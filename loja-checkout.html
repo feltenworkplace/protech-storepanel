@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Premium | ProTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030303; color: #fff; }
+        
+        /* Efeito de Fundo Premium */
+        .bg-glow {
+            position: fixed; top: -20%; left: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+            z-index: -1; pointer-events: none;
+        }
+
+        /* Painel de Vidro (Glassmorphism) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 2rem;
+        }
+
+        /* Inputs Premium */
+        .input-premium {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 20px;
+            border-radius: 1rem;
+            color: #fff;
+            outline: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .input-premium:focus {
+            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.02);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Botão Dourado */
+        .btn-gold {
+            background: linear-gradient(135deg, #D4AF37 0%, #F3E5AB 50%, #D4AF37 100%);
+            background-size: 200% auto;
+            color: #000;
+            transition: all 0.5s ease;
+        }
+        .btn-gold:hover {
+            background-position: right center;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row overflow-x-hidden relative">
+    
+    <div class="bg-glow"></div>
+
+    <main class="w-full lg:w-3/5 p-8 md:p-16 flex flex-col justify-center">
+        
+        <div class="max-w-xl mx-auto w-full">
+            <button onclick="window.history.back()" class="flex items-center gap-3 text-gray-500 hover:text-[#D4AF37] transition-colors mb-12 group">
+                <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <span class="text-[10px] font-black uppercase tracking-[0.2em]">Voltar à Loja</span>
+            </button>
+
+            <div class="flex items-center justify-between mb-16 relative">
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-white/10 -z-10"></div>
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1/4 h-px bg-[#D4AF37] shadow-[0_0_10px_#D4AF37] -z-10"></div>
+                
+                <div class="w-10 h-10 rounded-full bg-black border-2 border-[#D4AF37] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)] flex items-center justify-center text-xs font-black z-10">01</div>
+                <div class="w-10 h-10 rounded-full bg-black border border-white/20 text-gray-500 flex items-center justify-center text-xs font-black z-10 transition-all hover:border-white/40">02</div>
+                <div class="w-10 h-10 rounded-full bg-black border border-white/20 text-gray-500 flex items-center justify-center text-xs font-black z-10 transition-all hover:border-white/40">03</div>
+            </div>
+
+            <div>
+                <h2 class="text-3xl font-black tracking-tighter mb-2">Seus Dados</h2>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-10">Preencha com atenção</p>
+
+                <form id="checkout-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">Nome Completo</label>
+                            <input type="text" id="cli-name" placeholder="Ex: Seu Nome" class="input-premium" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">CPF</label>
+                            <input type="text" id="cli-cpf" placeholder="000.000.000-00" maxlength="14" class="input-premium" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">E-mail</label>
+                            <input type="email" id="cli-email" placeholder="seumail@email.com" class="input-premium" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">Celular</label>
+                            <input type="text" id="cli-phone" placeholder="(00) 00000-0000" maxlength="15" class="input-premium" required>
+                        </div>
+                    </div>
+
+                    <div class="pt-8">
+                        <button type="button" onclick="goToStep2()" class="w-full btn-gold py-5 rounded-xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3">
+                            Continuar para Pagamento
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <aside class="w-full lg:w-2/5 p-8 md:p-16 flex items-center relative z-10">
+        <div class="glass-panel w-full max-w-md mx-auto p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37] opacity-10 blur-[50px] rounded-full"></div>
+
+            <h3 class="text-sm font-black uppercase tracking-[0.3em] text-[#D4AF37] mb-8">Resumo do Pedido</h3>
+            
+            <div id="checkout-items-list" class="space-y-6 mb-10 max-h-[40vh] overflow-y-auto custom-scroll pr-4 pt-3">
+                </div>
+
+            <div class="flex gap-3 mb-10">
+                <input type="text" id="coupon-code" placeholder="CÓDIGO PROMO" class="input-premium !py-3 !text-xs uppercase placeholder:normal-case font-bold tracking-widest">
+                <button type="button" onclick="applyCoupon()" class="bg-white hover:bg-[#D4AF37] text-black font-black uppercase tracking-widest text-[10px] px-6 rounded-xl transition-all duration-300 shrink-0">
+                    Aplicar
+                </button>
+            </div>
+
+            <div class="space-y-4 pt-6 border-t border-white/10">
+                <div class="flex justify-between text-xs font-bold uppercase tracking-widest text-gray-500">
+                    <span>Subtotal</span>
+                    <span id="summary-subtotal" class="text-white">R$ 0,00</span>
+                </div>
+                <div id="discount-row" class="hidden justify-between text-xs font-bold uppercase tracking-widest text-emerald-400">
+                    <span>Desconto Aplicado</span>
+                    <span id="summary-discount">- R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end pt-8 mt-6 border-t border-white/10">
+                <span class="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-1">Total a Pagar</span>
+                <span id="summary-total" class="text-4xl font-black text-[#D4AF37] tracking-tighter">R$ 0,00</span>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        const cartItems = JSON.parse(localStorage.getItem('protech_active_cart')) || [];
+        let subtotalCart = 0;
+        let totalDiscount = 0;
+
+        function renderCheckoutItems() {
+            const list = document.getElementById('checkout-items-list');
+            subtotalCart = 0; // Zera para evitar duplicação
+            
+            if (cartItems.length === 0) {
+                list.innerHTML = '<div class="text-center py-10"><p class="text-gray-600 text-[10px] font-black uppercase tracking-[0.3em]">Carrinho Vazio</p></div>';
+                return;
+            }
+
+            let html = '';
+            cartItems.forEach(item => {
+                const safePrice = Number(item.price);
+                subtotalCart += safePrice * item.quantity;
+                
+                html += `
+                    <div class="flex items-center justify-between group">
+                        <div class="flex items-center gap-4">
+                            <div class="relative shrink-0">
+                                <img src="${item.image}" class="w-14 h-14 rounded-2xl object-cover border border-white/10 bg-black group-hover:border-[#D4AF37]/50 transition-colors">
+                                <span class="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(212,175,55,0.4)]">${item.quantity}</span>
+                            </div>
+                            <div>
+                                <h4 class="text-xs text-white font-bold leading-tight mb-1">${item.name}</h4>
+                                <p class="text-[9px] text-gray-500 font-black uppercase tracking-widest">Qtd: ${item.quantity}</p>
+                            </div>
+                        </div>
+                        <span class="text-sm text-white font-black whitespace-nowrap pl-4">R$ ${(safePrice * item.quantity).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+            updateTotalsDisplay();
+        }
+
+        function updateTotalsDisplay() {
+            document.getElementById('summary-subtotal').innerText = `R$ ${subtotalCart.toFixed(2)}`;
+            document.getElementById('summary-total').innerText = `R$ ${(subtotalCart - totalDiscount).toFixed(2)}`;
+        }
+
+        function applyCoupon() {
+            const codeInput = document.getElementById('coupon-code').value.trim().toUpperCase();
+            if (!codeInput) return;
+
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+            const store = stores.find(s => s.slug === slug);
+            
+            if (!store || !store.coupons) return alert("Erro ao conectar com a loja.");
+
+            const coupon = store.coupons.find(c => c.code === codeInput && c.status === 'Ativo');
+
+            if (!coupon) {
+                alert("Cupom inválido ou expirado.");
+                return;
+            }
+
+            totalDiscount = 0;
+            cartItems.forEach(item => {
+                if (coupon.categories.includes(item.categoryId)) {
+                    const itemTotal = Number(item.price) * item.quantity;
+                    totalDiscount += itemTotal * (coupon.discount / 100);
+                }
+            });
+
+            if (totalDiscount > 0) {
+                const row = document.getElementById('discount-row');
+                row.classList.remove('hidden');
+                row.classList.add('flex');
+                document.getElementById('summary-discount').innerText = `- R$ ${totalDiscount.toFixed(2)}`;
+                updateTotalsDisplay();
+            } else {
+                alert("Este cupom não se aplica aos itens selecionados.");
+            }
+        }
+
+        // Máscaras
+        document.getElementById('cli-cpf').addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = v;
+        });
+
+        document.getElementById('cli-phone').addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            v = v.replace(/(\d{2})(\d)/, '($1) $2');
+            v = v.replace(/(\d{5})(\d)/, '$1-$2');
+            e.target.value = v;
+        });
+
+        function goToStep2() {
+            const n = document.getElementById('cli-name').value;
+            const e = document.getElementById('cli-email').value;
+            const c = document.getElementById('cli-cpf').value;
+            
+            if(!n || !e || !c) return alert("Preencha todos os campos obrigatórios.");
+            
+            alert("Sucesso! Preparando aba de Pagamento...");
+        }
+
+        document.addEventListener('DOMContentLoaded', renderCheckoutItems);
+    </script>
+</body>
+</html>

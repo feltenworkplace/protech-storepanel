@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store | Legend Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+    --p-color: #22d3ee; /* Padrão caso não haja cor salva */
+    --s-color: #818cf8; 
+        }
+
+    body { background-color: #050505; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
+    .store-name-fade {
+    font-weight: 800;
+    text-transform: uppercase;
+    /* Adicionando espaçamento entre as letras para um ar mais premium */
+    letter-spacing: 0.15em; 
+    background: linear-gradient(to right, var(--p-color), var(--s-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+}
+
+    .header-title-fade {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.05em;
+    background: linear-gradient(to right, var(--p-color), var(--s-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+}
+
+    .store-banner-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 50vh;
+    z-index: -2; opacity: 0.3; /* Opacidade baixa para manter o ar premium */
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    }
+
+    .bg-glow {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 50% -10%, var(--p-color) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, var(--s-color) 0%, transparent 40%);
+    opacity: 0.12; z-index: -1; pointer-events: none;
+    }
+
+    /* Ajuste para o texto não cortar (Overflow lateral) */
+    .title-container {
+    overflow: visible !important;
+    padding: 20px 60px 20px 0; /* Aumentado padding direito e superior */
+    margin-bottom: -10px;
+}
+
+        .glass-header {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-legend {
+            background: linear-gradient(135deg, var(--p-color), var(--s-color));
+            color: #000;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-legend:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 0 30px var(--p-color);
+        }
+
+        .card-legend {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.5s ease;
+        }
+        .card-legend:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--p-color);
+            transform: translateY(-5px);
+        }
+
+        .text-gradient {
+    background: linear-gradient(to right, var(--p-color), var(--s-color));
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    line-height: 1.3; /* Aumentado significativamente para não cortar o topo */
+    padding-right: 20px; /* Respiro interno para o itálico */
+    }
+    .btn-legend {
+    background: linear-gradient(135deg, var(--p-color), var(--s-color));
+}
+.btn-category {
+    position: relative;
+    padding: 12px 28px;
+    border-radius: 99px; /* Botão totalmente arredondado */
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none; /* Removemos a borda padrão para não ter "duas bordas" */
+}
+.btn-category span {
+    background: linear-gradient(to right, var(--p-color), var(--s-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+}
+.btn-category:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.05);
+}
+.btn-category:hover::before {
+    opacity: 1; /* A borda brilha mais no hover */
+}
+.btn-category::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 99px;
+    padding: 1.5px; /* Espessura da borda */
+    background: linear-gradient(to right, var(--p-color), var(--s-color));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.3;
+    transition: opacity 0.4s;
+}
+    </style>
+</head>
+<body class="antialiased">
+    <div class="bg-glow"></div>
+    <div id="banner-layer" class="store-banner-layer hidden">
+        <img id="store-banner-img" src="" class="w-full h-full object-cover">
+    </div>
+
+    <header class="fixed top-0 w-full z-50 glass-header">
+        <div class="max-w-7xl mx-auto px-8 h-24 flex items-center justify-between">
+            <img id="header-logo-img" src="" class="w-12 h-12 object-contain rounded-full border border-white/10 p-1">
+            
+            <div class="text-center">
+                <span id="store-name-header" class="store-name-fade text-lg"></span>
+            </div>
+
+            <button onclick="toggleCart(true)" class="group relative p-2">
+                <svg class="w-7 h-7 text-white/80 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span id="cart-count" class="absolute -top-1 -right-1 btn-legend text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center">0</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-8 pt-40 pb-20">
+        <div class="flex flex-col gap-10 mb-20"> <div class="title-container"> 
+            <h1 id="current-cat-display" class="text-6xl md:text-8xl font-black tracking-tighter uppercase italic text-gradient">Tudo</h1>
+            <p class="text-white/20 text-xs font-bold uppercase tracking-[0.4em] mt-2 ml-2">Explorar Coleção</p>
+        </div>
+        
+        <nav id="category-list" class="flex flex-wrap gap-3 no-scrollbar">
+            </nav>
+        </div>
+        
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            </div>
+    </main>
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-[#050505] border-l border-white/10 z-[110] transform translate-x-full transition-transform duration-500 ease-in-out shadow-2xl">
+        <div class="h-full flex flex-col p-8">
+            <div class="flex justify-between items-center mb-10">
+                <h3 class="text-xl font-black uppercase tracking-tighter text-white italic">Sua Seleção</h3>
+                <button onclick="toggleCart(false)" class="group p-2 text-gray-500 hover:text-white transition-all">
+                    <svg class="w-6 h-6 transform group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+    
+            <div id="cart-items" class="flex-grow overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+                </div>
+    
+            <div class="border-t border-white/5 pt-8 mt-6">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <span class="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] block mb-1">Subtotal</span>
+                        <span id="cart-subtotal" class="text-white font-black text-2xl font-mono">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <button onclick="goToCheckout()" class="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#D4AF37] transition-all duration-500 rounded-2xl shadow-lg shadow-white/5">
+                    Ir para o Checkout
+                </button>
+                <p class="text-[9px] text-gray-600 text-center mt-4 uppercase font-bold tracking-widest">Pagamento 100% Seguro</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="cart-overlay" onclick="toggleCart(false)" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden opacity-0 transition-opacity duration-300"></div>
+    <script src="cart.js"></script>
+    <script>
+        let allProductsStore = [];
+        // Lógica de Carregamento e Cores
+        // store_legend1.html
+        function loadStore() {
+    const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('s');
+    const store = stores.find(s => s.slug === slug);
+    if (!store) return;
+
+    // Configurações de cores e visual existentes...
+    if (store.settings?.primaryColor) document.documentElement.style.setProperty('--p-color', store.settings.primaryColor);
+    if (store.settings?.secondaryColor) document.documentElement.style.setProperty('--s-color', store.settings.secondaryColor);
+    if (store.settings?.banner) {
+        document.getElementById('store-banner-img').src = store.settings.banner;
+        document.getElementById('banner-layer').classList.remove('hidden');
+    }
+
+    document.getElementById('store-name-header').innerText = store.name;
+    if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+
+    // Salva os produtos na variável global e renderiza
+    allProductsStore = store.products || [];
+    renderCategories(store.categories || []);
+    renderProducts(allProductsStore);
+}
+
+function filterByCat(id, name) {
+    document.getElementById('current-cat-display').innerText = name || 'Tudo';
+    
+    // Se o ID for vazio (''), mostra tudo. Senão, filtra pelo categoryId
+    const filtered = id === '' 
+        ? allProductsStore 
+        : allProductsStore.filter(p => p.categoryId === id);
+    
+    renderProducts(filtered);
+}
+
+function renderCategories(categories) {
+    const list = document.getElementById('category-list');
+    
+    list.innerHTML = `
+        <button onclick="filterByCat('', 'Tudo')" class="btn-category">
+            <span>Tudo</span>
+        </button>
+    ` + categories.map(cat => `
+        <button onclick="filterByCat('${cat.id}', '${cat.nome}')" class="btn-category">
+            <span>${cat.nome}</span>
+        </button>
+    `).join('');
+}
+
+function renderProducts(products) {
+    const grid = document.getElementById('product-grid');
+    if (products.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-20 uppercase tracking-widest font-black">Nenhum produto nesta categoria</div>`;
+        return;
+    }
+
+    grid.innerHTML = products.map(prod => `
+        <div class="card-legend rounded-[2rem] p-4 group animate-reveal">
+            <div class="aspect-square rounded-[1.5rem] bg-[#0a0a0a] mb-6 overflow-hidden relative border border-white/5">
+                <img src="${prod.image}" class="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700">
+            </div>
+            <div class="px-4 pb-4">
+                <h3 class="font-bold text-sm tracking-tight mb-4 opacity-80">${prod.name}</h3>
+                <div class="flex items-center justify-between">
+                    <span class="text-xl font-black">R$ ${prod.price}</span>
+                    <button onclick="addToCart('${prod.id}')" class="w-10 h-10 btn-legend rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadStore);
+    </script>
+</body>
+</html>

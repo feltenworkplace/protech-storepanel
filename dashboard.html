@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | ProTech Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #fff; margin: 0; }
+        .bg-gold { background-color: #D4AF37; }
+        .text-gold { color: #D4AF37; }
+        .gold-border { border: 1px solid rgba(212, 175, 55, 0.3); }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        #sidebar-overlay { transition: opacity 0.3s ease; pointer-events: none; }
+        #sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+        #store-drawer-overlay { transition: opacity 0.3s ease; pointer-events: none; opacity: 0; }
+        #store-drawer-overlay.active { opacity: 1; pointer-events: auto; }
+        #store-drawer select { color-scheme: dark; }
+        #store-drawer select option { background-color: #0b0b0b; color: #e5e7eb; }
+        .select-field {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-repeat: no-repeat; background-position: right 1rem center; background-size: 18px 18px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D4AF37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        }
+        .no-scroll { overflow: hidden; }
+        /* Scrollbar customizada para a Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.1); /* Dourado bem clarinho */
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.3);
+}
+
+/* Suaviza o movimento de rolagem em toda a sidebar */
+.custom-scrollbar {
+    scroll-behavior: smooth;
+    /* Melhora a precisão do scroll no trackpad e mouse */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* Scrollbar ainda mais discreta para não poluir o visual premium */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.05);
+    border-radius: 10px;
+    transition: background 0.3s;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.2);
+}
+
+select option {
+    background-color: #0b0b0b !important;
+    color: #ffffff !important;
+    padding: 10px;
+}
+
+/* Remove o destaque azul padrão ao selecionar no Windows/Chrome */
+select:focus option:checked {
+    background: #D4AF37 !important;
+    color: #000000 !important;
+}
+
+@keyframes bounce-short {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+.animate-bounce-short { 
+    animation: bounce-short 0.3s ease-in-out;
+    transform-origin: center; 
+}
+.template-selected {
+    border-color: #D4AF37 !important;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3) !important;
+    opacity: 1 !important;
+}
+.template-selected-pro {
+    border-color: #ec4899 !important;
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.4) !important;
+    opacity: 1 !important;
+}
+.template-card {
+    position: relative;
+    z-index: 20;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    scroll-snap-align: start; /* Faz o card "travar" no início ao parar de rolar */
+}
+.carousel-container {
+    scroll-behavior: smooth; /* Reforça o comportamento suave */
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox */
+}
+
+.carousel-container::-webkit-scrollbar {
+    display: none; /* Chrome e Safari */
+}
+.template-selected-legend {
+    border-color: #22d3ee !important;
+    box-shadow: 0 0 25px rgba(34, 211, 238, 0.5) !important;
+    opacity: 1 !important;
+}
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/80 z-[90] opacity-0 md:hidden"></div>
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-black border-r border-white/5 transform -translate-x-full transition-transform duration-300 z-[100] md:translate-x-0 md:static md:h-screen shrink-0">
+        <div class="h-full flex flex-col">
+            <div class="px-8 py-10">
+                <div class="text-2xl font-black tracking-tighter flex items-center">PRO<span class="text-gold">TECH</span></div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em] mt-1 ml-0.5">Control Panel</p>
+            </div>
+            <nav class="flex flex-col space-y-2 flex-grow">
+                <a href="#" class="group relative flex items-center gap-3 px-5 py-3 mx-4 rounded-2xl text-white transition-colors duration-200 bg-[#D4AF37]/10 border border-[#D4AF37]/20 shadow-[0_10px_30px_-18px_rgba(212,175,55,0.25)]">
+                    <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#D4AF37] rounded-full" aria-hidden="true"></span>
+                    <span class="w-9 h-9 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center text-[#D4AF37] transition-colors shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    </span>
+                    <span class="text-sm font-bold tracking-tight">Dashboard</span>
+                </a>
+                <a href="#" class="group relative flex items-center gap-3 px-5 py-3 mx-4 rounded-2xl text-gray-400 transition-colors duration-200 hover:bg-white/5 hover:text-white">
+                    <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-white transition-colors shrink-0">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.3 5.3a9 9 0 00-16.6 0l-.7 1.4V19l.7 1.4a9 9 0 0016.6 0l.7-1.4V6.7l-.7-1.4z"/></svg>
+                    </span>
+                    <span class="text-sm font-medium tracking-tight">Comunidade</span>
+                </a>
+                <a href="#" onclick="openStoresView(); return false;" class="group relative flex items-center gap-3 px-5 py-3 mx-4 rounded-2xl text-gray-400 transition-colors duration-200 hover:bg-white/5 hover:text-white">
+                    <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-white transition-colors shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    </span>
+                    <span class="text-sm font-medium tracking-tight">Minhas Lojas</span>
+                </a>
+                <a href="#" class="group relative flex items-center gap-3 px-5 py-3 mx-4 rounded-2xl text-gray-400 transition-colors duration-200 hover:bg-white/5 hover:text-white">
+                    <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-white transition-colors shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </span>
+                    <span class="text-sm font-medium tracking-tight">Configurações</span>
+                </a>
+            </nav>
+            <div class="px-4 py-8 border-t border-white/5">
+                <a href="index.html" class="group flex items-center gap-3 px-5 py-3 mx-4 rounded-2xl text-gray-400 hover:bg-white/5 hover:text-red-400 transition-colors duration-200">
+                    <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-red-400 transition-colors shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    </span>
+                    <span class="text-sm font-semibold tracking-tight">Sair do Painel</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <aside id="store-sidebar" class="hidden fixed inset-y-0 left-0 w-64 bg-black border-r border-white/5 transform -translate-x-full transition-transform duration-300 z-[100] md:translate-x-0 md:static md:h-screen shrink-0">
+        <div class="h-full flex flex-col">
+            <div class="px-8 py-10 shrink-0">
+                <div class="text-2xl font-black tracking-tighter flex items-center">PRO<span class="text-gold">TECH</span></div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em] mt-1 ml-0.5">Store Panel</p>
+                <div class="mt-6 glass rounded-2xl p-4 border-white/10">
+                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest">Loja ativa</p>
+                    <p id="store-sidebar-store-name" class="text-sm font-black mt-2 leading-tight">—</p>
+                    <p id="store-sidebar-store-domain" class="text-[11px] text-gray-500 font-medium mt-1">—</p>
+                </div>
+            </div>
+            <nav class="flex-grow overflow-y-auto custom-scrollbar px-4 space-y-2">
+                <div class="px-4 mb-2">
+                    <button id="btn-main-dashboard" onclick="toggleSubmenu('submenu-dashboard', 'arrow-dashboard')" class="w-full group relative flex items-center justify-between gap-3 px-5 py-3 rounded-2xl transition-colors duration-200 text-gray-400 hover:bg-white/5">
+                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#D4AF37] rounded-full hidden" aria-hidden="true"></span>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center transition-colors shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                            </span>
+                            <span class="text-sm font-bold tracking-tight">Dashboard</span>
+                        </div>
+                        <svg id="arrow-dashboard" class="w-4 h-4 text-white/40 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="submenu-dashboard" class="hidden flex flex-col mt-2 ml-4 border-l border-white/5 space-y-1">
+                        <a href="javascript:void(0)" id="menu-geral" onclick="switchTab('geral')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Geral</a>
+                        <a href="javascript:void(0)" id="menu-template" onclick="switchTab('template')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Template</a>
+                        <a href="javascript:void(0)" id="menu-planos" onclick="switchTab('planos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Planos</a>
+                        <a href="javascript:void(0)" id="menu-configuracoes" onclick="switchTab('configuracoes')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Configurações</a>
+                    </div>
+                </div>
+                <div class="px-4 mb-2">
+                    <button id="btn-main-catalogo" onclick="toggleSubmenu('submenu-catalogo', 'arrow-catalogo')" class="w-full group relative flex items-center justify-between gap-3 px-5 py-3 rounded-2xl transition-colors duration-200 text-gray-400 hover:bg-white/5">
+                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#D4AF37] rounded-full hidden" aria-hidden="true"></span>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center transition-colors shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+                            </span>
+                            <span class="text-sm font-medium tracking-tight">Catálogo</span>
+                        </div>
+                        <svg id="arrow-catalogo" class="w-4 h-4 text-white/30 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="submenu-catalogo" class="hidden flex flex-col mt-2 ml-4 border-l border-white/5 space-y-1">
+                        <a href="javascript:void(0)" id="menu-categorias" onclick="switchTab('categorias')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Categorias</a>
+                        <a href="javascript:void(0)" id="menu-produtos" onclick="switchTab('produtos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Produtos</a>
+                        <a href="javascript:void(0)" id="menu-cupons" onclick="switchTab('cupons')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Cupons</a>
+                    </div>
+                </div>
+                <div class="px-4 mb-2">
+                    <button id="btn-main-integracoes" onclick="toggleSubmenu('submenu-integracoes', 'arrow-integracoes')" class="w-full group relative flex items-center justify-between gap-3 px-5 py-3 rounded-2xl transition-colors duration-200 text-gray-400 hover:bg-white/5">
+                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#D4AF37] rounded-full hidden" aria-hidden="true"></span>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center transition-colors shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            </span>
+                            <span class="text-sm font-medium tracking-tight">Integrações</span>
+                        </div>
+                        <svg id="arrow-integracoes" class="w-4 h-4 text-white/30 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                
+                    <div id="submenu-integracoes" class="hidden flex flex-col mt-2 ml-4 border-l border-white/5 space-y-1">
+                        <a href="javascript:void(0)" id="menu-script" onclick="switchTab('script')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Script</a>
+                        <a href="javascript:void(0)" id="menu-comandos" onclick="switchTab('comandos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Comandos</a>
+                        <a href="javascript:void(0)" id="menu-variaveis" onclick="switchTab('variaveis')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Variáveis</a>
+                    </div>
+                </div>
+                <div class="px-4 mb-2">
+                    <button id="btn-main-financeiro" onclick="toggleSubmenu('submenu-financeiro', 'arrow-financeiro')" class="w-full group relative flex items-center justify-between gap-3 px-5 py-3 rounded-2xl transition-colors duration-200 text-gray-400 hover:bg-white/5">
+                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#D4AF37] rounded-full hidden" aria-hidden="true"></span>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center transition-colors shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3 0 .93.423 1.76 1.09 2.31C10.045 14.084 9 15.45 9 17h6c0-1.55-1.045-2.916-1.09-3.69A2.99 2.99 0 0015 11c0-1.657-1.343-3-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18v14H3z"/></svg>
+                            </span>
+                            <span class="text-sm font-medium tracking-tight">Financeiro</span>
+                        </div>
+                        <svg id="arrow-financeiro" class="w-4 h-4 text-white/30 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                
+                    <div id="submenu-financeiro" class="hidden flex flex-col mt-2 ml-4 border-l border-white/5 space-y-1">
+                        <a href="javascript:void(0)" id="menu-pedidos" onclick="switchTab('pedidos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Pedidos</a>
+                        <a href="javascript:void(0)" id="menu-metodos" onclick="switchTab('metodos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Pagamentos</a>
+                        <a href="javascript:void(0)" id="menu-despesas" onclick="switchTab('despesas')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Despesas</a>
+                    </div>
+                </div>
+                <div class="px-4 mb-2">
+                    <button id="btn-main-equipe" onclick="toggleSubmenu('submenu-equipe', 'arrow-equipe')" class="w-full group relative flex items-center justify-between gap-3 px-5 py-3 rounded-2xl transition-colors duration-200 text-gray-400 hover:bg-white/5">
+                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#D4AF37] rounded-full hidden" aria-hidden="true"></span>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center transition-colors shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            </span>
+                            <span class="text-sm font-medium tracking-tight">Equipe</span>
+                        </div>
+                        <svg id="arrow-equipe" class="w-4 h-4 text-white/30 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                
+                    <div id="submenu-equipe" class="hidden flex flex-col mb-2 mt-2 ml-4 border-l border-white/5 space-y-1">
+                        <a href="javascript:void(0)" id="menu-auditoria" onclick="switchTab('auditoria')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Auditoria</a>
+                    </div>
+                </div>
+            </nav>
+            <div class="px-4 py-8 border-t border-white/5 shrink-0">
+                <button onclick="openStoresView()" class="w-full group flex items-center justify-between gap-3 px-4 py-4 rounded-2xl text-gray-300 bg-white/5 hover:bg-white/10 transition-colors duration-200">
+                    <span class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-black/40 flex items-center justify-center text-gray-300 group-hover:text-white transition-colors shrink-0 border border-white/10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </span>
+                        <span class="text-sm font-black uppercase tracking-widest">Voltar</span>
+                    </span>
+                    <span class="text-[10px] text-gray-500 font-black uppercase tracking-widest mr-2">Lojas</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col overflow-y-auto">
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-6 md:px-10 bg-black/40 backdrop-blur-md sticky top-0 z-40">
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+                <p class="text-xs md:text-sm text-gray-400 italic">Boa noite, <span id="nome-usuario-header" class="text-white font-bold">Carregando...</span>. Bem-vindo à sua <span class="text-gold">plataforma de marketplace</span>.</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="hidden lg:block text-right">
+                    <p class="text-xs font-bold text-white">Expert Plan</p>
+                    <p class="text-[10px] text-gold font-bold uppercase tracking-widest leading-none">Pro Member</p>
+                </div>
+                <div class="w-10 h-10 flex-shrink-0 aspect-square rounded-xl border border-gold/40 p-0.5 overflow-hidden bg-zinc-900">
+                    <img id="user-avatar" src="" class="w-full h-full rounded-lg object-cover">
+                </div>
+            </div>
+        </header>
+        <div class="p-6 md:p-10 max-w-7xl mx-auto w-full">
+            <section id="view-stores">
+                <div class="glass bg-[#0a0a1a] border-[#1a1a3a] p-5 rounded-3xl mb-12 flex flex-col md:flex-row justify-between items-center gap-4 gold-border">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></div>
+                        <p class="text-sm text-gray-300 font-medium">Dúvidas? Entre na nossa comunidade oficial no Discord!</p>
+                    </div>
+                    <a href="#" class="bg-gold text-black text-xs font-black px-6 py-2.5 rounded-xl hover:opacity-90 transition w-full md:w-auto text-center shadow-lg shadow-gold/20">Acessar Discord</a>
+                </div>
+                <h2 class="text-2xl md:text-3xl font-black mb-8 tracking-tight">Minhas lojas</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="stores-grid">
+                    <button onclick="toggleStoreDrawer(true)" class="aspect-video glass rounded-[2rem] border-2 border-dashed border-white/10 hover:border-gold/40 flex flex-col items-center justify-center group transition-all p-6 text-center">
+                        <div class="w-14 h-14 bg-gold text-black rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition shadow-lg shadow-gold/40"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></div>
+                        <span class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] group-hover:text-white transition-colors">Criar Nova Loja</span>
+                    </button>
+                </div>
+            </section>
+            <section id="view-store-dashboard" class="hidden">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+                    <div>
+                        <h2 id="main-view-title" class="text-2xl md:text-3xl font-black tracking-tight">Dashboard</h2>
+                        <p class="text-xs text-gray-500 mt-1">Loja: <span id="active-store-name" class="text-gray-200 font-bold">-</span> <span class="text-gray-700 mx-1">•</span> <span class="text-gray-400" id="active-store-domain">-</span></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <button onclick="visitStore()" class="bg-gold text-black text-xs font-black px-6 py-3 rounded-xl hover:opacity-90 transition text-center shadow-lg shadow-gold/20">Visitar loja</button>
+                        <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-300">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 11h14M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span id="date-range-label">01 de mar de 2026 - 31 de mar de 2026</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-geral" class="space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="glass rounded-[2rem] p-10 border-white/10 bg-zinc-900/20 lg:col-span-2">
+                            <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-10">Ganho diário</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                <div><p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Bruto</p><p class="text-4xl font-black mt-2 text-white">R$ 0,00</p></div>
+                                <div><p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Líquido</p><p class="text-4xl font-black mt-2 text-white">R$ 0,00</p></div>
+                            </div>
+                        </div>
+                        <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20">
+                            <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Resumo</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between bg-white/5 rounded-2xl px-5 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-xs font-black">$</div><span class="text-xs text-gray-400 font-bold">Ganho bruto</span></div><span class="text-xs font-black text-white">R$ 0,00</span></div>
+                                <div class="flex items-center justify-between bg-white/5 rounded-2xl px-5 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-500 flex items-center justify-center text-xs font-black">%</div><span class="text-xs text-gray-400 font-bold">Lucro</span></div><span class="text-xs font-black text-white">R$ 0,00</span></div>
+                                <div class="flex items-center justify-between bg-white/5 rounded-2xl px-5 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-500 flex items-center justify-center text-xs font-black">−</div><span class="text-xs text-gray-400 font-bold">Despesas</span></div><span class="text-xs font-black text-white">R$ 0,00</span></div>
+                                <div class="flex items-center justify-between bg-white/5 rounded-2xl px-5 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center text-xs font-black">!</div><span class="text-xs text-gray-400 font-bold">Aprovado manualmente</span></div><span class="text-xs font-black text-white">R$ 0,00</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20 min-h-[300px]"><p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Métodos de Pagamento</p><div class="h-[200px] flex items-center justify-center text-xs text-gray-600 border border-dashed border-white/10 rounded-2xl">Gráfico (placeholder)</div></div>
+                        <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20 min-h-[300px]"><p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Vendas recentes</p><div class="space-y-3"><div class="h-12 bg-white/5 rounded-2xl border border-white/5"></div><div class="h-12 bg-white/5 rounded-2xl border border-white/5"></div><div class="h-12 bg-white/5 rounded-2xl border border-white/5"></div></div></div>
+                    </div>
+                    <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20 w-full min-h-[320px]"><p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Vendas</p><div class="h-[240px] flex items-center justify-center text-xs text-gray-600 border border-dashed border-white/10 rounded-2xl">Gráfico (placeholder)</div></div>
+                </div>
+                <div id="tab-template" class="hidden space-y-10">
+                        <div class="relative">
+                            <div class="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 class="text-xl font-black uppercase tracking-tighter text-white">Temas Disponíveis</h3>
+                                    <p class="text-[10px] text-gold font-bold uppercase tracking-[0.2em] mt-1">Navegue entre as opções VIP, PRO e LEGEND</p>
+                                </div>
+                                
+                                <div class="flex gap-3">
+                                    <button onclick="scrollCarousel(-1)" class="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl hover:bg-[#D4AF37] hover:text-black transition-all active:scale-90 shadow-lg shadow-black/50">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                    </button>
+                                    <button onclick="scrollCarousel(1)" class="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl hover:bg-[#D4AF37] hover:text-black transition-all active:scale-90 shadow-lg shadow-black/50">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="relative w-full overflow-hidden">
+                                <div id="template-carousel" class="carousel-container flex overflow-x-auto gap-6 no-scrollbar py-4 px-2">
+    
+                                    <div id="tpl-standart" onclick="selectTemplate('standart')" class="template-card shrink-0 w-[350px] bg-[#050505] rounded-[2.5rem] border border-white/5 overflow-hidden transition-all group cursor-pointer">
+                                        <div class="w-full aspect-video bg-zinc-900 border-b border-white/5">
+                                            <img src="img/template1.png" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                        </div>
+                                        <div class="py-6 text-center bg-black/40"><span class="text-white font-black uppercase tracking-[0.4em] text-[10px]">Standart</span></div>
+                                    </div>
+                                
+                                    <div id="tpl-dark" onclick="selectTemplate('dark')" class="template-card opacity-50 shrink-0 w-[350px] bg-[#050505] rounded-[2.5rem] border border-white/5 overflow-hidden transition-all group cursor-pointer">
+                                        <div class="w-full aspect-video bg-zinc-900 border-b border-white/5">
+                                            <img src="img/template2.png" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                        </div>
+                                        <div class="py-6 text-center bg-black/40"><span class="text-white font-black uppercase tracking-[0.4em] text-[10px]">Dark Mode</span></div>
+                                    </div>
+                                
+                                    <div id="tpl-pro1" onclick="selectTemplate('pro1')" class="template-card shrink-0 w-[350px] opacity-50 bg-[#050505] rounded-[2.5rem] border border-[#ec4899] overflow-hidden transition-all duration-500 group relative cursor-pointer hover:scale-[1.03]" style="isolation: isolate;"> 
+                                        <div class="w-full aspect-video bg-zinc-900 flex flex-col items-center justify-center relative overflow-hidden">
+                                            <div id="tpl-pro1-lock" class="absolute inset-0 bg-black/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center transition-opacity duration-500 hidden group-hover:bg-black/80">
+                                                <svg class="w-12 h-12 text-[#ec4899] mb-4 group-hover:rotate-12 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                                <div class="px-4 py-1 rounded-full bg-[#ec4899] text-white text-[10px] font-black uppercase tracking-widest mb-4 shadow-[0_0_15px_rgba(236,72,153,0.3)]">PRO</div>
+                                                <p class="text-white font-bold text-sm tracking-tight">Conteúdo Exclusivo</p>
+                                            </div>
+                                            <img src="img/templatepro1.png" class="w-full h-full object-cover z-0">
+                                        </div>
+                                        <div class="py-6 text-center bg-black/40 relative z-20"><span class="text-white group-hover:text-[#ec4899] font-black uppercase tracking-[0.4em] text-[10px]">Stories PRO</span></div>
+                                        <div class="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#ec4899] to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
+                                    </div>
+                                
+                                    <div id="tpl-pro2" onclick="selectTemplate('pro2')" class="template-card shrink-0 w-[350px] opacity-50 bg-[#050505] rounded-[2.5rem] border border-[#ec4899] overflow-hidden transition-all duration-500 group relative cursor-pointer hover:scale-[1.03]" style="isolation: isolate;">
+                                        <div class="w-full aspect-video bg-zinc-900 flex flex-col items-center justify-center relative overflow-hidden">
+                                            <div id="tpl-pro2-lock" class="absolute inset-0 bg-black/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center transition-opacity duration-500 hidden group-hover:bg-black/80">
+                                                <svg class="w-12 h-12 text-[#ec4899] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                                <div class="px-4 py-1 rounded-full bg-[#ec4899] text-white text-[10px] font-black uppercase tracking-widest mb-4">PRO</div>
+                                                <p class="text-white font-bold text-sm tracking-tight">Conteúdo Exclusivo</p>
+                                            </div>
+                                            <img src="img/templatepro2.png" class="w-full h-full object-cover z-0">
+                                        </div>
+                                        <div class="py-6 text-center bg-black/40 relative z-20"><span class="text-white group-hover:text-[#ec4899] font-black uppercase tracking-[0.4em] text-[10px]">Luxury PRO</span></div>
+                                        <div class="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#ec4899] to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
+                                    </div>
+                                
+                                    <div id="tpl-legend1" onclick="selectTemplate('legend1')" class="template-card shrink-0 w-[350px] opacity-50 bg-[#050505] rounded-[2.5rem] border border-[#22d3ee] overflow-hidden transition-all duration-500 group relative cursor-pointer hover:scale-[1.03]" style="isolation: isolate;">
+    
+                                        <div id="legend-mini-picker" class="absolute top-4 right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 hidden">
+                                            <input type="color" id="store-primary-color" title="Primária" 
+                                                   onclick="event.stopPropagation()" 
+                                                   class="w-7 h-7 rounded-full bg-transparent border-2 border-white/20 cursor-pointer overflow-hidden">
+                                            <input type="color" id="store-secondary-color" title="Secundária" 
+                                                   onclick="event.stopPropagation()" 
+                                                   class="w-7 h-7 rounded-full bg-transparent border-2 border-white/20 cursor-pointer overflow-hidden">
+                                        </div>
+                                    
+                                        <div class="w-full aspect-video bg-zinc-900 flex flex-col items-center justify-center relative overflow-hidden">
+                                            <div id="tpl-legend1-lock" class="absolute inset-0 bg-black/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center transition-opacity duration-500 hidden">
+                                                <svg class="w-12 h-12 text-[#22d3ee] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                                <div class="px-4 py-1 rounded-full bg-[#22d3ee] text-white text-[10px] font-black uppercase tracking-widest mb-4">LEGEND</div>
+                                                <p class="text-white font-bold text-sm">Conteúdo Exclusivo</p>
+                                            </div>
+                                            <img src="img/templatelegend1.png" class="w-full h-full object-cover z-0">
+                                        </div>
+                                    
+                                        <div class="py-5 text-center bg-black/40 relative z-20 flex flex-col items-center gap-3">
+                                            <span class="text-white group-hover:text-[#22d3ee] font-black uppercase tracking-[0.4em] text-[10px]">Ethereal Legend</span>
+                                            
+                                            <button id="legend-save-btn" onclick="event.stopPropagation(); saveTemplateSettings()" class="hidden opacity-0 group-hover:opacity-100 bg-[#22d3ee]/10 hover:bg-[#22d3ee]/20 text-[#22d3ee] border border-[#22d3ee]/30 px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-500">
+                                                Salvar Cores
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                        <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" onclick="document.getElementById('file-logo').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'file-logo', 'preview-logo')">
+                            <input type="file" id="file-logo" class="hidden" accept="image/*" onchange="uploadTemplateImage(this, 'logo')">
+                            <div id="preview-logo-container" class="mb-4 hidden">
+                                <img id="preview-logo" src="" class="h-16 mx-auto object-contain rounded-lg border border-white/10">
+                            </div>
+                            <p class="text-blue-500 text-[10px] font-bold">Logo (500x500px)</p>
+                            <p class="text-[8px] text-gray-500 uppercase tracking-widest mt-1">Arraste ou clique</p>
+                        </div>
+                    
+                        <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" onclick="document.getElementById('file-banner').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'file-banner', 'preview-banner')">
+                            <input type="file" id="file-banner" class="hidden" accept="image/*" onchange="uploadTemplateImage(this, 'banner')">
+                            <div id="preview-banner-container" class="mb-4 hidden">
+                                <img id="preview-banner" src="" class="h-16 w-full object-cover rounded-lg border border-white/10">
+                            </div>
+                            <p class="text-blue-500 text-[10px] font-bold">Banner (1920x400px)</p>
+                            <p class="text-[8px] text-gray-500 uppercase tracking-widest mt-1">Arraste ou clique</p>
+                        </div>
+                    
+                        <div class="glass border-dashed border-white/10 p-6 rounded-3xl text-center hover:border-gold/30 transition cursor-pointer relative" onclick="document.getElementById('file-favicon').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'file-favicon', 'preview-favicon')">
+                            <input type="file" id="file-favicon" class="hidden" accept="image/*" onchange="uploadTemplateImage(this, 'favicon')">
+                            <div id="preview-favicon-container" class="mb-4 hidden">
+                                <img id="preview-favicon" src="" class="h-10 w-10 mx-auto object-contain rounded border border-white/10">
+                            </div>
+                            <p class="text-blue-500 text-[10px] font-bold">Favicon (32x32px)</p>
+                            <p class="text-[8px] text-gray-500 uppercase tracking-widest mt-1">Arraste ou clique</p>
+                        </div>
+                    </div>
+                
+                    <div class="space-y-8 mt-10">
+                        <div>
+                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 block">CSS Customizado</label>
+                            <textarea id="temp-css" placeholder="/* Adicione seu CSS aqui... */" class="w-full bg-[#0c0c0c] border border-white/10 rounded-2xl p-6 text-xs font-mono text-gold min-h-[160px] outline-none focus:border-gold/30 transition-all"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 block">Corpo da Página Principal (HTML)</label>
+                            <textarea id="temp-html" class="w-full bg-[#0c0c0c] border border-white/10 rounded-2xl p-6 text-xs font-mono text-gray-300 min-h-[240px] outline-none focus:border-gold/30 transition-all"></textarea>
+                        </div>
+                        <div class="flex justify-end mt-8">
+                            <button onclick="saveTemplateSettings()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/20 uppercase tracking-widest">Salvar Template</button>
+                        </div>
+                        </div>
+                    </div>
+                 <div id="tab-planos" class="hidden space-y-10">
+                    <div class="text-center mb-10">
+                        <h2 class="text-2xl font-black tracking-tight text-white uppercase">Planos de Assinatura</h2>
+                        <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-[0.3em]">Gerencie ou faça o upgrade da sua instância</p>
+                    </div>
+                
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                        <div class="glass rounded-[2rem] p-8 border-green-400/20 flex flex-col h-full hover:border-green-400/40 transition-all">
+                            <h3 class="text-lg font-bold text-white mb-4 uppercase">VIP <span class="text-green-400 text-[10px] ml-2 font-black uppercase tracking-widest">Starter</span></h3>
+                            <div class="mb-6">
+                                <span class="text-3xl font-black text-green-400">R$ 14,90</span>
+                                <span class="text-gray-500 text-[10px]">/mensal</span>
+                            </div>
+                            <ul class="space-y-3 flex-grow border-t border-white/5 pt-6 text-[11px] text-gray-400">
+                                <li class="flex items-center gap-2"><span class="text-green-400">✔</span> Categorias ilimitadas</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✔</span> 1 Loja inclusa</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✔</span> 10 Itens por categoria</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✔</span> Auditoria ilimitada</li>
+                            </ul>
+                            <button onclick="upgradeAccount('VIP')" class="w-full py-4 mt-8 rounded-2xl border border-green-400/30 text-green-400 text-[10px] font-black uppercase hover:bg-green-400 hover:text-black transition tracking-widest">Selecionar</button>
+                        </div>
+                
+                        <div class="glass rounded-[2rem] p-8 border-pink-500/30 flex flex-col h-full bg-zinc-900/40 hover:border-pink-500/60 transition-all">
+                            <h3 class="text-lg font-bold text-white mb-4 uppercase">PRO <span class="text-pink-500 text-[10px] ml-2 font-black uppercase tracking-widest">Elite</span></h3>
+                            <div class="mb-6">
+                                <span class="text-3xl font-black text-pink-500">R$ 29,90</span>
+                                <span class="text-gray-500 text-[10px]">/mensal</span>
+                            </div>
+                            <ul class="space-y-3 flex-grow border-t border-white/5 pt-6 text-[11px] text-gray-300">
+                                <li class="py-1 px-3 bg-green-400/10 border border-green-400/20 rounded-lg font-bold text-green-400 inline-block mb-2 text-[9px]">📦 VIP Pack Incluso</li>
+                                <li class="flex items-center gap-2"><span class="text-pink-500 font-bold">✔</span> Até 3 Lojas</li>
+                                <li class="flex items-center gap-2"><span class="text-pink-500 font-bold">✔</span> 15 Itens por categoria</li>
+                                <li class="flex items-center gap-2"><span class="text-pink-500 font-bold">✔</span> Suporte prioritário</li>
+                            </ul>
+                            <button onclick="upgradeAccount('PRO')" class="w-full py-4 mt-8 rounded-2xl border border-pink-500/40 text-pink-500 text-[10px] font-black uppercase hover:bg-pink-500 hover:text-black transition tracking-widest">Selecionar</button>
+                        </div>
+                
+                        <div class="glass rounded-[2rem] p-8 border-cyan-400/20 flex flex-col h-full hover:border-cyan-400/40 transition-all">
+                            <h3 class="text-lg font-bold text-white mb-4 uppercase">LEGEND <span class="text-cyan-400 text-[10px] ml-2 font-black uppercase tracking-widest">Expert</span></h3>
+                            <div class="mb-6">
+                                <span class="text-3xl font-black text-cyan-400">R$ 59,90</span>
+                                <span class="text-gray-500 text-[10px]">/mensal</span>
+                            </div>
+                            <ul class="space-y-3 flex-grow border-t border-white/5 pt-6 text-[11px] text-gray-300">
+                                <li class="py-1 px-3 bg-pink-500/10 border border-pink-500/20 rounded-lg font-bold text-pink-500 inline-block mb-2 text-[9px]">🚀 Pro Pack Incluso</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✔</span> Até 10 Lojas</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✔</span> 30 Itens por categoria</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✔</span> Segurança Legend</li>
+                            </ul>
+                            <button onclick="upgradeAccount('LEGEND')" class="w-full py-4 mt-8 rounded-2xl border border-cyan-400/30 text-cyan-400 text-[10px] font-black uppercase hover:bg-cyan-400 hover:text-black transition tracking-widest">Selecionar</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-configuracoes" class="hidden space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Nome da Instância</label>
+                            <input type="text" id="cfg-store-name" placeholder="Ex: ProCity Market" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                        </div>
+                    </div>
+                
+                    <button onclick="saveStoreGeneralSettings()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/20">
+                        Salvar Configurações
+                    </button>
+                </div>
+
+                <div id="tab-categorias" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                        <div class="group relative w-full md:max-w-md">
+                            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <input type="text" id="search-category" oninput="renderCategories()" placeholder="Filtrar por nome..." class="w-full bg-white/[0.03] border border-white/5 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-sm transition-all placeholder:text-gray-600 text-white">
+                        </div>
+                
+                        <button onclick="openCategoryModal()" class="w-full md:w-auto bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+                            Nova Categoria
+                        </button>
+                    </div>
+                
+                    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                                <tr>
+                                    <th class="px-8 py-6">ID</th>
+                                    <th class="px-8 py-6">Nome</th>
+                                    <th class="px-8 py-6">Volume</th>
+                                    <th class="px-8 py-6 text-center">Status</th>
+                                    <th class="px-8 py-6 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categories-table-body" class="divide-y divide-white/5">
+                                </tbody>
+                        </table>
+                        
+                    </div>
+                </div>
+                
+                <div id="tab-produtos" class="hidden space-y-8">
+                    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center bg-white/[0.02] p-6 rounded-[2rem] border border-white/5">
+                        <div class="flex flex-col md:flex-row gap-4 w-full lg:w-auto flex-grow">
+                            <div class="relative min-w-[200px]">
+                                <select id="filter-product-category" onchange="renderProducts()" class="select-field w-full bg-black/40 border border-white/10 p-4 pr-12 rounded-2xl outline-none focus:border-gold/30 text-xs text-gray-400 appearance-none">
+                                    <option value="">Todas as Categorias</option>
+                                    </select>
+                            </div>
+                
+                            <div class="group relative flex-grow">
+                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <input type="text" id="search-product" oninput="renderProducts()" placeholder="Pesquisar produto..." class="w-full bg-black/40 border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600">
+                            </div>
+                        </div>
+                
+                        <button onclick="openProductModal()" class="w-full lg:w-auto bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+                            Novo Produto
+                        </button>
+                    </div>
+                
+                    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                                <tr>
+                                    <th class="px-8 py-6">Produto</th>
+                                    <th class="px-8 py-6">Categoria</th>
+                                    <th class="px-8 py-6">Preço</th>
+                                    <th class="px-8 py-6 text-center">Estoque</th>
+                                    <th class="px-8 py-6 text-center">Status</th>
+                                    <th class="px-8 py-6 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body" class="divide-y divide-white/5">
+                                </tbody>
+                        </table>
+                
+                        <div id="empty-products" class="p-20 text-center">
+                            <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            </div>
+                            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhum produto em estoque</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-cupons" class="hidden space-y-8">
+    <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div class="group relative w-full md:max-w-md">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" id="search-coupon" placeholder="Buscar cupom pelo nome..." class="w-full bg-white/[0.03] border border-white/5 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+        </div>
+
+        <button onclick="openCouponModal()" class="w-full md:w-auto bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+            Novo Cupom
+        </button>
+    </div>
+
+    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                <tr>
+                    <th class="px-8 py-6">Código</th>
+                    <th class="px-8 py-6">Desconto</th>
+                    <th class="px-8 py-6 text-center">Pedidos</th>
+                    <th class="px-8 py-6 text-center">Receita</th>
+                    <th class="px-8 py-6 text-center">Usos Restantes</th>
+                    <th class="px-8 py-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="coupons-table-body" class="divide-y divide-white/5">
+                </tbody>
+        </table>
+        
+        <div id="empty-coupons" class="p-20 text-center">
+            <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+            </div>
+            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhum cupom de desconto criado</p>
+        </div>
+    </div>
+</div>
+
+<div id="tab-script" class="hidden space-y-8">
+    <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h3 class="text-xl font-black uppercase tracking-tight">Script de Integração</h3>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Conecte sua loja ao seu servidor FiveM/RedM</p>
+            </div>
+            <button class="bg-gold/10 text-gold border border-gold/20 text-[10px] font-black px-4 py-2 rounded-lg uppercase hover:bg-gold hover:text-black transition">Baixar .zip</button>
+        </div>
+
+        <div class="space-y-4">
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Sua Secret Key</label>
+            <div class="flex gap-3">
+                <input type="password" readonly value="pt_live_942kS82ls92mS02l" class="flex-grow bg-black/40 border border-white/10 p-4 rounded-2xl text-xs font-mono text-gold outline-none">
+                <button class="bg-white/5 border border-white/10 px-6 rounded-2xl text-[10px] font-black uppercase hover:bg-white/10 transition">Copiar</button>
+            </div>
+        </div>
+
+        <div class="mt-8">
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-4">Instalação Rápida</label>
+            <div class="bg-[#0c0c0c] rounded-2xl p-6 border border-white/5 font-mono text-[11px] leading-relaxed text-gray-400">
+                <p class="text-gold">-- No seu server.cfg adicione:</p>
+                <p class="mt-2">ensure protech_connector</p>
+                <p class="mt-1">set protech_key <span class="text-white">"SUA_CHAVE_AQUI"</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-comandos" class="hidden space-y-6">
+    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
+        <div class="flex flex-col md:flex-row gap-4 w-full lg:w-auto flex-grow">
+            <div class="relative min-w-[180px]">
+                <select class="select-field w-full bg-white/[0.03] border border-white/10 p-4 pr-12 rounded-2xl outline-none focus:border-gold/30 text-xs text-gray-400 appearance-none">
+                    <option value="todos">Todos os Status</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="pausado">Pausado</option>
+                </select>
+            </div>
+
+            <div class="group relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" placeholder="Buscar comando por inclusão de texto..." class="w-full bg-white/[0.03] border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full lg:w-auto">
+            <button class="flex-1 lg:flex-none bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[11px] font-black px-8 py-4 rounded-2xl hover:bg-rose-500 hover:text-white transition uppercase tracking-widest">
+                Formatar
+            </button>
+            <button onclick="openCommandModal()" class="flex-1 lg:flex-none bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+                Cadastrar
+            </button>
+        </div>
+    </div>
+
+    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                <tr>
+                    <th class="px-8 py-6">ID</th>
+                    <th class="px-8 py-6">Comando</th>
+                    <th class="px-8 py-6">Resultado</th>
+                    <th class="px-8 py-6 text-center">Escopo</th>
+                    <th class="px-8 py-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="commands-table-body" class="divide-y divide-white/5">
+                </tbody>
+        </table>
+
+        <div id="empty-commands" class="p-20 text-center">
+            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhum comando de integração configurado</p>
+        </div>
+    </div>
+</div>
+
+<div id="tab-variaveis" class="hidden space-y-6">
+    <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div class="group relative w-full md:max-w-md">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" placeholder="Buscar uma variável pelo nome..." class="w-full bg-white/[0.03] border border-white/5 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+        </div>
+
+        <button onclick="openVariableModal()" class="w-full md:w-auto bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+            Nova Variável
+        </button>
+    </div>
+
+    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                <tr>
+                    <th class="px-8 py-6">ID</th>
+                    <th class="px-8 py-6">Nome</th>
+                    <th class="px-8 py-6">Código (Placeholder)</th>
+                    <th class="px-8 py-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="variables-table-body" class="divide-y divide-white/5">
+                </tbody>
+        </table>
+
+        <div id="empty-variables" class="p-20 text-center">
+            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhuma variável personalizada cadastrada</p>
+        </div>
+    </div>
+</div>
+
+<div id="tab-pedidos" class="hidden space-y-6">
+    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
+        <div class="group relative w-full md:max-w-xl">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" placeholder="Buscar um pedido por referência, email ou documento..." class="w-full bg-white/[0.03] border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+        </div>
+
+        <div class="flex items-center gap-3 w-full lg:w-auto">
+            <button class="flex-1 lg:flex-none bg-white/5 border border-white/10 text-gray-400 text-[11px] font-black px-8 py-4 rounded-2xl hover:bg-white/10 hover:text-white transition uppercase tracking-widest">
+                Busca Avançada
+            </button>
+            <button onclick="openOrderModal()" class="flex-1 lg:flex-none bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+                Cadastrar
+            </button>
+        </div>
+    </div>
+
+    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                <tr>
+                    <th class="px-8 py-6">ID</th>
+                    <th class="px-8 py-6">Cliente</th>
+                    <th class="px-8 py-6">Total</th>
+                    <th class="px-8 py-6">Método</th>
+                    <th class="px-8 py-6 text-center">Situação</th>
+                    <th class="px-8 py-6">Data</th>
+                    <th class="px-8 py-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="orders-table-body" class="divide-y divide-white/5">
+                </tbody>
+        </table>
+
+        <div id="empty-orders" class="p-20 text-center">
+            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhuma venda registrada no período selecionado</p>
+        </div>
+    </div>
+</div>
+
+<div id="tab-metodos" class="hidden space-y-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        
+        <div class="glass rounded-[2rem] p-8 border-white/5 bg-zinc-900/10 flex flex-col items-center text-center group hover:border-gold/20 transition-all h-full">
+            <div class="w-24 h-24 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/5 p-4 shrink-0 overflow-hidden">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKItLyTnFNM9IpmWGCmBxMCP-njQTA9dj6Uw&s" alt="Mercado Pago" class="w-full h-full object-contain">
+            </div>
+            <h4 class="font-black text-lg uppercase tracking-tight text-white flex-grow">Mercado Pago</h4>
+            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-8">Checkout Transparente</p>
+            <button class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gold hover:text-black hover:border-gold transition-all">Configurar</button>
+        </div>
+
+        <div class="glass rounded-[2rem] p-8 border-white/5 bg-zinc-900/10 flex flex-col items-center text-center group hover:border-gold/20 transition-all h-full">
+            <div class="w-24 h-24 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/5 p-4 shrink-0 overflow-hidden">
+                <img src="https://files.passeidireto.com/2889edc1-1a70-456a-a32c-e3f050102347/2889edc1-1a70-456a-a32c-e3f050102347.png" alt="Pix" class="w-full h-full object-contain">
+            </div>
+            <h4 class="font-black text-lg uppercase tracking-tight text-white flex-grow">Pix</h4>
+            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-8">Recebimento Instantâneo</p>
+            <button class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gold hover:text-black hover:border-gold transition-all">Configurar</button>
+        </div>
+
+    </div>
+</div>
+
+<div id="tab-despesas" class="hidden space-y-6">
+    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
+        <div class="flex flex-col md:flex-row gap-4 w-full lg:w-auto flex-grow">
+            <div class="relative min-w-[180px]">
+                <select class="select-field w-full bg-white/[0.03] border border-white/10 p-4 pr-12 rounded-2xl outline-none focus:border-gold/30 text-xs text-gray-400 appearance-none">
+                    <option value="todos">Todas as Situações</option>
+                    <option value="pago">Pago</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="atrasado">Atrasado</option>
+                </select>
+            </div>
+
+            <div class="group relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" placeholder="Buscar uma despesa pelo nome..." class="w-full bg-white/[0.03] border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+            </div>
+        </div>
+
+        <button onclick="openExpenseModal()" class="w-full lg:w-auto bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
+            Cadastrar Despesa
+        </button>
+    </div>
+
+    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                <tr>
+                    <th class="px-8 py-6">ID</th>
+                    <th class="px-8 py-6">Nome</th>
+                    <th class="px-8 py-6">Valor</th>
+                    <th class="px-8 py-6 text-center">Situação</th>
+                    <th class="px-8 py-6 text-center">Vencimento</th>
+                    <th class="px-8 py-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="expenses-table-body" class="divide-y divide-white/5">
+                </tbody>
+        </table>
+
+        <div id="empty-expenses" class="p-20 text-center">
+            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhuma despesa registrada no sistema</p>
+        </div>
+    </div>
+</div>
+
+<div id="tab-auditoria" class="hidden space-y-6">
+    <div class="group relative w-full">
+        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" placeholder="Buscar por nome ou ID..." class="w-full bg-white/[0.03] border border-white/5 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+    </div>
+
+    <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
+                <tr>
+                    <th class="px-8 py-6">Nome</th>
+                    <th class="px-8 py-6">ID</th>
+                    <th class="px-8 py-6 text-center">Operação</th>
+                    <th class="px-8 py-6 text-right">Data</th>
+                </tr>
+            </thead>
+            <tbody id="audit-table-body" class="divide-y divide-white/5">
+                <tr class="hover:bg-white/[0.02] transition-colors group">
+                    <td class="px-8 py-5">
+                        <span class="text-white font-bold tracking-tight dynamic-user-name">Marcos Silva</span>
+                    </td>
+                    <td class="px-8 py-5">
+                        <span class="text-gray-400 text-xs font-medium">#3747511</span>
+                    </td>
+                    <td class="px-8 py-5 text-center">
+                        <span class="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase border border-emerald-500/20">Ativo</span>
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <span class="text-gray-400 text-xs font-medium tracking-tight">11/03/2026, 04:22:39</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+            </section>
+        </div>
+    </main>
+
+    <div id="store-drawer-overlay" onclick="toggleStoreDrawer(false)" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[180]"></div>
+    <aside id="store-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-[#0b0b0b]/95 border-l border-white/10 z-[190] transform translate-x-full transition-transform duration-300">
+        <div class="h-full flex flex-col">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-white/10">
+                <div><h3 class="text-xl font-black tracking-tight">Criar Loja</h3><p class="text-xs text-gray-500 font-medium mt-1">Configure sua instância em poucos passos.</p></div>
+                <button onclick="toggleStoreDrawer(false)" class="p-2 rounded-xl hover:bg-white/5 transition"><svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Template</label><select id="storeTemplate" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm transition-all text-white"><option value="sem-template" selected>Sem template</option><option value="padrao">Padrão</option><option value="premium">Premium</option></select></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Nome da loja</label><input type="text" id="storeName" placeholder="Ex: ProCity Market" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm transition-all text-white"></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Moeda</label><select id="storeCurrency" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm transition-all text-white"><option value="BRL" selected>Real Brasileiro - R$</option><option value="USD">Dólar - $</option></select></div><div><label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Valor máximo por pedido</label><input type="number" id="storeMaxOrder" placeholder="1000" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm transition-all text-white"></div></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Jogo</label><select id="storeGame" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm transition-all text-white"><option value="FiveM" selected>FiveM</option><option value="RedM">RedM</option></select></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Domínio ProTech</label><div class="flex"><span class="bg-white/10 border border-white/10 border-r-0 rounded-l-2xl px-4 py-4 text-xs text-gray-500 select-none">protech.gg/</span><input type="text" id="storeSlug" placeholder="loja-vendas" class="w-full bg-white/5 border border-white/10 rounded-r-2xl p-4 text-sm outline-none focus:border-gold transition-all text-white"></div></div>
+            </div>
+            <div class="px-6 py-5 border-t border-white/10 bg-black/40 backdrop-blur-md"><div class="flex gap-3"><button onclick="toggleStoreDrawer(false)" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button><button onclick="addStore()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Criar Loja</button></div></div>
+        </div>
+    </aside>
+
+    <div id="category-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('category-modal')"></div>
+        <div class="relative w-full max-w-md glass rounded-[2rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+                <h3 class="text-xl font-black tracking-tight">Nova Categoria</h3>
+                <button onclick="closeModal('category-modal')" class="text-gray-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome da Categoria</label>
+                    <input type="text" id="cat-name" placeholder="Ex: Roupas, Veículos..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Situação</label>
+                    <div class="relative">
+                        <select id="cat-status" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all appearance-none cursor-pointer">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+            
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal('category-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+                    <button onclick="saveCategory()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('product-modal')"></div>
+        <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+                <h3 class="text-xl font-black tracking-tight text-white">Novo Produto</h3>
+                <button onclick="closeModal('product-modal')" class="text-gray-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
+                    <input type="text" id="prod-name" placeholder="Ex: Ak-47 Vulcan" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
+                    <div class="relative">
+                        <select id="prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
+                            <option value="">Selecionar...</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
+                    <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Imagem do Produto</label>
+                    <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
+                         onclick="document.getElementById('prod-file').click()"
+                         ondragover="handleDragOver(event)" 
+                         ondrop="handleDrop(event, 'prod-file', 'prod-preview')"> <input type="file" id="prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'prod-preview')">
+                        <img id="prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover">
+                        <p class="text-blue-500 text-[10px] font-bold">Clique para enviar <span class="text-gray-500">ou arraste</span></p>
+                    </div>
+                </div>
+                <div class="md:col-span-2 flex gap-3 pt-4">
+                    <button onclick="closeModal('product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+                    <button onclick="saveProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Cadastrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('edit-product-modal')"></div>
+        <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+                <h3 class="text-xl font-black tracking-tight text-white">Editar Produto</h3>
+                <button onclick="closeModal('edit-product-modal')" class="text-gray-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <input type="hidden" id="edit-prod-id"> <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
+                    <input type="text" id="edit-prod-name" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
+                    <div class="relative">
+                        <select id="edit-prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
+                            </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
+                    <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Alterar Imagem</label>
+                    <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
+                         onclick="document.getElementById('edit-prod-file').click()"
+                         ondragover="handleDragOver(event)" 
+                         ondrop="handleDrop(event, 'edit-prod-file', 'edit-prod-preview')">
+                        <input type="file" id="edit-prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-prod-preview')">
+                        <img id="edit-prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover">
+                        <p class="text-blue-500 text-[10px] font-bold">Trocar arquivo <span class="text-gray-500">ou arraste</span></p>
+                    </div>
+                </div>
+                <div class="md:col-span-2 flex gap-3 pt-4">
+                    <button onclick="closeModal('edit-product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+                    <button onclick="updateProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="coupon-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('coupon-modal')"></div>
+        <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+                <h3 class="text-xl font-black tracking-tight text-white">Criar Cupom</h3>
+                <button onclick="closeModal('coupon-modal')" class="text-gray-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Código do Cupom</label>
+                    <input type="text" id="cp-code" placeholder="Ex: PROMO20" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all uppercase">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Desconto (%)</label>
+                    <input type="number" id="cp-discount" placeholder="0" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Limite de Usos</label>
+                    <input type="number" id="cp-uses" placeholder="999" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Aplicável em:</label>
+                    <div id="cp-categories-list" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto custom-scrollbar p-2 bg-black/20 rounded-xl border border-white/5">
+                        </div>
+                </div>
+                <div class="md:col-span-2 flex gap-3 pt-4">
+                    <button onclick="closeModal('coupon-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+                    <button onclick="saveCoupon()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Criar Cupom</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-4 animate-bounce-short">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
+        <div class="relative w-full max-w-sm glass rounded-[2rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl">
+            <div class="p-10 text-center">
+                <div class="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-white mb-2">Você tem certeza?</h3>
+                <p class="text-sm text-gray-500 leading-relaxed mb-8">Esta ação não pode ser desfeita. A categoria e seus vínculos serão removidos permanentemente.</p>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeModal('confirm-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-400 hover:text-white transition rounded-2xl bg-white/5">Cancelar</button>
+                    <button id="confirm-delete-btn" class="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg shadow-rose-900/20 hover:bg-rose-500 transition">Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-modal" class="hidden fixed inset-0 z-[400] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('alert-modal')"></div>
+        <div class="relative w-full max-w-xs glass rounded-3xl border-amber-500/20 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h4 class="text-sm font-black text-white uppercase tracking-widest mb-1">Atenção</h4>
+                <p class="text-xs text-gray-500 mb-6">Você precisa digitar um nome para a categoria antes de salvar.</p>
+                <button onclick="closeModal('alert-modal')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase hover:bg-white/10 transition">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-modal" class="hidden fixed inset-0 z-[500] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('success-modal')"></div>
+        <div class="relative w-full max-w-xs glass rounded-3xl border-emerald-500/20 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h4 class="text-sm font-black text-white uppercase tracking-widest mb-1">Sucesso</h4>
+                <p id="success-message" class="text-xs text-gray-500 mb-6">Ação realizada com sucesso!</p>
+                <button onclick="closeModal('success-modal')" class="w-full py-3 bg-emerald-500 text-black rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let productIdToDelete = null; // Controle para exclusão de produtos
+
+        const STORAGE_KEYS = { stores: 'protech_stores_v1', activeStoreId: 'protech_active_store_id_v1' };
+        function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
+        function getStores() { const raw = localStorage.getItem(STORAGE_KEYS.stores); return safeParse(raw, []); }
+        function setStores(stores) { localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); }
+        function getActiveStoreId() { return localStorage.getItem(STORAGE_KEYS.activeStoreId) || ''; }
+        function setActiveStoreId(id) { if (!id) localStorage.removeItem(STORAGE_KEYS.activeStoreId); else localStorage.setItem(STORAGE_KEYS.activeStoreId, id); }
+        function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
+        function createId() { return `store_${Date.now()}_${Math.random().toString(16).slice(2)}`; }
+        function createStore({ name, slug }) { const now = Date.now(); return { id: createId(), name: String(name || '').trim(), slug: normalizeSlug(slug), createdAt: now, trialEndsAt: now + 15 * 24 * 60 * 60 * 1000, plan: null }; }
+
+        function openStoreDashboard(storeId) {
+    const stores = getStores();
+    const store = stores.find(s => s.id === storeId);
+    if (!store) return;
+
+    setActiveStoreId(storeId);
+    
+    // UI Updates
+    document.getElementById('view-stores')?.classList.add('hidden');
+    document.getElementById('view-store-dashboard')?.classList.remove('hidden');
+    
+    const mainSidebar = document.getElementById('sidebar');
+    const storeSidebar = document.getElementById('store-sidebar');
+    if (mainSidebar) { mainSidebar.classList.add('hidden'); mainSidebar.classList.remove('md:block'); }
+    if (storeSidebar) { storeSidebar.classList.remove('hidden'); storeSidebar.classList.add('md:block'); }
+
+    // Atualiza Textos
+    document.getElementById('active-store-name').textContent = store.name;
+    document.getElementById('store-sidebar-store-name').textContent = store.name;
+    const domain = store.slug ? `protech.gg/${store.slug}` : 'protech.gg/loja';
+    document.getElementById('store-sidebar-store-domain').textContent = domain;
+    document.getElementById('active-store-domain').textContent = domain;
+
+    // ATUALIZA A URL PRIMEIRO
+    window.history.pushState({}, '', `?s=${store.slug}`);
+
+    // AGORA CHAMA AS RENDERIZAÇÕES
+    switchTab('geral');
+    renderCategories(); 
+    renderProducts();
+    renderCoupons();
+    updateCategoryDropdowns();
+}
+
+function visitStore() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    if (!store) return;
+
+    const files = {
+        'standart': 'store.html',
+        'dark': 'store2.html',
+        'pro1': 'store_pro1.html',
+        'pro2': 'store_pro2.html',
+        'legend1': 'store_legend1.html'
+    };
+
+    const target = files[store.template] || 'store.html';
+    window.open(`${target}?s=${store.slug}`, '_blank');
+}
+
+        function openStoresView() {
+            setActiveStoreId('');
+            document.getElementById('view-store-dashboard')?.classList.add('hidden');
+            document.getElementById('view-stores')?.classList.remove('hidden');
+            const mainSidebar = document.getElementById('sidebar');
+            const storeSidebar = document.getElementById('store-sidebar');
+            if (mainSidebar) { mainSidebar.classList.remove('hidden'); mainSidebar.classList.add('md:block'); }
+            if (storeSidebar) { storeSidebar.classList.add('hidden'); storeSidebar.classList.remove('md:block'); }
+        }
+
+        function renderStoresGrid() {
+    const grid = document.getElementById('stores-grid');
+    if (!grid) return;
+
+    const stores = getStores() || []; // O "|| []" impede o erro de 'forEach'
+    
+    // Mantém o botão de "Criar Loja"
+    const createBtn = grid.querySelector('button[onclick*="toggleStoreDrawer"]')?.cloneNode(true);
+    grid.innerHTML = '';
+    if (createBtn) grid.appendChild(createBtn);
+
+    stores.forEach((store) => {
+        const card = document.createElement('div');
+        card.className = "aspect-video glass rounded-[2rem] p-8 flex flex-col justify-between border-white/10 hover:border-gold/30 transition shadow-xl";
+        card.innerHTML = `
+            <div><h4 class="font-black text-xl mb-1">${store.name}</h4><p class="text-xs text-gray-500">Link: protech.gg/${store.slug}</p></div>
+            <button onclick="openStoreDashboard('${store.id}')" class="w-full mt-6 py-3 text-[10px] font-black uppercase bg-white/5 rounded-xl hover:bg-gold hover:text-black transition-all">Acessar Painel</button>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function switchTab(tabName) {
+    const tabs = ['geral', 'template', 'planos', 'configuracoes', 'categorias', 'produtos', 'cupons', 'script', 'comandos', 'variaveis', 'pedidos', 'metodos', 'despesas', 'auditoria'];
+    const dashTabs = ['geral', 'template', 'planos', 'configuracoes'];
+    const catalogTabs = ['categorias', 'produtos', 'cupons'];
+    const integraTabs = ['script', 'comandos', 'variaveis'];
+    const financeTabs = ['pedidos', 'metodos', 'despesas'];
+    const equipeTabs = ['auditoria'];
+
+    const mainTitle = document.getElementById('main-view-title');
+    const btns = {
+        dash: document.getElementById('btn-main-dashboard'),
+        catalog: document.getElementById('btn-main-catalogo'),
+        integra: document.getElementById('btn-main-integracoes'),
+        finance: document.getElementById('btn-main-financeiro'),
+        equipe: document.getElementById('btn-main-equipe')
+    };
+    
+    const activeClasses = ['bg-[#D4AF37]/10', 'border-[#D4AF37]/20', 'text-white', 'shadow-[0_10px_30px_-18px_rgba(212,175,55,0.25)]', 'border'];
+    const inactiveClasses = ['text-gray-400', 'hover:bg-white/5'];
+
+    // 1. RESET ABSOLUTO: Esconde todas as divs de conteúdo e limpa os submenus
+    tabs.forEach(tab => {
+        const tabEl = document.getElementById(`tab-${tab}`);
+        const menuEl = document.getElementById(`menu-${tab}`);
+        
+        if (tabEl) {
+            tabEl.classList.add('hidden'); // Força todas as abas a sumirem
+        }
+        
+        if (menuEl) {
+            menuEl.classList.remove('text-gold', 'bg-gold/10', 'font-bold', 'border-r-2', 'border-gold');
+            menuEl.classList.add('text-gray-500', 'font-medium');
+        }
+    });
+
+    // 2. LÓGICA DE SUBMENUS (Fecha os grupos que não estão sendo usados)
+    const closeMenu = (id, arrow) => {
+        const el = document.getElementById(id);
+        const ar = document.getElementById(arrow);
+        if (el && !el.classList.contains('hidden')) {
+            el.classList.add('hidden');
+            ar?.classList.remove('rotate-180');
+        }
+    };
+
+    if (dashTabs.includes(tabName)) {
+        ['submenu-catalogo', 'submenu-integracoes', 'submenu-financeiro', 'submenu-equipe'].forEach(m => closeMenu(m, m.replace('submenu', 'arrow')));
+    } else if (catalogTabs.includes(tabName)) {
+        ['submenu-dashboard', 'submenu-integracoes', 'submenu-financeiro', 'submenu-equipe'].forEach(m => closeMenu(m, m.replace('submenu', 'arrow')));
+    } else if (integraTabs.includes(tabName)) {
+        ['submenu-dashboard', 'submenu-catalogo', 'submenu-financeiro', 'submenu-equipe'].forEach(m => closeMenu(m, m.replace('submenu', 'arrow')));
+    } else if (financeTabs.includes(tabName)) {
+        ['submenu-dashboard', 'submenu-catalogo', 'submenu-integracoes', 'submenu-equipe'].forEach(m => closeMenu(m, m.replace('submenu', 'arrow')));
+    } else if (equipeTabs.includes(tabName)) {
+        ['submenu-dashboard', 'submenu-catalogo', 'submenu-integracoes', 'submenu-financeiro'].forEach(m => closeMenu(m, m.replace('submenu', 'arrow')));
+    }
+
+    // 3. ATUALIZAÇÃO DOS BOTÕES PRINCIPAIS (Destaque dourado)
+    const setActive = (btn, active) => {
+        if (!btn) return;
+        const icon = btn.querySelector('span.w-9');
+        const stripe = btn.querySelector('span.absolute');
+        if (active) {
+            btn.classList.add(...activeClasses); btn.classList.remove(...inactiveClasses);
+            icon?.classList.add('bg-[#D4AF37]/15', 'text-[#D4AF37]');
+            icon?.classList.remove('bg-white/5', 'text-gray-400');
+            stripe?.classList.remove('hidden');
+        } else {
+            btn.classList.remove(...activeClasses); btn.classList.add(...inactiveClasses);
+            icon?.classList.remove('bg-[#D4AF37]/15', 'text-[#D4AF37]');
+            icon?.classList.add('bg-white/5', 'text-gray-400');
+            stripe?.classList.add('hidden');
+        }
+    };
+
+    setActive(btns.dash, dashTabs.includes(tabName));
+    setActive(btns.catalog, catalogTabs.includes(tabName));
+    setActive(btns.integra, integraTabs.includes(tabName));
+    setActive(btns.finance, financeTabs.includes(tabName));
+    setActive(btns.equipe, equipeTabs.includes(tabName));
+
+    // 4. MUDANÇA REAL DO CONTEÚDO (O Ponto Crítico)
+    const activeTab = document.getElementById(`tab-${tabName}`);
+    const activeMenu = document.getElementById(`menu-${tabName}`);
+    
+    if (activeTab) {
+        activeTab.classList.remove('hidden'); // MOSTRA A DIV CERTA
+    } else {
+        console.error(`Aba tab-${tabName} não encontrada no HTML!`);
+    }
+    
+    if (activeMenu) {
+        activeMenu.classList.add('text-gold', 'bg-gold/10', 'font-bold', 'border-r-2', 'border-gold');
+        activeMenu.classList.remove('text-gray-500', 'font-medium');
+    }
+
+    // 5. ATUALIZAÇÃO DO TÍTULO NO HEADER
+    if (mainTitle) {
+    if (tabName === 'template') mainTitle.textContent = 'Customização';
+    else if (tabName === 'planos') mainTitle.textContent = 'Planos';
+    else if (tabName === 'configuracoes') mainTitle.textContent = 'Configurações';
+    else if (tabName === 'geral') mainTitle.textContent = 'Dashboard';
+    else if (catalogTabs.includes(tabName)) mainTitle.textContent = 'Catálogo';
+    else if (integraTabs.includes(tabName)) mainTitle.textContent = 'Integrações';
+    else if (financeTabs.includes(tabName)) mainTitle.textContent = (tabName === 'metodos') ? 'Pagamentos' : 'Financeiro';
+}
+
+    // 6. CARREGAMENTO DE DADOS ESPECÍFICOS
+    if (tabName === 'configuracoes') {
+        const params = new URLSearchParams(window.location.search);
+        const currentSlug = params.get('s');
+        const store = getStores().find(s => s.slug === currentSlug);
+        if (store) document.getElementById('cfg-store-name').value = store.name;
+    }
+
+    if (tabName === 'template') {
+        loadTemplateSettings(); // Só carrega o template se clicar nele
+    }
+}
+
+        function toggleSubmenu(id, arrowId) {
+            const submenu = document.getElementById(id);
+            const arrow = document.getElementById(arrowId);
+            if (submenu.classList.contains('hidden')) { submenu.classList.remove('hidden'); if(arrow) arrow.classList.add('rotate-180'); }
+            else { submenu.classList.add('hidden'); if(arrow) arrow.classList.remove('rotate-180'); }
+        }
+
+        function toggleSidebar() {
+            const isStoreView = !document.getElementById('view-store-dashboard')?.classList.contains('hidden');
+            const sidebar = document.getElementById(isStoreView ? 'store-sidebar' : 'sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('translate-x-0'); sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('active'); document.body.classList.toggle('no-scroll');
+        }
+
+        function toggleStoreDrawer(show) {
+            const drawer = document.getElementById('store-drawer');
+            const overlay = document.getElementById('store-drawer-overlay');
+            if (show) { drawer.classList.replace('translate-x-full', 'translate-x-0'); overlay.classList.add('active'); }
+            else { drawer.classList.replace('translate-x-0', 'translate-x-full'); overlay.classList.remove('active'); }
+        }
+
+        function addStore() {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    const stores = getStores() || [];
+    // Pega o limite real ou define 0 se algo falhar
+    const storeLimit = (user && user.limits) ? parseInt(user.limits.stores) : 0; 
+
+    if (stores.length >= storeLimit) {
+        return alert(`Limite atingido! Seu plano ${user.plan} permite apenas ${storeLimit} loja(s).`);
+    }
+
+    const name = document.getElementById('storeName').value.trim();
+    const slugInput = document.getElementById('storeSlug').value.trim();
+    const slug = normalizeSlug(slugInput || name);
+
+    if(!name || !slug) return alert('Preencha o nome e o domínio.');
+
+    const store = {
+        ...createStore({ name, slug }),
+        template: document.getElementById('storeTemplate').value,
+        categories: [],
+        products: [],
+        settings: { logo: '', banner: '', primaryColor: '#D4AF37' }
+    };
+
+    stores.unshift(store);
+    setStores(stores);
+    toggleStoreDrawer(false);
+    renderStoresGrid();
+    openStoreDashboard(store.id);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!user) return window.location.href = 'login.html';
+
+    // 1. Nome e Avatar (Foto)
+    if (document.getElementById('nome-usuario-header')) {
+        document.getElementById('nome-usuario-header').innerText = user.nome;
+    }
+    
+    const avatarImg = document.getElementById('user-avatar');
+    if (avatarImg) {
+        // Gera o avatar com as iniciais do usuário logado
+        avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
+    }
+
+    // 2. Atualiza Plano no Canto Direito (Busca direta por classe do Tailwind)
+    const planText = document.querySelector('.text-right p.text-xs.font-bold');
+    if (planText) planText.innerText = `${user.plan || 'Expert'} Plan`;
+
+    renderStoresGrid(); // Chama a grade de lojas
+
+    // Garantir comportamento consistente dos botões de submenu
+    document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
+        const tabName = link.id.replace(/^menu-/, '');
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            switchTab(tabName);
+        });
+    });
+});
+
+function renderCategories() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const tbody = document.getElementById('categories-table-body');
+    
+    if (!tbody || !currentSlug) return;
+
+    const stores = getStores() || [];
+    const store = stores.find(s => s.slug === currentSlug);
+    
+    if (!store) return;
+    
+    tbody.innerHTML = '';
+
+    if (!store.categories || store.categories.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-8 py-20 text-center">
+                    <p class="text-[10px] text-gray-600 font-black uppercase tracking-[0.2em]">Nenhuma categoria encontrada</p>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = store.categories.map((cat, index) => {
+        const isActive = cat.status === 'Ativo';
+        const statusClass = isActive 
+            ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
+            : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+        const dotClass = isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500';
+
+        return `
+            <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">
+                <td class="px-8 py-5 text-gray-600 font-mono text-[10px]">#${index + 1}</td>
+                
+                <td class="px-8 py-5">
+                    <input type="text" 
+                           value="${cat.nome}" 
+                           onblur="renameCategory('${cat.id}', this.value)"
+                           onkeydown="if(event.key === 'Enter') this.blur()"
+                           class="bg-transparent border border-transparent hover:border-white/10 focus:border-gold/50 focus:outline-none rounded-lg px-2 py-1 w-full transition-all text-white font-bold tracking-tight text-sm">
+                </td>
+                
+                <td class="px-8 py-5 text-gray-500 text-[10px] font-medium uppercase tracking-wider">
+                    ${cat.data || '13/03/2026'}
+                </td>
+                
+                <td class="px-8 py-5 text-center">
+                    <button onclick="toggleCategoryStatus('${cat.id}')" class="inline-flex items-center gap-2 text-[9px] font-black uppercase ${statusClass} py-1.5 px-3 rounded-lg border cursor-pointer hover:scale-105 transition-transform">
+                        <span class="w-1 h-1 ${dotClass} rounded-full"></span> ${cat.status}
+                    </button>
+                </td>
+                
+                <td class="px-8 py-5 text-right">
+                    <button onclick="deleteCategory('${cat.id}')" class="bg-white/5 p-2.5 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all border border-white/5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renameCategory(categoryId, newName) {
+    if (!newName.trim()) return renderCategories(); // Evita nomes vazios
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const catIndex = stores[storeIndex].categories.findIndex(c => c.id === categoryId);
+        if (catIndex !== -1) {
+            // Atualiza o nome da categoria
+            stores[storeIndex].categories[catIndex].nome = newName.trim();
+            setStores(stores);
+            
+            // Atualiza os dropdowns de produtos e tabelas sem recarregar a página
+            updateCategoryDropdowns();
+            renderProducts(); 
+            showSuccess("Categoria renomeada!");
+        }
+    }
+}
+
+// Chamar ao carregar a página
+document.addEventListener('DOMContentLoaded', renderCategories);
+
+let categoryIdToDelete = null; // Armazena temporariamente o ID
+
+function deleteCategory(id) {
+    categoryIdToDelete = id;
+    const modal = document.getElementById('confirm-modal');
+    modal.classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+
+    // Configura o botão de confirmação para executar a exclusão real
+    document.getElementById('confirm-delete-btn').onclick = function() {
+        executeDelete();
+    };
+}
+
+function executeDelete() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+    
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+    if (storeIndex !== -1 && categoryIdToDelete) {
+        // Filtra e remove a categoria
+        stores[storeIndex].categories = stores[storeIndex].categories.filter(c => c.id !== categoryIdToDelete);
+        localStorage.setItem('protech_stores_v1', JSON.stringify(stores));
+        
+        closeModal('confirm-modal');
+        renderCategories(); // Atualiza a tabela
+        categoryIdToDelete = null;
+        updateCategoryDropdowns();
+    }
+}
+
+// Adicione isto dentro do seu <script>
+    const sidebarNav = document.querySelector('#store-sidebar nav');
+
+if (sidebarNav) {
+    sidebarNav.addEventListener('wheel', (e) => {
+        // Se o scroll for vertical, nós diminuímos a força dele pela metade
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            sidebarNav.scrollTop += e.deltaY * 0.4; // 0.4 é a sensibilidade (menor = mais lento)
+        }
+    }, { passive: false });
+}
+
+// Função para buscar as categorias do localStorage
+function getCategories() {
+    const stores = getStores();
+    const activeId = getActiveStoreId();
+    const store = stores.find(s => s.id === activeId);
+    // Se a loja tiver categorias, retorna elas, senão retorna array vazio
+    return store?.categories || [];
+}
+
+function saveCategory() {
+    const nameInput = document.getElementById('cat-name');
+    const statusSelect = document.getElementById('cat-status');
+    const name = nameInput.value.trim();
+    
+    // Substituindo o alert nativo pelo Modal ProTech
+    if (!name) {
+        const alertModal = document.getElementById('alert-modal');
+        alertModal.classList.remove('hidden');
+        return; 
+    }
+
+    // Restante da lógica de salvamento...
+    const status = statusSelect.value;
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        if (!stores[storeIndex].categories) stores[storeIndex].categories = [];
+        const newCategory = { id: Date.now().toString(), nome: name, status: status, data: new Date().toLocaleDateString('pt-BR') };
+        stores[storeIndex].categories.push(newCategory);
+        localStorage.setItem('protech_stores_v1', JSON.stringify(stores));
+        nameInput.value = '';
+        closeModal('category-modal');
+        renderCategories();
+        updateCategoryDropdowns();
+    }
+}
+
+// Função para abrir o modal de categoria
+function openCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.classList.add('no-scroll');
+    }
+}
+
+// Função para fechar qualquer modal
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+        // Limpa o campo de texto ao fechar
+        const input = modal.querySelector('input');
+        if(input) input.value = '';
+    }
+}
+
+function toggleCategoryStatus(categoryId) {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const catIndex = stores[storeIndex].categories.findIndex(c => c.id === categoryId);
+        if (catIndex !== -1) {
+            // Inverte o status
+            const currentStatus = stores[storeIndex].categories[catIndex].status;
+            stores[storeIndex].categories[catIndex].status = (currentStatus === 'Ativo') ? 'Inativo' : 'Ativo';
+            
+            // SALVA e ATUALIZA a tabela na hora
+            setStores(stores);
+            renderCategories(); 
+            updateCategoryDropdowns(); // Isso atualiza os filtros de produtos
+        }
+    }
+}
+
+// Adicione isso ao final do seu script para carregar as categorias nos selects
+function updateCategoryDropdowns() {
+    const categories = getCategories();
+    // Pega o select de filtro da tabela e o (futuro) select do modal de produto
+    const dropdowns = [document.getElementById('filter-product-category'), document.getElementById('prod-category')];
+    
+    dropdowns.forEach(select => {
+        if (!select) return;
+        const defaultValue = select.firstElementChild; // Mantém o "Todas as Categorias"
+        select.innerHTML = '';
+        select.appendChild(defaultValue);
+        
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.nome;
+            select.appendChild(opt);
+        });
+    });
+}
+
+function openProductModal() {
+    // Limpa o seletor de arquivo para permitir subir a mesma foto se quiser
+    document.getElementById('prod-file').value = ""; 
+    currentProdImageBase64 = ""; // Garante que comece vazio
+    document.getElementById('prod-preview').classList.add('hidden');
+    
+    updateCategoryDropdowns();
+    document.getElementById('product-modal').classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+}
+
+function saveProduct() {
+    const name = document.getElementById('prod-name').value.trim();
+    const categoryId = document.getElementById('prod-category').value;
+    const price = document.getElementById('prod-price').value;
+    // Pega a imagem que foi carregada no preview (Base64) ou o placeholder
+    const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
+
+    if (!name || !categoryId || !price) {
+        document.getElementById('alert-modal').classList.remove('hidden');
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        if (!stores[storeIndex].products) stores[storeIndex].products = [];
+
+        const newProduct = {
+            id: Date.now().toString(),
+            name,
+            categoryId,
+            price: parseFloat(price).toFixed(2),
+            image: image,
+            status: 'Ativo'
+        };
+
+        stores[storeIndex].products.push(newProduct);
+        setStores(stores);
+        
+        // Limpeza Completa
+        currentProdImageBase64 = "";
+        document.getElementById('prod-preview').classList.add('hidden');
+        closeModal('product-modal');
+        renderProducts();
+    }
+}
+
+function renderProducts() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const stores = getStores();
+    const store = stores.find(s => s.slug === currentSlug);
+    const tbody = document.getElementById('products-table-body');
+    const emptyMsg = document.getElementById('empty-products');
+    
+    if (!tbody) return;
+
+    // CAPTURA DOS FILTROS
+    const searchTerm = document.getElementById('search-product').value.toLowerCase();
+    const filterCat = document.getElementById('filter-product-category').value;
+
+    tbody.innerHTML = '';
+    let products = store?.products || [];
+
+    // APLICAÇÃO DOS FILTROS
+    products = products.filter(prod => {
+        const matchesSearch = prod.name.toLowerCase().includes(searchTerm);
+        const matchesCategory = filterCat === "" || prod.categoryId === filterCat;
+        return matchesSearch && matchesCategory;
+    });
+
+    if (products.length === 0) {
+        if (emptyMsg) emptyMsg.classList.remove('hidden');
+        return;
+    }
+
+    if (emptyMsg) emptyMsg.classList.add('hidden');
+
+    // Desenha os produtos com o novo status clicável e visual padronizado
+    tbody.innerHTML = products.map(prod => {
+        const category = store.categories?.find(c => c.id === prod.categoryId);
+        
+        // Lógica de visual do status idêntica à de Categorias/Cupons
+        const isActive = prod.status === 'Ativo';
+        const statusClass = isActive 
+            ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
+            : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+        const dotClass = isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500';
+
+        return `
+            <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">
+                <td class="px-8 py-5 flex items-center gap-4 cursor-pointer" onclick="openEditProductModal('${prod.id}')">
+                    <img src="${prod.image}" class="w-10 h-10 rounded-lg object-cover border border-white/10" onerror="this.src='https://via.placeholder.com/300'">
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold text-sm hover:text-gold transition-colors">${prod.name}</span>
+                        <span class="text-[9px] text-gray-500 uppercase font-black">Editar</span>
+                    </div>
+                </td>
+                <td class="px-8 py-5 text-gray-400 text-xs">${category ? category.nome : 'Sem Categoria'}</td>
+                <td class="px-8 py-5 font-bold text-gold text-sm">R$ ${prod.price}</td>
+                <td class="px-8 py-5 text-center text-gray-500 text-xs font-mono">∞</td>
+                
+                <td class="px-8 py-5 text-center">
+                    <button onclick="toggleProductStatus('${prod.id}')" class="inline-flex items-center gap-2 text-[9px] font-black uppercase ${statusClass} py-1.5 px-3 rounded-lg border cursor-pointer hover:scale-105 transition-transform">
+                        <span class="w-1.5 h-1.5 ${dotClass} rounded-full"></span> ${prod.status}
+                    </button>
+                </td>
+
+                <td class="px-8 py-5 text-right">
+                    <button onclick="deleteProduct('${prod.id}')" class="bg-white/5 p-2.5 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all border border-white/5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+function toggleProductStatus(productId) {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const prodIndex = stores[storeIndex].products.findIndex(p => p.id === productId);
+        if (prodIndex !== -1) {
+            // Inverte o status do produto
+            const currentStatus = stores[storeIndex].products[prodIndex].status;
+            stores[storeIndex].products[prodIndex].status = (currentStatus === 'Ativo') ? 'Inativo' : 'Ativo';
+            
+            // Salva as alterações no LocalStorage e atualiza a tabela
+            setStores(stores);
+            renderProducts(); 
+        }
+    }
+}
+
+function deleteProduct(productId) {
+    productIdToDelete = productId;
+    const modal = document.getElementById('confirm-modal');
+    if (modal) {
+        // Altera o texto do modal para "produto" em vez de "categoria"
+        modal.querySelector('h3').textContent = "Excluir Produto?";
+        modal.querySelector('p').textContent = "Esta ação removerá o item permanentemente do seu estoque.";
+        
+        modal.classList.remove('hidden');
+        document.body.classList.add('no-scroll');
+
+        // Configura o botão vermelho do modal para chamar a função real de deletar
+        document.getElementById('confirm-delete-btn').onclick = executeProductDelete;
+    }
+}
+
+function executeProductDelete() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1 && productIdToDelete) {
+        stores[storeIndex].products = stores[storeIndex].products.filter(p => p.id !== productIdToDelete);
+        setStores(stores);
+        
+        closeModal('confirm-modal');
+        renderProducts();
+        productIdToDelete = null; // Reseta a variável
+    }
+}
+
+// Abre o modal carregando os dados do produto
+function openEditProductModal(productId) {
+    // Limpa o seletor de arquivo de edição
+    document.getElementById('edit-prod-file').value = "";
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    const product = store?.products?.find(p => p.id === productId);
+
+    if (!product) return;
+
+    // Preenche os campos
+    document.getElementById('edit-prod-id').value = product.id;
+    document.getElementById('edit-prod-name').value = product.name;
+    document.getElementById('edit-prod-price').value = product.price;
+    
+    // Atualiza o seletor de categoria e o preview da imagem
+    const editSelect = document.getElementById('edit-prod-category');
+    editSelect.innerHTML = (store.categories || []).map(cat => `<option value="${cat.id}">${cat.nome}</option>`).join('');
+    editSelect.value = product.categoryId;
+
+    const imgPreview = document.getElementById('edit-prod-preview');
+    imgPreview.src = product.image;
+    imgPreview.classList.remove('hidden');
+    currentEditImageBase64 = product.image; // Mantém a imagem atual se não trocar
+
+    document.getElementById('edit-product-modal').classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+}
+
+// Salva as alterações no localStorage
+function updateProduct() {
+    const id = document.getElementById('edit-prod-id').value;
+    const name = document.getElementById('edit-prod-name').value.trim();
+    const categoryId = document.getElementById('edit-prod-category').value;
+    const price = document.getElementById('edit-prod-price').value;
+    const image = currentEditImageBase64; // Usa a imagem atual ou a nova carregada
+
+    if (!name || !price) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const prodIndex = stores[storeIndex].products.findIndex(p => p.id === id);
+        if (prodIndex !== -1) {
+            stores[storeIndex].products[prodIndex] = {
+                ...stores[storeIndex].products[prodIndex],
+                name,
+                categoryId,
+                price: parseFloat(price).toFixed(2),
+                image
+            };
+            
+            setStores(stores);
+            currentEditImageBase64 = "";
+            closeModal('edit-product-modal');
+            renderProducts();
+        }
+    }
+}
+
+// Salva todas as configurações de visual
+// dashboard.html
+// dashboard.html
+function saveTemplateSettings() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
+
+        // Captura as cores dos inputs do mini-picker
+        stores[storeIndex].settings.primaryColor = document.getElementById('store-primary-color').value;
+        stores[storeIndex].settings.secondaryColor = document.getElementById('store-secondary-color').value;
+
+        setStores(stores);
+        showSuccess('Cores do template salvas!');
+    }
+}
+
+// Carrega os dados quando trocar de aba ou entrar na loja
+function loadTemplateSettings() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+
+    if (store && store.settings) {
+        // Carrega as cores nos inputs
+        if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
+        if (store.settings.secondaryColor) document.getElementById('store-secondary-color').value = store.settings.secondaryColor;
+        
+        document.getElementById('temp-css').value = store.settings.customCss || '';
+        document.getElementById('temp-html').value = store.settings.customHtml || '';
+
+        // CARREGA OS PREVIEWS DAS IMAGENS SALVAS
+        const types = ['logo', 'banner', 'favicon'];
+        types.forEach(type => {
+            if (store.settings[type]) {
+                const img = document.getElementById(`preview-${type}`);
+                const container = document.getElementById(`preview-${type}-container`);
+                if (img && container) {
+                    img.src = store.settings[type];
+                    container.classList.remove('hidden');
+                }
+            }
+        });
+    }
+}
+
+function uploadTemplateImage(input, type) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        
+        // Atualiza o quadradinho de preview
+        const img = document.getElementById(`preview-${type}`);
+        const container = document.getElementById(`preview-${type}-container`);
+        if (img && container) {
+            img.src = base64;
+            container.classList.remove('hidden');
+        }
+
+        // Salva no banco de dados da loja
+        const params = new URLSearchParams(window.location.search);
+        const currentSlug = params.get('s');
+        let stores = getStores();
+        const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+        if (storeIndex !== -1) {
+            if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
+            stores[storeIndex].settings[type] = base64;
+            setStores(stores);
+            showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} atualizado!`);
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateProduct() {
+    // ... capturas existentes ...
+    const image = document.getElementById('edit-prod-image').value.trim(); // Nova captura
+
+    // ... lógica de encontrar a loja e o produto ...
+    if (prodIndex !== -1) {
+        stores[storeIndex].products[prodIndex].name = name;
+        stores[storeIndex].products[prodIndex].categoryId = categoryId;
+        stores[storeIndex].products[prodIndex].price = parseFloat(price).toFixed(2);
+        stores[storeIndex].products[prodIndex].image = image || 'https://via.placeholder.com/300'; // Salva a imagem
+        
+        setStores(stores);
+        closeModal('edit-product-modal');
+        renderProducts();
+    }
+}
+
+// Variáveis temporárias para armazenar o Base64 das imagens
+let currentProdImageBase64 = "";
+let currentEditImageBase64 = "";
+
+function previewImage(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        const img = document.getElementById(previewId);
+        img.src = base64;
+        img.classList.remove('hidden');
+        
+        // Armazena na variável correta
+        if (previewId === 'prod-preview') currentProdImageBase64 = base64;
+        else currentEditImageBase64 = base64;
+    };
+    reader.readAsDataURL(file);
+}
+
+// ATUALIZE sua função saveProduct para usar currentProdImageBase64
+function saveProduct() {
+    const name = document.getElementById('prod-name').value.trim();
+    const categoryId = document.getElementById('prod-category').value;
+    const price = document.getElementById('prod-price').value;
+    // Usa a imagem capturada no preview ou um placeholder se estiver vazio
+    const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
+
+    if (!name || !categoryId || !price) {
+        document.getElementById('alert-modal').classList.remove('hidden');
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        if (!stores[storeIndex].products) stores[storeIndex].products = [];
+
+        const newProduct = {
+            id: Date.now().toString(),
+            name: name,
+            categoryId: categoryId,
+            price: parseFloat(price).toFixed(2),
+            image: image,
+            status: 'Ativo'
+        };
+
+        stores[storeIndex].products.push(newProduct);
+        setStores(stores);
+        
+        // Limpeza dos campos e variáveis
+        currentProdImageBase64 = "";
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-price').value = '';
+        document.getElementById('prod-preview').classList.add('hidden');
+        
+        closeModal('product-modal');
+        renderProducts();
+    }
+}
+
+// ATUALIZE sua função updateProduct para usar currentEditImageBase64
+function updateProduct() {
+    const id = document.getElementById('edit-prod-id').value;
+    const name = document.getElementById('edit-prod-name').value.trim();
+    const categoryId = document.getElementById('edit-prod-category').value;
+    const price = document.getElementById('edit-prod-price').value;
+    // currentEditImageBase64 contém a imagem antiga ou a nova carregada no modal
+    const image = currentEditImageBase64; 
+
+    if (!name || !price) {
+        alert("Preencha o nome e o preço.");
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const prodIndex = stores[storeIndex].products.findIndex(p => p.id === id);
+        if (prodIndex !== -1) {
+            // Atualiza o objeto do produto mantendo o ID original
+            stores[storeIndex].products[prodIndex] = {
+                ...stores[storeIndex].products[prodIndex],
+                name: name,
+                categoryId: categoryId,
+                price: parseFloat(price).toFixed(2),
+                image: image
+            };
+            
+            setStores(stores);
+            currentEditImageBase64 = ""; // Reseta a variável temporária
+            closeModal('edit-product-modal');
+            renderProducts();
+        }
+    }
+}
+
+function previewImage(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Bloqueia levemente para evitar salvar sem a imagem ter carregado
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        const img = document.getElementById(previewId);
+        img.src = base64;
+        img.classList.remove('hidden');
+        
+        if (previewId === 'prod-preview') {
+            currentProdImageBase64 = base64;
+        } else {
+            currentEditImageBase64 = base64;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+}
+
+// Captura o arquivo solto e manda para a nossa função de preview
+function handleDrop(event, inputId, previewId) {
+    event.preventDefault();
+    event.stopPropagation();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        const input = document.getElementById(inputId);
+        input.files = files; // Vincula o arquivo ao input
+        
+        // Se for das configurações da loja (Logo, Banner, Favicon)
+        if (inputId.includes('file-logo') || inputId.includes('file-banner') || inputId.includes('file-favicon')) {
+            const type = inputId.replace('file-', '');
+            uploadTemplateImage(input, type);
+        } else {
+            // Se for dos produtos
+            previewImage(input, previewId);
+        }
+    }
+}
+
+function saveStoreGeneralSettings() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const newName = document.getElementById('cfg-store-name').value.trim();
+
+    if (!newName) return alert("Por favor, digite um nome para a loja.");
+
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        stores[storeIndex].name = newName;
+        setStores(stores);
+
+        document.getElementById('active-store-name').textContent = newName;
+        document.getElementById('store-sidebar-store-name').textContent = newName;
+        
+        showSuccess("Nome da loja atualizado com sucesso!");
+    }
+}
+
+function showSuccess(message) {
+    const modal = document.getElementById('success-modal');
+    const msgLabel = document.getElementById('success-message');
+    if (modal && msgLabel) {
+        msgLabel.textContent = message; // Define a mensagem personalizada
+        modal.classList.remove('hidden');
+        document.body.classList.add('no-scroll');
+        
+        // Opcional: Fecha sozinho após 3 segundos
+        setTimeout(() => closeModal('success-modal'), 3000);
+    }
+}
+
+function upgradeAccount(planName) {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!user) return alert("Erro: Usuário não identificado.");
+
+    // Define as limitações de cada plano para uso futuro
+    const planLimits = {
+        'VIP': { stores: 1, items: 10 },
+        'PRO': { stores: 3, items: 15 },
+        'LEGEND': { stores: 10, items: 30 }
+    };
+
+    user.plan = planName;
+    user.limits = planLimits[planName];
+
+    localStorage.setItem('usuarioLogado', JSON.stringify(user));
+    
+    // Feedback visual e atualização da tela
+    showSuccess(`Plano ${planName} ativado com sucesso!`);
+    setTimeout(() => window.location.reload(), 1500);
+}
+
+function selectTemplate(templateName) {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    const proTemplates = ['pro1', 'pro2']; 
+    const legendTemplates = ['legend1'];
+    const alertModal = document.getElementById('alert-modal');
+    const alertText = alertModal?.querySelector('p');
+
+    // 1. Bloqueio específico para o Template LEGEND (Mensagem Única)
+    if (legendTemplates.includes(templateName) && user.plan !== 'LEGEND') {
+        if (alertModal && alertText) {
+            alertText.innerText = "O template Legend é exclusivo para assinantes do plano LEGEND.";
+            alertModal.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // 2. Bloqueio para VIP tentando acessar templates PRO
+    if (user.plan === 'VIP' && proTemplates.includes(templateName)) {
+        if (alertModal && alertText) {
+            alertText.innerText = "Este template é exclusivo para assinantes do plano PRO ou LEGEND.";
+            alertModal.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Lógica de aplicação do template (seu código original abaixo)
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        stores[storeIndex].template = templateName;
+        setStores(stores);
+
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.classList.remove('template-selected', 'template-selected-pro', 'template-selected-legend');
+            card.classList.add('opacity-50');
+        });
+
+        const selectedCard = document.getElementById(`tpl-${templateName}`);
+        if (selectedCard) {
+            selectedCard.classList.remove('opacity-50');
+            if (legendTemplates.includes(templateName)) selectedCard.classList.add('template-selected-legend');
+            else if (proTemplates.includes(templateName)) selectedCard.classList.add('template-selected-pro');
+            else selectedCard.classList.add('template-selected');
+        }
+
+        const nomesTemplates = {
+            'standart': 'Standart', 'dark': 'Dark Mode',
+            'pro1': 'Stories PRO', 'pro2': 'Luxury PRO', 'legend1': 'Ethereal Legend'
+        };
+        showSuccess(`Template ${nomesTemplates[templateName] || templateName.toUpperCase()} aplicado!`);
+    }
+
+    // Só mostra o botão de cores se for LEGEND real
+    if (templateName === 'legend1' && user.plan === 'LEGEND') {
+        document.getElementById('legend-save-area')?.classList.remove('hidden');
+    } else {
+        document.getElementById('legend-save-area')?.classList.add('hidden');
+    }
+}
+
+function checkTemplateAccess() {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!user) return;
+
+    // Bloqueios específicos
+    const locks = {
+        'pro1': ['VIP'],
+        'pro2': ['VIP'],
+        'legend1': ['VIP', 'PRO'] // Só libera se não for VIP nem PRO
+    };
+
+    Object.keys(locks).forEach(id => {
+        const overlay = document.getElementById(`tpl-${id}-lock`);
+        if (overlay) {
+            if (locks[id].includes(user.plan) || !user.plan) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+    });
+
+    // Mostra o seletor de cores se for LEGEND
+    const colorPicker = document.getElementById('legend-color-picker');
+    if (colorPicker) {
+        user.plan === 'LEGEND' ? colorPicker.classList.remove('hidden') : colorPicker.classList.add('hidden');
+    }
+    const miniPicker = document.getElementById('legend-mini-picker');
+    const saveBtn = document.getElementById('legend-save-btn');
+    
+    if (user.plan === 'LEGEND') {
+        miniPicker?.classList.remove('hidden');
+        saveBtn?.classList.remove('hidden'); // O botão fica disponível, mas só aparece no hover do card
+    } else {
+        miniPicker?.classList.add('hidden');
+        saveBtn?.classList.add('hidden');
+    }
+}
+
+function scrollCarousel(direction) {
+    const carousel = document.getElementById('template-carousel');
+    if (carousel) {
+        // Largura do card (350) + o gap (24) = 374px por clique
+        const scrollAmount = 374; 
+        carousel.scrollBy({
+            left: direction * scrollAmount,
+            behavior: 'smooth' // ESSA É A CHAVE PARA O DESLIZAR SUAVE
+        });
+    }
+}
+
+// Chame essa função quando a aba de templates for aberta ou o DOM carregar
+document.addEventListener('DOMContentLoaded', checkTemplateAccess);
+
+let couponIdToDelete = null;
+
+function openCouponModal() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    
+    const container = document.getElementById('cp-categories-list');
+    container.innerHTML = '';
+
+    if (store && store.categories) {
+        store.categories.forEach(cat => {
+            container.innerHTML += `
+                <label class="relative cursor-pointer group">
+                    <input type="checkbox" name="cp-cats" value="${cat.id}" class="peer sr-only">
+                    
+                    <div class="px-4 py-3 rounded-xl border border-white/5 bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-widest text-center transition-all duration-300 peer-checked:bg-[#D4AF37]/10 peer-checked:border-[#D4AF37] peer-checked:text-[#D4AF37] peer-checked:shadow-[0_0_15px_rgba(212,175,55,0.15)] group-hover:bg-white/10">
+                        ${cat.nome}
+                    </div>
+                </label>
+            `;
+        });
+    }
+
+    document.getElementById('coupon-modal').classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+}
+
+function saveCoupon() {
+    const code = document.getElementById('cp-code').value.trim().toUpperCase();
+    const discount = document.getElementById('cp-discount').value;
+    const uses = document.getElementById('cp-uses').value;
+    const selectedCats = Array.from(document.querySelectorAll('input[name="cp-cats"]:checked')).map(cb => cb.value);
+
+    if (!code || !discount || selectedCats.length === 0) {
+        alert("Preencha o código, o desconto e selecione ao menos uma categoria.");
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        if (!stores[storeIndex].coupons) stores[storeIndex].coupons = [];
+
+        const newCoupon = {
+            id: Date.now().toString(),
+            code,
+            discount: parseInt(discount),
+            maxUses: parseInt(uses) || 0,
+            used: 0,
+            revenue: 0,
+            categories: selectedCats,
+            status: 'Ativo'
+        };
+
+        stores[storeIndex].coupons.push(newCoupon);
+        setStores(stores);
+        closeModal('coupon-modal');
+        renderCoupons();
+        showSuccess("Cupom criado!");
+    }
+}
+
+function renderCoupons() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    const tbody = document.getElementById('coupons-table-body');
+    const emptyMsg = document.getElementById('empty-coupons');
+
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const coupons = store?.coupons || [];
+
+    if (coupons.length === 0) {
+        if (emptyMsg) emptyMsg.classList.remove('hidden');
+        return;
+    }
+    if (emptyMsg) emptyMsg.classList.add('hidden');
+
+    tbody.innerHTML = coupons.map(cp => {
+        const isActive = cp.status === 'Ativo';
+        
+        // Definição das classes seguindo o padrão da screenshot
+        const statusClass = isActive 
+            ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
+            : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+        const dotClass = isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500';
+
+        return `
+            <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">
+                <td class="px-8 py-5 text-white font-black font-mono text-sm">${cp.code}</td>
+                <td class="px-8 py-5 text-gold font-bold text-sm">${cp.discount}%</td>
+                <td class="px-8 py-5 text-center text-gray-400 text-xs">${cp.used}</td>
+                <td class="px-8 py-5 text-center text-emerald-500 font-bold text-sm">R$ ${cp.revenue.toFixed(2)}</td>
+                <td class="px-8 py-5 text-center text-gray-500 text-xs font-mono">${cp.maxUses > 0 ? (cp.maxUses - cp.used) : '∞'}</td>
+                
+                <td class="px-8 py-5 text-center">
+                    <button onclick="toggleCouponStatus('${cp.id}')" class="inline-flex items-center gap-2 text-[9px] font-black uppercase ${statusClass} py-1.5 px-3 rounded-lg border cursor-pointer hover:scale-105 transition-transform">
+                        <span class="w-1.5 h-1.5 ${dotClass} rounded-full"></span> ${cp.status}
+                    </button>
+                </td>
+
+                <td class="px-8 py-5 text-right">
+                    <button onclick="deleteCoupon('${cp.id}')" class="bg-white/5 p-2.5 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all border border-white/5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+function toggleCouponStatus(id) {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const cpIdx = stores[storeIndex].coupons.findIndex(c => c.id === id);
+        if (cpIdx !== -1) {
+            stores[storeIndex].coupons[cpIdx].status = stores[storeIndex].coupons[cpIdx].status === 'Ativo' ? 'Inativo' : 'Ativo';
+            setStores(stores);
+            renderCoupons();
+        }
+    }
+}
+
+function deleteCoupon(id) {
+    couponIdToDelete = id;
+    const modal = document.getElementById('confirm-modal');
+    modal.querySelector('h3').textContent = "Excluir Cupom?";
+    modal.classList.remove('hidden');
+    document.getElementById('confirm-delete-btn').onclick = executeCouponDelete;
+}
+
+function executeCouponDelete() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1 && couponIdToDelete) {
+        stores[storeIndex].coupons = stores[storeIndex].coupons.filter(c => c.id !== couponIdToDelete);
+        setStores(stores);
+        closeModal('confirm-modal');
+        renderCoupons();
+        couponIdToDelete = null;
+    }
+}
+    </script>
+</body>
+</html>

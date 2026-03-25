@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxury PRO | ProTech Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #fcfcfc; color: #1a1a1a; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        /* Menu Flutuante de Categorias */
+        .floating-nav {
+            position: sticky;
+            top: 100px;
+            z-index: 40;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        /* Card de Produto "Luxury" */
+        .luxury-card {
+            background: #ffffff;
+            border-radius: 2rem;
+            border: 1px solid #f0f0f0;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .luxury-card:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 40px 80px rgba(212, 175, 55, 0.08);
+            transform: scale(1.02);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between relative">
+            <img id="header-logo-img" src="" class="w-14 h-14 object-contain rounded-full border border-gray-100 p-1 bg-white">
+            
+            <div class="absolute left-1/2 -translate-x-1/2">
+                <span id="store-name-header" class="font-extrabold tracking-tighter text-xl uppercase text-black">PROtech</span>
+            </div>
+
+            <button onclick="toggleCart(true)" class="relative p-2 text-black hover:text-[#D4AF37] transition-colors">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <span id="cart-count" class="absolute -top-1 -right-1 btn-gold text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">0</span>
+            </button>
+        </div>
+    </header>
+
+    <div id="store-banner-container" class="w-full h-[200px] relative mt-20 hidden">
+        <img id="store-banner-img" src="" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-white/10"></div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-8 py-16 flex flex-col lg:flex-row gap-12">
+        
+        <aside class="lg:w-64 shrink-0">
+            <div class="floating-nav p-6 space-y-2">
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6 ml-2">Explorar</h3>
+                <div id="category-list" class="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible no-scrollbar">
+                    </div>
+            </div>
+        </aside>
+
+        <div class="flex-grow">
+            <h2 id="current-cat-display" class="text-4xl font-extrabold tracking-tight mb-12">Tudo</h2>
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                </div>
+        </div>
+    </main>
+
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-[#050505] border-l border-white/10 z-[110] transform translate-x-full transition-transform duration-500 ease-in-out shadow-2xl">
+        <div class="h-full flex flex-col p-8">
+            <div class="flex justify-between items-center mb-10">
+                <h3 class="text-xl font-black uppercase tracking-tighter text-white italic">Sua Seleção</h3>
+                <button onclick="toggleCart(false)" class="group p-2 text-gray-500 hover:text-white transition-all">
+                    <svg class="w-6 h-6 transform group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+    
+            <div id="cart-items" class="flex-grow overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+                </div>
+    
+            <div class="border-t border-white/5 pt-8 mt-6">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <span class="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] block mb-1">Subtotal</span>
+                        <span id="cart-subtotal" class="text-white font-black text-2xl font-mono">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <button onclick="goToCheckout()" class="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#D4AF37] transition-all duration-500 rounded-2xl shadow-lg shadow-white/5">
+                    Ir para o Checkout
+                </button>
+                <p class="text-[9px] text-gray-600 text-center mt-4 uppercase font-bold tracking-widest">Pagamento 100% Seguro</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="cart-overlay" onclick="toggleCart(false)" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden opacity-0 transition-opacity duration-300"></div>
+    <script src="cart.js"></script>
+    <script>
+        const STORAGE_KEYS = { stores: 'protech_stores_v1' };
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('s');
+
+        function loadStore() {
+            if (!slug) {
+            document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-black uppercase tracking-widest text-gray-500'>URL Inválida</div>";
+            return;
+            }
+
+            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+            const store = stores.find(s => s.slug === slug);
+            if (!store) {
+            document.body.innerHTML = `
+            <div class='h-screen flex flex-col items-center justify-center bg-white text-black p-10 text-center'>
+                <h1 class='text-6xl font-black text-[#D4AF37] mb-4'>404</h1>
+                <p class='font-bold uppercase tracking-[0.3em] text-xs text-gray-500'>Instância Luxury não localizada</p>
+                <a href='dashboard.html' class='mt-8 px-8 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase hover:bg-[#D4AF37] transition-all'>Voltar ao Painel</a>
+            </div>`;
+            return;
+            }
+
+            document.title = `${store.name} | Luxury Pro`;
+            document.getElementById('store-name-header').innerText = store.name;
+
+            if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+            if (store.settings?.banner) {
+                document.getElementById('store-banner-img').src = store.settings.banner;
+                document.getElementById('store-banner-container').classList.remove('hidden');
+            }
+
+            // Categorias no Menu Flutuante
+            const catList = document.getElementById('category-list');
+            const activeCats = (store.categories || []).filter(c => c.status === 'Ativo');
+            
+            catList.innerHTML = `
+                <button onclick="resetFilter()" class="flex-shrink-0 text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest bg-[#D4AF37]/10 text-[#D4AF37] transition-all">Tudo</button>
+            ` + activeCats.map(cat => `
+                <button onclick="filterByCat('${cat.id}', '${cat.nome}')" class="flex-shrink-0 text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-400 hover:bg-gray-100 hover:text-black transition-all">
+                    ${cat.nome}
+                </button>
+            `).join('');
+
+            renderProducts(store.products || []);
+        }
+
+        function renderProducts(productsToRender) {
+            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+            const store = stores.find(s => s.slug === slug);
+            const products = productsToRender || store.products || [];
+            
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = products.map(prod => `
+                <div class="luxury-card p-6 group">
+                    <div class="aspect-square rounded-3xl overflow-hidden mb-6 bg-gray-50 p-6 relative">
+                        <img src="${prod.image}" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700">
+                    </div>
+                    <div class="px-2">
+                        <p class="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 mb-2">Exclusivo</p>
+                        <h3 class="font-extrabold text-lg tracking-tight mb-4">${prod.name}</h3>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xl font-extrabold">R$ ${prod.price}</span>
+                            <button onclick="addToCart('${prod.id}')" class="px-6 py-3 btn-gold rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all">Adicionar</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function resetFilter() {
+            document.getElementById('current-cat-display').innerText = "Tudo";
+            renderProducts();
+        }
+
+        function filterByCat(id, name) {
+            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+            const store = stores.find(s => s.slug === slug);
+            const filtered = store.products.filter(p => p.categoryId === id);
+            document.getElementById('current-cat-display').innerText = name;
+            renderProducts(filtered);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStore);
+    </script>
+</body>
+</html>

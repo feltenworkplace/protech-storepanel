@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Seguro | ProTech Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fafafa; color: #111; }
+    </style>
+</head>
+<body class="bg-[#fafafa]">
+
+    <nav class="w-full py-6 px-10 bg-white border-b border-gray-100 flex justify-between items-center">
+        <div class="text-xl font-black tracking-tighter uppercase">PRO<span class="text-[#D4AF37]">TECH</span></div>
+        <div class="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+            Ambiente Seguro
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <div class="lg:col-span-2 space-y-8">
+            
+            <section class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
+                <h2 class="text-xl font-black mb-8 flex items-center gap-4">
+                    <span class="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs">1</span>
+                    Como você prefere pagar?
+                </h2>
+
+                <div class="p-6 border-2 border-[#D4AF37] bg-[#D4AF37]/5 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-6 h-6 border-4 border-[#D4AF37] rounded-full flex items-center justify-center">
+                            <div class="w-2 h-2 bg-[#D4AF37] rounded-full"></div>
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm">Pix</p>
+                            <p class="text-xs text-gray-500">Aprovação imediata e 100% segura.</p>
+                        </div>
+                    </div>
+                    <img src="https://logopng.com.br/logos/pix-106.png" class="h-6">
+                </div>
+            </section>
+
+            <section class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
+                <h2 class="text-xl font-black mb-8 flex items-center gap-4">
+                    <span class="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs">2</span>
+                    Dados do Titular
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="pay-name" placeholder="Nome" title="Apenas letras são permitidas" class="w-full border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-[#D4AF37] transition-all font-medium">
+                        <input type="text" id="pay-surname" placeholder="Sobrenome" title="Apenas letras são permitidas" class="w-full border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-[#D4AF37] transition-all font-medium">
+                    </div>
+                    
+                    <input type="email" id="pay-email" placeholder="E-mail" class="w-full border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-[#D4AF37] transition-all font-medium">
+                    <input type="text" id="pay-cpf" placeholder="CPF ou CNPJ" maxlength="14" class="w-full border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-[#D4AF37] transition-all font-medium">
+                </div>
+            </section>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100 sticky top-10">
+                <h3 class="font-black text-lg mb-8">Resumo da Compra</h3>
+                
+                <div class="space-y-6">
+                    <div class="pb-6 border-b border-gray-100">
+                        <p class="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest mb-1">Plano Selecionado</p>
+                        <p id="plan-name" class="text-2xl font-black">Carregando...</p>
+                    </div>
+                    
+                    <div class="flex justify-between text-sm text-gray-500 font-medium">
+                        <span>Assinatura Mensal</span>
+                        <span id="plan-price">R$ 0,00</span>
+                    </div>
+
+                    <div class="flex justify-between items-center font-black text-2xl pt-6 border-t border-gray-100">
+                        <span>Total</span>
+                        <span id="total-price" class="text-black">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <button onclick="confirmPayment(event)" class="w-full bg-[#D4AF37] text-black py-5 rounded-2xl font-black uppercase tracking-widest mt-10 hover:opacity-90 transition-all shadow-xl shadow-[#D4AF37]/20 active:scale-95">
+                    Finalizar Compra
+                </button>
+                
+                <p class="text-[10px] text-gray-400 text-center mt-6 leading-relaxed">
+                    Ao confirmar, você concorda com nossos <br> <span class="underline cursor-pointer">termos de serviço</span>.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 1. Carregamento Inicial de Dados
+        const tempUser = JSON.parse(sessionStorage.getItem('tempSignupData'));
+        if (!tempUser) window.location.href = 'signup.html';
+
+        const prices = { 'VIP': '14,90', 'PRO': '29,90', 'LEGEND': '59,90' };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('plan-name').innerText = tempUser.plan || 'Plano';
+            document.getElementById('plan-price').innerText = `R$ ${prices[tempUser.plan] || '0,00'}`;
+            document.getElementById('total-price').innerText = `R$ ${prices[tempUser.plan] || '0,00'}`;
+            if (tempUser.email) document.getElementById('pay-email').value = tempUser.email;
+        });
+
+        // 2. Máscara de CPF
+        document.getElementById('pay-cpf').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 11) value = value.slice(0, 11);
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        });
+
+        // 3. Função de Finalização de Compra
+        async function confirmPayment(event) {
+    const name = document.getElementById('pay-name').value.trim();
+    const surname = document.getElementById('pay-surname').value.trim();
+    const email = document.getElementById('pay-email').value.trim();
+    const cpf = document.getElementById('pay-cpf').value.trim();
+
+    if (!name || !surname || !email || !cpf) {
+        Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Preencha tudo para gerar o Pix.', confirmButtonColor: '#000' });
+        return;
+    }
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = "GERANDO PIX...";
+
+    try {
+        // PASSO 1: Chama o servidor para gerar o QR Code
+        const responsePix = await fetch('http://localhost:3000/generate-pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...tempUser, nome: name, sobrenome: surname, cpf: cpf })
+        });
+
+        const dataPix = await responsePix.json();
+
+        if (dataPix.qr_code) {
+            // PASSO 2: Mostra o modal com o Pix real
+            Swal.fire({
+                title: 'Escaneie para pagar',
+                html: `
+                    <img src="data:image/jpeg;base64,${dataPix.qr_code}" class="mx-auto w-48 h-48 mb-4 border-2 border-gray-100 p-2">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Copia e Cola:</p>
+                    <textarea readonly class="w-full text-[10px] bg-gray-50 p-2 rounded border font-mono h-20 outline-none">${dataPix.copy_paste}</textarea>
+                `,
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Já paguei (Finalizar Cadastro)',
+                confirmButtonColor: '#D4AF37'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // PASSO 3: Só faz o cadastro no banco após o usuário clicar que pagou
+                    const responseSignup = await fetch('http://localhost:3000/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...tempUser,
+                            nome: `${name} ${surname}`,
+                            email: email // Garante que o email usado no checkout é o salvo
+                        })
+                    });
+
+                    if (responseSignup.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Cadastro Realizado!',
+                            text: 'Seu plano foi ativado com sucesso.',
+                            confirmButtonColor: '#000'
+                        }).then(() => {
+                            sessionStorage.removeItem('tempSignupData');
+                            window.location.href = 'login.html';
+                        });
+                    }
+                }
+            });
+        }
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o pagamento.' });
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "FINALIZAR COMPRA";
+    }
+}
+
+        // Função para permitir apenas letras e espaços
+function apenasLetras(e) {
+    // Remove números e caracteres especiais, mantendo apenas letras (incluindo acentos) e espaços
+    e.target.value = e.target.value.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '');
+}
+
+// Aplica a trava nos campos de Nome e Sobrenome
+document.getElementById('pay-name').addEventListener('input', apenasLetras);
+document.getElementById('pay-surname').addEventListener('input', apenasLetras);
+    </script>
+</body>
+</html>

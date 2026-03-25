@@ -6,19 +6,24 @@ const { MercadoPagoConfig, Payment } = require('mercadopago');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+// Liberta o acesso APENAS para o seu site do GitHub para maior segurança
+app.use(cors({
+    origin: ['https://feltenworkplace.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500']
+}));
 
 // --- CONFIGURAÇÃO MERCADO PAGO ---
-// [CRÍTICO]: Substitua SEU_ACCESS_TOKEN_AQUI pelo seu token real (TEST-... ou APP_USR-...)
 const client = new MercadoPagoConfig({ accessToken: 'TEST-6126732693506794-031800-e58f9530a9b144f8746dad11c29b4e38-2146058938' });
 const payment = new Payment(client);
 
-// --- CONEXÃO COM O BANCO DE DADOS (XAMPP) ---
+// --- CONEXÃO COM O BANCO DE DADOS (HÍBRIDA COM SSL) ---
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'protech_db'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'defaultdb', // Mudei para defaultdb que é o padrão do Aiven
+    port: process.env.DB_PORT || 3306,
+    ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : null
 });
 
 db.connect(err => {
@@ -26,7 +31,23 @@ db.connect(err => {
         console.error('Erro ao conectar ao MySQL:', err);
         return;
     }
-    console.log('Conectado ao MySQL com sucesso!');
+    console.log('Conectado ao MySQL com sucesso na Nuvem!');
+
+    // Cria a tabela automaticamente assim que o servidor liga
+    const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nome VARCHAR(100) NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            senha VARCHAR(255) NOT NULL,
+            plano VARCHAR(50) DEFAULT 'VIP',
+            limites TEXT
+        )
+    `;
+    db.query(createTableQuery, (err, result) => {
+        if (err) console.error("Erro ao criar tabela:", err);
+        else console.log("Tabela 'usuarios' pronta para uso!");
+    });
 });
 
 // --- ROTA: GERAR PIX (CHECKOUT) ---
@@ -49,9 +70,7 @@ app.post('/generate-pix', async (req, res) => {
     };
 
     try {
-        // O segredo está aqui: pedindo uma chave única para ignorar o bloqueio anterior
         const requestOptions = { idempotencyKey: Date.now().toString() }; 
-        
         const response = await payment.create({ body, requestOptions });
         
         res.json({
@@ -60,7 +79,6 @@ app.post('/generate-pix', async (req, res) => {
         });
     } catch (error) {
         console.log("--- ERRO NO MERCADO PAGO ---");
-        // Isso vai mostrar exatamente qual campo o MP não gostou no seu terminal
         if (error.response && error.response.body) {
             console.log("Causa:", JSON.stringify(error.response.body.cause, null, 2));
         } else {
@@ -77,8 +95,6 @@ app.post('/signup', async (req, res) => {
     try {
         const salt = await bcrypt.genSalt(10);
         const senhaHash = await bcrypt.hash(senha, salt);
-        
-        // Converte o objeto de limites em String para salvar no banco
         const limitesStr = JSON.stringify(limits);
 
         const sql = "INSERT INTO usuarios (nome, email, senha, plano, limites) VALUES (?, ?, ?, ?, ?)";
@@ -108,7 +124,6 @@ app.post('/login', (req, res) => {
         
         if (!senhaValida) return res.status(401).send("Senha incorreta!");
 
-        // Retorna os dados necessários para o Dashboard funcionar com as travas
         res.json({
             id: usuario.id,
             nome: usuario.nome,
@@ -118,9 +133,9 @@ app.post('/login', (req, res) => {
     });
 });
 
-// --- INICIALIZAÇÃO DO SERVIDOR ---
-app.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
     console.log("------------------------------------------");
-    console.log("PROtech Server ONLINE - Porta 3000");
+    console.log(`PROtech Server ONLINE - Porta ${PORT}`);
     console.log("------------------------------------------");
 });

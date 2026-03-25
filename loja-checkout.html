@@ -9,14 +9,12 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030303; color: #fff; }
         
-        /* Efeito de Fundo Premium */
         .bg-glow {
             position: fixed; top: -20%; left: -10%; width: 50vw; height: 50vw;
             background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
             z-index: -1; pointer-events: none;
         }
 
-        /* Painel de Vidro (Glassmorphism) */
         .glass-panel {
             background: rgba(255, 255, 255, 0.02);
             backdrop-filter: blur(16px);
@@ -24,7 +22,6 @@
             border-radius: 2rem;
         }
 
-        /* Inputs Premium */
         .input-premium {
             width: 100%;
             background: rgba(0, 0, 0, 0.4);
@@ -42,7 +39,6 @@
             transform: translateY(-2px);
         }
 
-        /* Botão Dourado */
         .btn-gold {
             background: linear-gradient(135deg, #D4AF37 0%, #F3E5AB 50%, #D4AF37 100%);
             background-size: 200% auto;
@@ -55,19 +51,28 @@
             transform: translateY(-3px);
         }
 
-        /* Custom Scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 10px; }
+
+        /* Esconde o input radio padrão */
+        .payment-radio:checked + div {
+            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+        .payment-radio:checked + div .radio-dot {
+            background-color: #D4AF37;
+            box-shadow: 0 0 10px #D4AF37;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col lg:flex-row overflow-x-hidden relative">
     
     <div class="bg-glow"></div>
 
-    <main class="w-full lg:w-3/5 p-8 md:p-16 flex flex-col justify-center">
+    <main class="w-full lg:w-3/5 p-8 md:p-16 flex flex-col justify-center overflow-hidden">
         
-        <div class="max-w-xl mx-auto w-full">
+        <div class="max-w-xl mx-auto w-full relative">
             <button onclick="window.history.back()" class="flex items-center gap-3 text-gray-500 hover:text-[#D4AF37] transition-colors mb-12 group">
                 <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span class="text-[10px] font-black uppercase tracking-[0.2em]">Voltar à Loja</span>
@@ -75,47 +80,123 @@
 
             <div class="flex items-center justify-between mb-16 relative">
                 <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-white/10 -z-10"></div>
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1/4 h-px bg-[#D4AF37] shadow-[0_0_10px_#D4AF37] -z-10"></div>
+                <div id="progress-bar" class="absolute left-0 top-1/2 -translate-y-1/2 w-1/4 h-px bg-[#D4AF37] shadow-[0_0_10px_#D4AF37] -z-10 transition-all duration-500"></div>
                 
-                <div class="w-10 h-10 rounded-full bg-black border-2 border-[#D4AF37] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)] flex items-center justify-center text-xs font-black z-10">01</div>
-                <div class="w-10 h-10 rounded-full bg-black border border-white/20 text-gray-500 flex items-center justify-center text-xs font-black z-10 transition-all hover:border-white/40">02</div>
-                <div class="w-10 h-10 rounded-full bg-black border border-white/20 text-gray-500 flex items-center justify-center text-xs font-black z-10 transition-all hover:border-white/40">03</div>
+                <div id="step1-indicator" class="w-10 h-10 rounded-full bg-black border-2 border-[#D4AF37] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)] flex items-center justify-center text-xs font-black z-10 transition-all duration-500">01</div>
+                <div id="step2-indicator" class="w-10 h-10 rounded-full bg-black border border-white/20 text-gray-500 flex items-center justify-center text-xs font-black z-10 transition-all duration-500">02</div>
+                <div class="w-10 h-10 rounded-full bg-black border border-white/20 text-gray-500 flex items-center justify-center text-xs font-black z-10 opacity-50">03</div>
             </div>
 
-            <div>
-                <h2 class="text-3xl font-black tracking-tighter mb-2">Seus Dados</h2>
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-10">Preencha com atenção</p>
-
-                <form id="checkout-form" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">Nome Completo</label>
-                            <input type="text" id="cli-name" placeholder="Ex: Seu Nome" class="input-premium" required>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">CPF</label>
-                            <input type="text" id="cli-cpf" placeholder="000.000.000-00" maxlength="14" class="input-premium" required>
-                        </div>
-                    </div>
+            <div class="overflow-hidden w-full">
+                <div id="form-slider" class="flex w-[200%] transition-transform duration-500 ease-in-out">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">E-mail</label>
-                            <input type="email" id="cli-email" placeholder="seumail@email.com" class="input-premium" required>
+                    <div class="w-1/2 pr-4 shrink-0">
+                        <h2 class="text-3xl font-black tracking-tighter mb-2">Seus Dados</h2>
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-10">Preencha com atenção</p>
+
+                        <form id="step1-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">Nome Completo</label>
+                                    <input type="text" id="cli-name" placeholder="Ex: Seu Nome" class="input-premium" required>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">CPF</label>
+                                    <input type="text" id="cli-cpf" placeholder="000.000.000-00" maxlength="14" class="input-premium" required>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">E-mail</label>
+                                    <input type="email" id="cli-email" placeholder="seumail@email.com" class="input-premium" required>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">Celular</label>
+                                    <input type="text" id="cli-phone" placeholder="(00) 00000-0000" maxlength="15" class="input-premium" required>
+                                </div>
+                            </div>
+
+                            <div class="pt-8">
+                                <button type="button" onclick="goToStep2()" class="w-full btn-gold py-5 rounded-xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 shadow-lg">
+                                    Continuar para Pagamento
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="w-1/2 pl-4 shrink-0">
+                        <div class="flex items-center gap-4 mb-10">
+                            <button type="button" onclick="goToStep1()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 hover:border-[#D4AF37] transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            </button>
+                            <div>
+                                <h2 class="text-3xl font-black tracking-tighter mb-1">Pagamento</h2>
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Escolha o método</p>
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-3 pl-2">Celular</label>
-                            <input type="text" id="cli-phone" placeholder="(00) 00000-0000" maxlength="15" class="input-premium" required>
+
+                        <div class="space-y-4 mb-8">
+                            <label class="block cursor-pointer relative">
+                                <input type="radio" name="payment_method" value="pix" class="peer sr-only payment-radio" checked onchange="togglePaymentView()">
+                                <div class="w-full p-5 rounded-xl border border-white/10 bg-black/50 flex items-center gap-4 transition-all">
+                                    <div class="w-5 h-5 rounded-full border border-gray-500 flex items-center justify-center shrink-0">
+                                        <div class="radio-dot w-2.5 h-2.5 rounded-full bg-transparent transition-colors"></div>
+                                    </div>
+                                    <div class="flex-1 flex items-center justify-between">
+                                        <span class="font-bold text-sm tracking-wide">PIX (Aprovação Imediata)</span>
+                                        <svg class="w-6 h-6 text-[#32BCAD]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.016 0C5.385 0 0 5.385 0 12.016s5.385 12.016 12.016 12.016 12.016-5.385 12.016-12.016S18.647 0 12.016 0zm-2.27 18.068l-3.32-3.32 1.487-1.488 1.833 1.834 5.76-5.76 1.488 1.488-7.248 7.246z"/></svg>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="block cursor-pointer relative">
+                                <input type="radio" name="payment_method" value="credit_card" class="peer sr-only payment-radio" onchange="togglePaymentView()">
+                                <div class="w-full p-5 rounded-xl border border-white/10 bg-black/50 flex items-center gap-4 transition-all">
+                                    <div class="w-5 h-5 rounded-full border border-gray-500 flex items-center justify-center shrink-0">
+                                        <div class="radio-dot w-2.5 h-2.5 rounded-full bg-transparent transition-colors"></div>
+                                    </div>
+                                    <div class="flex-1 flex items-center justify-between">
+                                        <span class="font-bold text-sm tracking-wide">Cartão de Crédito</span>
+                                        <div class="flex gap-2">
+                                            <div class="w-8 h-5 bg-white/10 rounded"></div>
+                                            <div class="w-8 h-5 bg-white/10 rounded"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div id="credit-card-form" class="hidden space-y-4 mb-8 bg-white/5 p-6 rounded-2xl border border-white/10">
+                            <div>
+                                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">Número do Cartão</label>
+                                <input type="text" placeholder="0000 0000 0000 0000" class="input-premium !py-3">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">Validade</label>
+                                    <input type="text" placeholder="MM/AA" class="input-premium !py-3">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">CVV</label>
+                                    <input type="text" placeholder="123" class="input-premium !py-3">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">Nome Impresso</label>
+                                <input type="text" placeholder="Nome no cartão" class="input-premium !py-3">
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="button" onclick="finalizeOrder()" id="btn-finalize" class="w-full btn-gold py-5 rounded-xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center shadow-lg">
+                                Gerar PIX
+                            </button>
                         </div>
                     </div>
 
-                    <div class="pt-8">
-                        <button type="button" onclick="goToStep2()" class="w-full btn-gold py-5 rounded-xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3">
-                            Continuar para Pagamento
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </main>
@@ -126,7 +207,7 @@
 
             <h3 class="text-sm font-black uppercase tracking-[0.3em] text-[#D4AF37] mb-8">Resumo do Pedido</h3>
             
-            <div id="checkout-items-list" class="space-y-6 mb-10 max-h-[40vh] overflow-y-auto custom-scroll pr-4 pt-3">
+            <div id="checkout-items-list" class="space-y-6 mb-10 max-h-[40vh] overflow-y-auto custom-scroll pr-4 pt-5">
                 </div>
 
             <div class="flex gap-3 mb-10">
@@ -159,9 +240,10 @@
         let subtotalCart = 0;
         let totalDiscount = 0;
 
+        // Renderiza itens e corrige bolinha cortada
         function renderCheckoutItems() {
             const list = document.getElementById('checkout-items-list');
-            subtotalCart = 0; // Zera para evitar duplicação
+            subtotalCart = 0; 
             
             if (cartItems.length === 0) {
                 list.innerHTML = '<div class="text-center py-10"><p class="text-gray-600 text-[10px] font-black uppercase tracking-[0.3em]">Carrinho Vazio</p></div>';
@@ -178,7 +260,7 @@
                         <div class="flex items-center gap-4">
                             <div class="relative shrink-0">
                                 <img src="${item.image}" class="w-14 h-14 rounded-2xl object-cover border border-white/10 bg-black group-hover:border-[#D4AF37]/50 transition-colors">
-                                <span class="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(212,175,55,0.4)]">${item.quantity}</span>
+                                <span class="absolute -top-3 -right-3 bg-[#D4AF37] text-black text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(212,175,55,0.4)] border-2 border-black z-10">${item.quantity}</span>
                             </div>
                             <div>
                                 <h4 class="text-xs text-white font-bold leading-tight mb-1">${item.name}</h4>
@@ -236,7 +318,7 @@
             }
         }
 
-        // Máscaras
+        // --- MÁSCARAS ---
         document.getElementById('cli-cpf').addEventListener('input', e => {
             let v = e.target.value.replace(/\D/g, '');
             if (v.length > 11) v = v.slice(0, 11);
@@ -254,14 +336,58 @@
             e.target.value = v;
         });
 
+        // --- LÓGICA DO SLIDER (PASSO 1 E PASSO 2) ---
         function goToStep2() {
             const n = document.getElementById('cli-name').value;
             const e = document.getElementById('cli-email').value;
             const c = document.getElementById('cli-cpf').value;
             
-            if(!n || !e || !c) return alert("Preencha todos os campos obrigatórios.");
+            if(!n || !e || !c) {
+                alert("Por favor, preencha Nome, CPF e E-mail para continuar.");
+                return;
+            }
             
-            alert("Sucesso! Preparando aba de Pagamento...");
+            // Move o slider para a esquerda (-50%)
+            document.getElementById('form-slider').style.transform = 'translateX(-50%)';
+            
+            // Atualiza barra e indicadores
+            document.getElementById('progress-bar').style.width = '75%';
+            document.getElementById('step2-indicator').classList.remove('border-white/20', 'text-gray-500');
+            document.getElementById('step2-indicator').classList.add('border-[#D4AF37]', 'text-[#D4AF37]', 'shadow-[0_0_15px_rgba(212,175,55,0.3)]');
+        }
+
+        function goToStep1() {
+            // Volta o slider para a posição original (0)
+            document.getElementById('form-slider').style.transform = 'translateX(0)';
+            
+            // Reverte barra e indicadores
+            document.getElementById('progress-bar').style.width = '25%';
+            document.getElementById('step2-indicator').classList.add('border-white/20', 'text-gray-500');
+            document.getElementById('step2-indicator').classList.remove('border-[#D4AF37]', 'text-[#D4AF37]', 'shadow-[0_0_15px_rgba(212,175,55,0.3)]');
+        }
+
+        function togglePaymentView() {
+            const method = document.querySelector('input[name="payment_method"]:checked').value;
+            const cardForm = document.getElementById('credit-card-form');
+            const btnFinalize = document.getElementById('btn-finalize');
+
+            if (method === 'credit_card') {
+                cardForm.classList.remove('hidden');
+                btnFinalize.innerText = 'Pagar com Cartão';
+            } else {
+                cardForm.classList.add('hidden');
+                btnFinalize.innerText = 'Gerar PIX';
+            }
+        }
+
+        function finalizeOrder() {
+            const method = document.querySelector('input[name="payment_method"]:checked').value;
+            if (method === 'pix') {
+                // Aqui depois entraremos com a integração do Mercado Pago para a loja!
+                alert("Gerando o seu QR Code PIX...");
+            } else {
+                alert("Processando pagamento via Cartão de Crédito...");
+            }
         }
 
         document.addEventListener('DOMContentLoaded', renderCheckoutItems);

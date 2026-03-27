@@ -4,87 +4,74 @@ const bcrypt = require('bcrypt');
 const cors = require('cors');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 
+// --- CONFIGURAÇÃO MERCADO PAGO ---
+const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+const payment = new Payment(client);
+
 const app = express();
 app.use(express.json());
 
-// Liberta o acesso APENAS para o seu site do GitHub para maior segurança
+// Liberta o acesso para o seu site do GitHub
 app.use(cors({
-    origin: ['https://feltenworkplace.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500']
+    origin: '*' // Para evitar bloqueios no Render, permitimos todas as origens por enquanto
 }));
 
-// --- CONFIGURAÇÃO MERCADO PAGO ---
-const client = new MercadoPagoConfig({ accessToken: 'TEST-6126732693506794-031800-e58f9530a9b144f8746dad11c29b4e38-2146058938' });
-const payment = new Payment(client);
-
-// --- CONEXÃO COM O BANCO DE DADOS (HÍBRIDA COM SSL) ---
+// --- CONEXÃO COM O BANCO DE DADOS (AIVEN NUVEM) ---
 const db = mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'defaultdb', // Mudei para defaultdb que é o padrão do Aiven
-    port: process.env.DB_PORT || 3306,
-    ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : null
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    ssl: { rejectUnauthorized: false } // Obrigatório para conectar no Aiven!
 });
 
 db.connect(err => {
     if (err) {
-        console.error('Erro ao conectar ao MySQL:', err);
+        console.error('Erro ao conectar ao MySQL na Nuvem:', err);
         return;
     }
     console.log('Conectado ao MySQL com sucesso na Nuvem!');
-
-    // Cria a tabela automaticamente assim que o servidor liga
-    const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nome VARCHAR(100) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            senha VARCHAR(255) NOT NULL,
-            plano VARCHAR(50) DEFAULT 'VIP',
-            limites TEXT
-        )
-    `;
-    db.query(createTableQuery, (err, result) => {
-        if (err) console.error("Erro ao criar tabela:", err);
-        else console.log("Tabela 'usuarios' pronta para uso!");
-    });
 });
 
 // --- ROTA: GERAR PIX (CHECKOUT) ---
 app.post('/generate-pix', async (req, res) => {
-    const { email, nome, sobrenome, cpf, plan } = req.body;
-    const prices = { 'VIP': 14.90, 'PRO': 29.90, 'LEGEND': 59.90 };
+    const { nome, email, cpf, plano } = req.body;
 
-    if (!prices[plan]) return res.status(400).json({ error: "Plano inválido" });
-
-    const body = {
-        transaction_amount: prices[plan],
-        description: `Assinatura ProTech: ${plan}`,
-        payment_method_id: 'pix',
-        payer: {
-            email: email,
-            first_name: nome,
-            last_name: sobrenome,
-            identification: { type: 'CPF', number: cpf.replace(/\D/g, '') }
-        }
-    };
+    let valorCobrado = 29.90; 
+    if (plano === 'Pro') valorCobrado = 49.90;
+    if (plano === 'Legend') valorCobrado = 99.90;
 
     try {
-        const requestOptions = { idempotencyKey: Date.now().toString() }; 
-        const response = await payment.create({ body, requestOptions });
-        
+        const body = {
+            transaction_amount: valorCobrado,
+            description: `Assinatura ProTech - Plano ${plano}`,
+            payment_method_id: 'pix',
+            payer: {
+                email: email,
+                first_name: nome,
+                identification: {
+                    type: 'CPF',
+                    number: cpf
+                }
+            }
+        };
+
+        const response = await payment.create({ body });
+
+        const qrCodeBase64 = response.point_of_interaction.transaction_data.qr_code_base64;
+        const copiaECola = response.point_of_interaction.transaction_data.qr_code;
+
         res.json({
-            qr_code: response.point_of_interaction.transaction_data.qr_code_base64,
-            copy_paste: response.point_of_interaction.transaction_data.qr_code
+            success: true,
+            qrCodeBase64: qrCodeBase64,
+            qrCodeCopiaCola: copiaECola,
+            paymentId: response.id 
         });
+
     } catch (error) {
-        console.log("--- ERRO NO MERCADO PAGO ---");
-        if (error.response && error.response.body) {
-            console.log("Causa:", JSON.stringify(error.response.body.cause, null, 2));
-        } else {
-            console.log("Mensagem:", error.message);
-        }
-        res.status(500).json({ error: "Erro ao gerar Pix" });
+        console.error("Erro ao gerar PIX no Mercado Pago:", error);
+        res.status(500).json({ success: false, message: 'Erro ao gerar PIX' });
     }
 });
 
@@ -133,9 +120,11 @@ app.post('/login', (req, res) => {
     });
 });
 
+// --- INICIALIZAÇÃO DO SERVIDOR ---
+// O Render exige process.env.PORT para saber em qual porta ligar o servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log("------------------------------------------");
+    console.log(`------------------------------------------`);
     console.log(`PROtech Server ONLINE - Porta ${PORT}`);
-    console.log("------------------------------------------");
+    console.log(`------------------------------------------`);
 });

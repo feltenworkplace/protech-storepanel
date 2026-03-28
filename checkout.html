@@ -165,23 +165,30 @@ async function confirmPayment(event) {
                     const dataStatus = await resStatus.json();
 
                     if (dataStatus.approved) {
-                        clearInterval(checkInterval); // Para de perguntar
-                        
-                        // 4. Efetiva o cadastro no banco
-                        await fetch('https://storepanel-backend.onrender.com/signup', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                ...tempUser,
-                                nome: `${name} ${surname}`,
-                                email: email
-                            })
-                        });
+                clearInterval(checkInterval); // Para de perguntar status do Pix
 
-                        // 5. Redireciona Automático
-                        sessionStorage.setItem('userLogado', JSON.stringify({ nome: name, email: email, plan: tempUser.plan }));
-                        window.location.href = 'dashboard.html';
-                    }
+                // 4. Efetiva o cadastro no banco de dados
+                await fetch('https://storepanel-backend.onrender.com/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...tempUser,
+                        nome: `${name} ${surname}`,
+                        email: email
+                    })
+                });
+
+                // 5. Salva os dados EXATAMENTE como a Dashboard espera (localStorage + usuarioLogado)
+                localStorage.setItem('usuarioLogado', JSON.stringify({ 
+                    nome: `${name} ${surname}`, 
+                    email: email, 
+                    plan: tempUser.plan 
+                }));
+
+                // 6. Redireciona direto para a Dashboard
+                window.location.href = 'dashboard.html';
+            }
+
                 } catch (e) {
                     console.error("Erro na checagem:", e);
                 }

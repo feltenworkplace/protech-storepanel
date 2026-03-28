@@ -1419,6 +1419,7 @@ function switchTab(tabName) {
 
     const store = {
         ...createStore({ name, slug }),
+        ownerEmail: user.email,
         template: document.getElementById('storeTemplate').value,
         categories: [],
         products: [],

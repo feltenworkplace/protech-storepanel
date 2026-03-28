@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | ProTech Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
@@ -270,30 +271,60 @@
 
         const formLogin = document.querySelector('#seu-formulario-login');
 
-        formLogin.addEventListener('submit', async (e) => {
-            e.preventDefault();
+formLogin.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            const email = document.querySelector('#email').value;
-            const senha = document.querySelector('#senha').value;
+    const email = document.querySelector('#email').value;
+    const senha = document.querySelector('#senha').value;
+    const btnEntrar = document.querySelector('#btn-entrar');
 
-            const response = await fetch('https://storepanel-backend.onrender.com/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senha })
-            });
+    // Feedback visual no botão
+    btnEntrar.disabled = true;
+    btnEntrar.innerText = "Verificando...";
 
-            if (response.ok) {
-                const dadosDoUsuario = await response.json();
-
-                // Salva os dados (nome, plano) para usar no Dashboard
-                localStorage.setItem('usuarioLogado', JSON.stringify(dadosDoUsuario));
-
-                // Redireciona para o Dashboard
-                window.location.href = 'dashboard.html';
-            } else {
-                alert("E-mail ou senha incorretos.");
-            }
+    try {
+        // CONECTA COM O SEU SERVIDOR NO RENDER (Troquei o localhost)
+        const response = await fetch('https://storepanel-backend.onrender.com/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, senha })
         });
+
+        if (response.ok) {
+            const dadosDoUsuario = await response.json();
+
+            // Salva os dados para a Dashboard usar (Nome, Plano, etc)
+            localStorage.setItem('usuarioLogado', JSON.stringify(dadosDoUsuario));
+
+            // Redireciona com sucesso
+            window.location.href = 'dashboard.html';
+        } else {
+            // NOTIFICAÇÃO DE ERRO ELEGANTE
+            Swal.fire({
+                icon: 'error',
+                title: 'Acesso Negado',
+                text: 'E-mail ou senha incorretos. Tente novamente.',
+                background: '#121212',
+                color: '#fff',
+                confirmButtonColor: '#D4AF37',
+                iconColor: '#ef4444'
+            });
+        }
+    } catch (error) {
+        // Caso o servidor esteja offline
+        Swal.fire({
+            icon: 'warning',
+            title: 'Servidor Offline',
+            text: 'Não foi possível conectar ao sistema. Tente em instantes.',
+            background: '#121212',
+            color: '#fff',
+            confirmButtonColor: '#D4AF37'
+        });
+    } finally {
+        btnEntrar.disabled = false;
+        btnEntrar.innerText = "Entrar";
+    }
+});
     </script>
 </body>
 </html>

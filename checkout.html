@@ -133,10 +133,26 @@
 
     const btn = event.target;
     btn.disabled = true;
-    btn.innerText = "GERANDO PIX...";
+    btn.innerText = "PROCESSANDO...";
 
     try {
-        // PASSO 1: Chama o servidor oficial no Render
+        // PASSO 1: Já faz o cadastro no banco ANTES de mostrar o PIX
+        const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...tempUser,
+                nome: `${name} ${surname}`,
+                email: email
+            })
+        });
+
+        if (!responseSignup.ok) {
+            const errorMsg = await responseSignup.text();
+            throw new Error(errorMsg || 'Erro ao realizar cadastro.');
+        }
+
+        // PASSO 2: Gera o PIX
         const responsePix = await fetch('https://storepanel-backend.onrender.com/generate-pix', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -146,7 +162,6 @@
         const dataPix = await responsePix.json();
 
         if (dataPix.success) {
-            // PASSO 2: Mostra o modal com o Pix real usando os nomes certos (qrCodeBase64 e qrCodeCopiaCola)
             Swal.fire({
                 title: 'Escaneie para pagar',
                 html: `
@@ -154,39 +169,16 @@
                     <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Copia e Cola:</p>
                     <textarea readonly class="w-full text-[10px] bg-gray-50 p-2 rounded border font-mono h-20 outline-none">${dataPix.qrCodeCopiaCola}</textarea>
                 `,
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Já paguei (Finalizar Cadastro)',
+                confirmButtonText: 'Ir para minha Dashboard',
                 confirmButtonColor: '#D4AF37'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    // PASSO 3: Cadastro oficial no Render
-                    const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            ...tempUser,
-                            nome: `${name} ${surname}`,
-                            email: email
-                        })
-                    });
-
-                    if (responseSignup.ok) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Cadastro Realizado!',
-                            text: 'Seu plano foi ativado com sucesso.',
-                            confirmButtonColor: '#000'
-                        }).then(() => {
-                            sessionStorage.removeItem('tempSignupData');
-                            window.location.href = 'login.html';
-                        });
-                    }
-                }
+            }).then(() => {
+                // PASSO 3: Manda direto para a Dashboard
+                sessionStorage.setItem('userLogado', JSON.stringify({ nome: name, email: email, plan: tempUser.plan }));
+                window.location.href = 'dashboard.html';
             });
         }
     } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o pagamento.' });
+        Swal.fire({ icon: 'error', title: 'Erro', text: err.message || 'Não foi possível finalizar.' });
     } finally {
         btn.disabled = false;
         btn.innerText = "FINALIZAR COMPRA";

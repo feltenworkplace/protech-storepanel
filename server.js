@@ -32,6 +32,22 @@ db.connect(err => {
         return;
     }
     console.log('Conectado ao MySQL com sucesso na Nuvem!');
+
+    // CRIA A TABELA AUTOMATICAMENTE SE NÃO EXISTIR
+    const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nome VARCHAR(100) NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            senha VARCHAR(255) NOT NULL,
+            plano VARCHAR(50) DEFAULT 'VIP',
+            limites TEXT
+        )
+    `;
+    db.query(createTableQuery, (err) => {
+        if (err) console.error("Erro ao criar tabela:", err);
+        else console.log("Tabela 'usuarios' verificada/pronta.");
+    });
 });
 
 // --- ROTA: GERAR PIX (CHECKOUT) ---

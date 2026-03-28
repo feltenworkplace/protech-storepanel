@@ -292,8 +292,8 @@ select:focus option:checked {
             </div>
             <div class="flex items-center space-x-4">
                 <div class="hidden lg:block text-right">
-                    <p class="text-[10px] font-black text-white uppercase tracking-[0.15em]">
-                    <span id="user-plan-name">CARREGANDO...</span> PLAN
+                    <p id="user-plan-text" class="text-[10px] font-black text-white uppercase tracking-[0.15em]">
+                        Expert PLAN
                     </p>
                 </div>
                 <div class="w-10 h-10 flex-shrink-0 aspect-square rounded-xl border border-gold/40 p-0.5 overflow-hidden bg-zinc-900">
@@ -1433,57 +1433,46 @@ function switchTab(tabName) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Busca os dados exatos salvos no checkout
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-    
-    // Se não houver usuário, redireciona para o login
     if (!user) return window.location.href = 'login.html';
 
-    // 1. Nome do Usuário no Header
+    // 1. Nome do Usuário
     if (document.getElementById('nome-usuario-header')) {
         document.getElementById('nome-usuario-header').innerText = user.nome;
     }
 
-    // 2. Lógica de Cores dos Planos (Baseada nos cards de seleção)
-    const planText = document.querySelector('.text-right p.text-xs.font-bold');
-    if (planText && user.plan) {
-        const planoAtivo = user.plan.toUpperCase();
-        
-        // Cores extraídas do print: Verde (VIP), Rosa (PRO), Ciano (LEGEND)
-        const coresPlanos = {
-            'VIP': '#22C55E',    // Starter
-            'PRO': '#EC4899',    // Elite
-            'LEGEND': '#06B6D4'  // Expert
-        };
-
-        // Aplica o texto "PLANO Plan" com a cor apenas na primeira palavra
-        const corHex = coresPlanos[planoAtivo] || '#FFFFFF';
-        planText.innerHTML = `<span style="color: ${corHex}">${planoAtivo}</span> PLAN`;
-    }
-
-    // 3. Avatar Dinâmico com a cor do plano
+    // 2. Avatar (Sempre Dourado como você pediu)
     const avatarImg = document.getElementById('user-avatar');
     if (avatarImg) {
-        const planoAtivo = user.plan ? user.plan.toUpperCase() : 'VIP';
-        const coresAvatar = { 'VIP': '22C55E', 'PRO': 'EC4899', 'LEGEND': '06B6D4' };
-        const corFundo = coresAvatar[planoAtivo] || 'D4AF37';
+        // background=D4AF37 é o seu dourado padrão
+        avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
+    }
+
+    // 3. Plano com Cores Corretas (Troca o "CARREGANDO...")
+    const planText = document.getElementById('user-plan-text');
+    if (planText && user.plan) {
+        const plano = user.plan.toUpperCase();
         
-        avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=${corFundo}&color=000&bold=true`;
+        // Cores dos seus cards: Verde (VIP), Rosa (PRO), Ciano (LEGEND)
+        const cores = {
+            'VIP': '#22C55E',    //
+            'PRO': '#EC4899',    //
+            'LEGEND': '#06B6D4'  //
+        };
+
+        const corHex = cores[plano] || '#FFFFFF';
+        // Atualiza o HTML interno para pintar apenas o nome do plano
+        planText.innerHTML = `<span style="color: ${corHex}">${plano}</span> PLAN`;
     }
 
-    // 4. Inicializa as funções da Dashboard
-    if (typeof renderStoresGrid === "function") {
-        renderStoresGrid();
-    }
+    // Restante do seu código (Lojas e Sidebar)
+    renderStoresGrid();
 
-    // 5. Comportamento dos botões de submenu (Sidebar)
     document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
         const tabName = link.id.replace(/^menu-/, '');
         link.addEventListener('click', (event) => {
             event.preventDefault();
-            if (typeof switchTab === "function") {
-                switchTab(tabName);
-            }
+            switchTab(tabName);
         });
     });
 });

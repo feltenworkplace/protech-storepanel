@@ -271,60 +271,58 @@
 
         const formLogin = document.querySelector('#seu-formulario-login');
 
-formLogin.addEventListener('submit', async (e) => {
-    e.preventDefault();
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-    const email = document.querySelector('#email').value;
-    const senha = document.querySelector('#senha').value;
-    const btnEntrar = document.querySelector('#btn-entrar');
+            const email = document.querySelector('#email').value;
+            const senha = document.querySelector('#senha').value;
+            const btnEntrar = document.querySelector('#btn-entrar');
 
-    // Feedback visual no botão
-    btnEntrar.disabled = true;
-    btnEntrar.innerText = "Verificando...";
+            // Feedback visual no botão
+            btnEntrar.disabled = true;
+            btnEntrar.innerText = "VERIFICANDO...";
 
-    try {
-        // CONECTA COM O SEU SERVIDOR NO RENDER (Troquei o localhost)
-        const response = await fetch('https://storepanel-backend.onrender.com/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, senha })
+            try {
+                // AGORA APONTANDO PARA O RENDER (O motivo de não entrar era o localhost)
+                const response = await fetch('https://storepanel-backend.onrender.com/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                if (response.ok) {
+                    const dadosDoUsuario = await response.json();
+
+                    // Salva os dados (nome, plano) no localStorage para a Dashboard
+                    localStorage.setItem('usuarioLogado', JSON.stringify(dadosDoUsuario));
+
+                    // Redireciona para o Dashboard
+                    window.location.href = 'dashboard.html';
+                } else {
+                    // NOTIFICAÇÃO MODERNA DE ERRO
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acesso Negado',
+                        text: 'E-mail ou senha incorretos.',
+                        background: '#121212',
+                        color: '#fff',
+                        confirmButtonColor: '#D4AF37'
+                    });
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Erro de Conexão',
+                    text: 'Não foi possível contatar o servidor.',
+                    background: '#121212',
+                    color: '#fff',
+                    confirmButtonColor: '#D4AF37'
+                });
+            } finally {
+                btnEntrar.disabled = false;
+                btnEntrar.innerText = "Entrar";
+            }
         });
-
-        if (response.ok) {
-            const dadosDoUsuario = await response.json();
-
-            // Salva os dados para a Dashboard usar (Nome, Plano, etc)
-            localStorage.setItem('usuarioLogado', JSON.stringify(dadosDoUsuario));
-
-            // Redireciona com sucesso
-            window.location.href = 'dashboard.html';
-        } else {
-            // NOTIFICAÇÃO DE ERRO ELEGANTE
-            Swal.fire({
-                icon: 'error',
-                title: 'Acesso Negado',
-                text: 'E-mail ou senha incorretos. Tente novamente.',
-                background: '#121212',
-                color: '#fff',
-                confirmButtonColor: '#D4AF37',
-                iconColor: '#ef4444'
-            });
-        }
-    } catch (error) {
-        // Caso o servidor esteja offline
-        Swal.fire({
-            icon: 'warning',
-            title: 'Servidor Offline',
-            text: 'Não foi possível conectar ao sistema. Tente em instantes.',
-            background: '#121212',
-            color: '#fff',
-            confirmButtonColor: '#D4AF37'
-        });
-    } finally {
-        btnEntrar.disabled = false;
-        btnEntrar.innerText = "Entrar";
-    }
-});
     </script>
 </body>
 </html>

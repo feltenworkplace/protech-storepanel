@@ -121,77 +121,77 @@
 
         // 3. Função de Finalização de Compra
         async function confirmPayment(event) {
-            const name = document.getElementById('pay-name').value.trim();
-            const surname = document.getElementById('pay-surname').value.trim();
-            const email = document.getElementById('pay-email').value.trim();
-            const cpf = document.getElementById('pay-cpf').value.trim();
+    const name = document.getElementById('pay-name').value.trim();
+    const surname = document.getElementById('pay-surname').value.trim();
+    const email = document.getElementById('pay-email').value.trim();
+    const cpf = document.getElementById('pay-cpf').value.trim();
 
-            if (!name || !surname || !email || !cpf) {
-                Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Preencha tudo para gerar o Pix.', confirmButtonColor: '#000' });
-                return;
-            }
+    if (!name || !surname || !email || !cpf) {
+        Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Preencha tudo para gerar o Pix.', confirmButtonColor: '#000' });
+        return;
+    }
 
-            const btn = event.target;
-            btn.disabled = true;
-            btn.innerText = "GERANDO PIX...";
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = "GERANDO PIX...";
 
-            try {
-                // PASSO 1: Chama o servidor para gerar o QR Code (LINK ATUALIZADO)
-                const responsePix = await fetch('https://storepanel-backend.onrender.com/generate-pix', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...tempUser, nome: name, sobrenome: surname, cpf: cpf })
-                });
+    try {
+        // PASSO 1: Chama o servidor oficial no Render
+        const responsePix = await fetch('https://storepanel-backend.onrender.com/generate-pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...tempUser, nome: name, sobrenome: surname, cpf: cpf })
+        });
 
-                const dataPix = await responsePix.json();
+        const dataPix = await responsePix.json();
 
-                if (dataPix.qr_code) {
-                    // PASSO 2: Mostra o modal com o Pix real
-                    Swal.fire({
-                        title: 'Escaneie para pagar',
-                        html: `
-                            <img src="data:image/jpeg;base64,${dataPix.qr_code}" class="mx-auto w-48 h-48 mb-4 border-2 border-gray-100 p-2">
-                            <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Copia e Cola:</p>
-                            <textarea readonly class="w-full text-[10px] bg-gray-50 p-2 rounded border font-mono h-20 outline-none">${dataPix.copy_paste}</textarea>
-                        `,
-                        showCancelButton: true,
-                        cancelButtonText: 'Cancelar',
-                        confirmButtonText: 'Já paguei (Finalizar Cadastro)',
-                        confirmButtonColor: '#D4AF37'
-                    }).then(async (result) => {
-                        if (result.isConfirmed) {
-                            // PASSO 3: Só faz o cadastro no banco após o usuário clicar que pagou (LINK ATUALIZADO)
-                            const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    ...tempUser,
-                                    nome: `${name} ${surname}`,
-                                    email: email 
-                                })
-                            });
-
-                            if (responseSignup.ok) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Cadastro Realizado!',
-                                    text: 'Seu plano foi ativado com sucesso.',
-                                    confirmButtonColor: '#000'
-                                }).then(() => {
-                                    sessionStorage.removeItem('tempSignupData');
-                                    window.location.href = 'login.html';
-                                });
-                            }
-                        }
+        if (dataPix.success) {
+            // PASSO 2: Mostra o modal com o Pix real usando os nomes certos (qrCodeBase64 e qrCodeCopiaCola)
+            Swal.fire({
+                title: 'Escaneie para pagar',
+                html: `
+                    <img src="data:image/jpeg;base64,${dataPix.qrCodeBase64}" class="mx-auto w-48 h-48 mb-4 border-2 border-gray-100 p-2">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Copia e Cola:</p>
+                    <textarea readonly class="w-full text-[10px] bg-gray-50 p-2 rounded border font-mono h-20 outline-none">${dataPix.qrCodeCopiaCola}</textarea>
+                `,
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Já paguei (Finalizar Cadastro)',
+                confirmButtonColor: '#D4AF37'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // PASSO 3: Cadastro oficial no Render
+                    const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...tempUser,
+                            nome: `${name} ${surname}`,
+                            email: email
+                        })
                     });
+
+                    if (responseSignup.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Cadastro Realizado!',
+                            text: 'Seu plano foi ativado com sucesso.',
+                            confirmButtonColor: '#000'
+                        }).then(() => {
+                            sessionStorage.removeItem('tempSignupData');
+                            window.location.href = 'login.html';
+                        });
+                    }
                 }
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o pagamento.' });
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "FINALIZAR COMPRA";
-            }
+            });
         }
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o pagamento.' });
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "FINALIZAR COMPRA";
+    }
+}
 
         // Função para permitir apenas letras e espaços
 function apenasLetras(e) {

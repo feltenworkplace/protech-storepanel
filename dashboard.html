@@ -2512,6 +2512,14 @@ function executeCouponDelete() {
         couponIdToDelete = null;
     }
 }
+
+// Dentro da parte que você clica em OK no modal do PIX:
+sessionStorage.setItem('userLogado', JSON.stringify({ 
+    nome: name, 
+    email: email, 
+    plan: tempUser.plan 
+}));
+window.location.href = 'dashboard.html';
     </script>
 </body>
 </html>

@@ -1239,22 +1239,36 @@ function visitStore() {
         }
 
         function renderStoresGrid() {
+    // 1. Pega os dados do usuário logado (Admin ou Cliente)
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     const grid = document.getElementById('stores-grid');
-    if (!grid) return;
-
-    const stores = getStores() || []; // O "|| []" impede o erro de 'forEach'
     
-    // Mantém o botão de "Criar Loja"
+    if (!grid || !user) return;
+
+    // 2. Busca todas as lojas do localStorage
+    let allStores = getStores() || [];
+    
+    // 3. FILTRO CRÍTICO: Só mantém as lojas onde o dono é o usuário atual
+    // Se a loja não tiver 'ownerEmail' (lojas antigas), ela não aparecerá para evitar confusão
+    const userStores = allStores.filter(store => store.ownerEmail === user.email);
+
+    // 4. Prepara o Grid (Mantém o botão de criar)
     const createBtn = grid.querySelector('button[onclick*="toggleStoreDrawer"]')?.cloneNode(true);
     grid.innerHTML = '';
     if (createBtn) grid.appendChild(createBtn);
 
-    stores.forEach((store) => {
+    // 5. Renderiza apenas as lojas do usuário
+    userStores.forEach((store) => {
         const card = document.createElement('div');
         card.className = "aspect-video glass rounded-[2rem] p-8 flex flex-col justify-between border-white/10 hover:border-gold/30 transition shadow-xl";
         card.innerHTML = `
-            <div><h4 class="font-black text-xl mb-1">${store.name}</h4><p class="text-xs text-gray-500">Link: protech.gg/${store.slug}</p></div>
-            <button onclick="openStoreDashboard('${store.id}')" class="w-full mt-6 py-3 text-[10px] font-black uppercase bg-white/5 rounded-xl hover:bg-gold hover:text-black transition-all">Acessar Painel</button>
+            <div>
+                <h4 class="font-black text-xl mb-1">${store.name}</h4>
+                <p class="text-xs text-gray-500">Link: protech.gg/${store.slug}</p>
+            </div>
+            <button onclick="openStoreDashboard('${store.id}')" class="w-full mt-6 py-3 text-[10px] font-black uppercase bg-white/5 rounded-xl hover:bg-gold hover:text-black transition-all">
+                Acessar Painel
+            </button>
         `;
         grid.appendChild(card);
     });

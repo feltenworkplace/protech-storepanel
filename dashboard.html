@@ -1756,11 +1756,12 @@ function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
     const categoryId = document.getElementById('prod-category').value;
     const price = document.getElementById('prod-price').value;
-    const desc = document.getElementById('prod-desc').value.trim(); // <--- AGORA ELE LÊ A DESCRIÇÃO
+    const description = document.getElementById('prod-desc').value.trim(); // Lendo a descrição
     const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
 
     if (!name || !categoryId || !price) {
-        document.getElementById('alert-modal').classList.remove('hidden');
+        const alertModal = document.getElementById('alert-modal');
+        if (alertModal) alertModal.classList.remove('hidden');
         return;
     }
 
@@ -1777,7 +1778,7 @@ function saveProduct() {
             name: name,
             categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
-            description: desc,
+            description: description, // Salvando a descrição no objeto
             image: image,
             status: 'Ativo'
         };
@@ -1785,10 +1786,11 @@ function saveProduct() {
         stores[storeIndex].products.push(newProduct);
         setStores(stores);
         
+        // Limpeza dos campos
         currentProdImageBase64 = "";
         document.getElementById('prod-name').value = '';
         document.getElementById('prod-price').value = '';
-        document.getElementById('prod-desc').value = ''; // Limpa o campo
+        document.getElementById('prod-desc').value = '';
         document.getElementById('prod-preview').classList.add('hidden');
         
         closeModal('product-modal');
@@ -1932,7 +1934,10 @@ function openEditProductModal(productId) {
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     document.getElementById('edit-prod-price').value = product.price;
-    document.getElementById('edit-prod-desc').value = product.description || ''; // <--- CARREGA A DESCRIÇÃO
+    
+    // Puxa a descrição salva
+    const descField = document.getElementById('edit-prod-desc');
+    if (descField) descField.value = product.description || '';
     
     const editSelect = document.getElementById('edit-prod-category');
     editSelect.innerHTML = (store.categories || []).map(cat => `<option value="${cat.id}">${cat.nome}</option>`).join('');
@@ -1941,7 +1946,7 @@ function openEditProductModal(productId) {
     const imgPreview = document.getElementById('edit-prod-preview');
     imgPreview.src = product.image;
     imgPreview.classList.remove('hidden');
-    currentEditImageBase64 = product.image;
+    currentEditImageBase64 = product.image; 
 
     document.getElementById('edit-product-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
@@ -1952,7 +1957,7 @@ function updateProduct() {
     const name = document.getElementById('edit-prod-name').value.trim();
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = document.getElementById('edit-prod-price').value;
-    const desc = document.getElementById('edit-prod-desc').value.trim(); // <--- LÊ A DESCRIÇÃO EDITADA
+    const description = document.getElementById('edit-prod-desc').value.trim(); // Lendo a descrição editada
     const image = currentEditImageBase64; 
 
     if (!name || !price) {
@@ -1973,7 +1978,7 @@ function updateProduct() {
                 name: name,
                 categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
-                description: desc,
+                description: description, // Salvando a edição
                 image: image
             };
             
@@ -2086,89 +2091,6 @@ function previewImage(input, previewId) {
         else currentEditImageBase64 = base64;
     };
     reader.readAsDataURL(file);
-}
-
-// ATUALIZE sua função saveProduct para usar currentProdImageBase64
-function saveProduct() {
-    const name = document.getElementById('prod-name').value.trim();
-    const categoryId = document.getElementById('prod-category').value;
-    const price = document.getElementById('prod-price').value;
-    // Usa a imagem capturada no preview ou um placeholder se estiver vazio
-    const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
-
-    if (!name || !categoryId || !price) {
-        document.getElementById('alert-modal').classList.remove('hidden');
-        return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const currentSlug = params.get('s');
-    let stores = getStores();
-    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
-
-    if (storeIndex !== -1) {
-        if (!stores[storeIndex].products) stores[storeIndex].products = [];
-
-        const newProduct = {
-            id: Date.now().toString(),
-            name: name,
-            categoryId: categoryId,
-            price: parseFloat(price).toFixed(2),
-            image: image,
-            status: 'Ativo'
-        };
-
-        stores[storeIndex].products.push(newProduct);
-        setStores(stores);
-        
-        // Limpeza dos campos e variáveis
-        currentProdImageBase64 = "";
-        document.getElementById('prod-name').value = '';
-        document.getElementById('prod-price').value = '';
-        document.getElementById('prod-preview').classList.add('hidden');
-        
-        closeModal('product-modal');
-        renderProducts();
-    }
-}
-
-// ATUALIZE sua função updateProduct para usar currentEditImageBase64
-function updateProduct() {
-    const id = document.getElementById('edit-prod-id').value;
-    const name = document.getElementById('edit-prod-name').value.trim();
-    const categoryId = document.getElementById('edit-prod-category').value;
-    const price = document.getElementById('edit-prod-price').value;
-    // currentEditImageBase64 contém a imagem antiga ou a nova carregada no modal
-    const image = currentEditImageBase64; 
-
-    if (!name || !price) {
-        alert("Preencha o nome e o preço.");
-        return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const currentSlug = params.get('s');
-    let stores = getStores();
-    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
-
-    if (storeIndex !== -1) {
-        const prodIndex = stores[storeIndex].products.findIndex(p => p.id === id);
-        if (prodIndex !== -1) {
-            // Atualiza o objeto do produto mantendo o ID original
-            stores[storeIndex].products[prodIndex] = {
-                ...stores[storeIndex].products[prodIndex],
-                name: name,
-                categoryId: categoryId,
-                price: parseFloat(price).toFixed(2),
-                image: image
-            };
-            
-            setStores(stores);
-            currentEditImageBase64 = ""; // Reseta a variável temporária
-            closeModal('edit-product-modal');
-            renderProducts();
-        }
-    }
 }
 
 function previewImage(input, previewId) {

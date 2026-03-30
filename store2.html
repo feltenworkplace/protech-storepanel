@@ -109,6 +109,31 @@
     
     <div id="cart-overlay" onclick="toggleCart(false)" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden opacity-0 transition-opacity duration-300"></div>
 
+<div id="product-details-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeProductDetails()"></div>
+    
+    <div class="relative w-full max-w-3xl bg-[#0b0b0b] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black flex flex-col md:flex-row max-h-[90vh]">
+        
+        <button onclick="closeProductDetails()" class="absolute top-6 right-6 z-10 w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white hover:bg-white hover:text-black transition-all border border-white/10">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="w-full md:w-5/12 bg-black p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 min-h-[250px] shrink-0">
+            <img id="modal-prod-img" src="" class="w-full h-auto max-h-[300px] object-contain hover:scale-105 transition-transform duration-500">
+        </div>
+
+        <div class="w-full md:w-7/12 p-8 md:p-10 flex flex-col bg-[#0b0b0b] overflow-y-auto custom-scrollbar">
+            <h3 id="modal-prod-name" class="text-3xl font-black text-white mb-6 tracking-tight leading-tight">Nome do Produto</h3>
+            
+            <h4 class="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.2em] mb-3">Detalhes do Produto</h4>
+            
+            <p id="modal-prod-desc" class="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                Nenhuma descrição disponível.
+            </p>
+        </div>
+    </div>
+</div>
+
     <script src="cart.js"></script>
 <script>
     const STORAGE_KEYS = { stores: 'protech_stores_v1' };
@@ -212,6 +237,37 @@
     function toggleCatDrawer(show) {
         document.getElementById('cat-drawer').classList.toggle('-translate-x-full', !show);
     }
+
+    // Funções do Modal de Detalhes do Produto
+function openProductDetails(productId) {
+    const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+    const store = stores.find(s => s.slug === slug);
+    if (!store) return;
+
+    const product = (store.products || []).find(p => p.id === productId);
+    if (!product) return;
+
+    // Preencher os dados no modal limpo
+    document.getElementById('modal-prod-img').src = product.image;
+    document.getElementById('modal-prod-name').textContent = product.name;
+    
+    // Inserir a descrição 
+    const descElement = document.getElementById('modal-prod-desc');
+    if (product.description && product.description.trim() !== '') {
+        descElement.textContent = product.description;
+    } else {
+        descElement.textContent = "Nenhuma descrição detalhada disponível para este item.";
+    }
+
+    // Mostrar o modal
+    document.getElementById('product-details-modal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeProductDetails() {
+    document.getElementById('product-details-modal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
 
     document.addEventListener('DOMContentLoaded', loadStore);
 </script>

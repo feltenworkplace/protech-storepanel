@@ -995,101 +995,104 @@ select:focus option:checked {
     </div>
 
     <div id="product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('product-modal')"></div>
-        <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
-            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
-                <h3 class="text-xl font-black tracking-tight text-white">Novo Produto</h3>
-                <button onclick="closeModal('product-modal')" class="text-gray-500 hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('product-modal')"></div>
+    <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short flex flex-col max-h-[95vh]">
+        <div class="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
+            <h3 class="text-xl font-black tracking-tight text-white">Novo Produto</h3>
+            <button onclick="closeModal('product-modal')" class="text-gray-500 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5 overflow-y-auto custom-scrollbar">
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
+                <input type="text" id="prod-name" placeholder="Ex: Ak-47 Vulcan" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
             </div>
-            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="md:col-span-2">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
-                    <input type="text" id="prod-name" placeholder="Ex: Ak-47 Vulcan" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
-                    <div class="relative">
-                        <select id="prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
-                            <option value="">Selecionar...</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
-                    <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
-                    <textarea id="prod-desc" placeholder="Descreva os detalhes, vantagens e como o cliente receberá o produto..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-[#D4AF37] outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Imagem do Produto</label>
-                    <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
-                         onclick="document.getElementById('prod-file').click()"
-                         ondragover="handleDragOver(event)" 
-                         ondrop="handleDrop(event, 'prod-file', 'prod-preview')"> <input type="file" id="prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'prod-preview')">
-                        <img id="prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover">
-                        <p class="text-blue-500 text-[10px] font-bold">Clique para enviar <span class="text-gray-500">ou arraste</span></p>
-                    </div>
-                </div>
-                <div class="md:col-span-2 flex gap-3 pt-4">
-                    <button onclick="closeModal('product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
-                    <button onclick="saveProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Cadastrar</button>
+            <div>
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
+                <div class="relative">
+                    <select id="prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
+                        <option value="">Selecionar...</option>
+                    </select>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div id="edit-product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('edit-product-modal')"></div>
-<div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
-    <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
-        <h3 class="text-xl font-black tracking-tight text-white">Editar Produto</h3>
-        <button onclick="closeModal('edit-product-modal')" class="text-gray-500 hover:text-white transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-    </div>
-    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-        <input type="hidden" id="edit-prod-id"> 
-        <div class="md:col-span-2">
-            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
-            <input type="text" id="edit-prod-name" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-        </div>
-        <div>
-            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
-            <div class="relative">
-                <select id="edit-prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
-                </select>
+            <div>
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
+                <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
             </div>
-        </div>
-        <div>
-            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
-            <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-        </div>
-        <div class="md:col-span-2">
-            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
-            <textarea id="edit-prod-desc" placeholder="Detalhes, vantagens e entrega..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
-        </div>
-        <div class="md:col-span-2">
-            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Alterar Imagem</label>
-            <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
-                 onclick="document.getElementById('edit-prod-file').click()"
-                 ondragover="handleDragOver(event)" 
-                 ondrop="handleDrop(event, 'edit-prod-file', 'edit-prod-preview')">
-                <input type="file" id="edit-prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-prod-preview')">
-                <img id="edit-prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover border border-white/10">
-                <p class="text-blue-500 text-[10px] font-bold">Trocar arquivo <span class="text-gray-500">ou arraste</span></p>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
+                <textarea id="prod-desc" placeholder="Descreva os detalhes, vantagens e como o cliente receberá o produto..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-[#D4AF37] outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
             </div>
-        </div>
-        <div class="md:col-span-2 flex gap-3 pt-4">
-            <button onclick="closeModal('edit-product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
-            <button onclick="updateProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Alterações</button>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Imagem do Produto</label>
+                <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
+                     onclick="document.getElementById('prod-file').click()"
+                     ondragover="handleDragOver(event)" 
+                     ondrop="handleDrop(event, 'prod-file', 'prod-preview')">
+                    <input type="file" id="prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'prod-preview')">
+                    <img id="prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover">
+                    <p class="text-blue-500 text-[10px] font-bold">Clique para enviar <span class="text-gray-500">ou arraste</span></p>
+                </div>
+            </div>
+            <div class="md:col-span-2 flex gap-3 pt-4">
+                <button onclick="closeModal('product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+                <button onclick="saveProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Cadastrar</button>
+            </div>
         </div>
     </div>
 </div>
+
+    <div id="edit-product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('edit-product-modal')"></div>
+    <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short flex flex-col max-h-[95vh]">
+        <div class="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
+            <h3 class="text-xl font-black tracking-tight text-white">Editar Produto</h3>
+            <button onclick="closeModal('edit-product-modal')" class="text-gray-500 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5 overflow-y-auto custom-scrollbar">
+            <input type="hidden" id="edit-prod-id"> 
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
+                <input type="text" id="edit-prod-name" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
+                <div class="relative">
+                    <select id="edit-prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
+                <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
+                <textarea id="edit-prod-desc" placeholder="Detalhes, vantagens e entrega..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Alterar Imagem</label>
+                <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
+                     onclick="document.getElementById('edit-prod-file').click()"
+                     ondragover="handleDragOver(event)" 
+                     ondrop="handleDrop(event, 'edit-prod-file', 'edit-prod-preview')">
+                    <input type="file" id="edit-prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-prod-preview')">
+                    <img id="edit-prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover border border-white/10">
+                    <p class="text-blue-500 text-[10px] font-bold">Trocar arquivo <span class="text-gray-500">ou arraste</span></p>
+                </div>
+            </div>
+            <div class="md:col-span-2 flex gap-3 pt-4">
+                <button onclick="closeModal('edit-product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+                <button onclick="updateProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Alterações</button>
+            </div>
+        </div>
     </div>
+</div>
 
     <div id="coupon-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('coupon-modal')"></div>
@@ -1753,7 +1756,7 @@ function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
     const categoryId = document.getElementById('prod-category').value;
     const price = document.getElementById('prod-price').value;
-    const description = document.getElementById('prod-desc').value.trim(); // <--- NOVA LINHA
+    const desc = document.getElementById('prod-desc').value.trim(); // <--- AGORA ELE LÊ A DESCRIÇÃO
     const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
 
     if (!name || !categoryId || !price) {
@@ -1774,7 +1777,7 @@ function saveProduct() {
             name: name,
             categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
-            description: description,
+            description: desc,
             image: image,
             status: 'Ativo'
         };
@@ -1782,15 +1785,15 @@ function saveProduct() {
         stores[storeIndex].products.push(newProduct);
         setStores(stores);
         
-        // Limpeza
         currentProdImageBase64 = "";
         document.getElementById('prod-name').value = '';
         document.getElementById('prod-price').value = '';
-        document.getElementById('prod-desc').value = '';
+        document.getElementById('prod-desc').value = ''; // Limpa o campo
         document.getElementById('prod-preview').classList.add('hidden');
         
         closeModal('product-modal');
         renderProducts();
+        showSuccess("Produto cadastrado com sucesso!");
     }
 }
 
@@ -1929,10 +1932,7 @@ function openEditProductModal(productId) {
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     document.getElementById('edit-prod-price').value = product.price;
-    
-    // Carrega a descrição (se o produto já tiver uma)
-    const descField = document.getElementById('edit-prod-desc');
-    if (descField) descField.value = product.description || '';
+    document.getElementById('edit-prod-desc').value = product.description || ''; // <--- CARREGA A DESCRIÇÃO
     
     const editSelect = document.getElementById('edit-prod-category');
     editSelect.innerHTML = (store.categories || []).map(cat => `<option value="${cat.id}">${cat.nome}</option>`).join('');
@@ -1941,25 +1941,22 @@ function openEditProductModal(productId) {
     const imgPreview = document.getElementById('edit-prod-preview');
     imgPreview.src = product.image;
     imgPreview.classList.remove('hidden');
-    currentEditImageBase64 = product.image; // Guarda a imagem atual
+    currentEditImageBase64 = product.image;
 
     document.getElementById('edit-product-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
 }
 
-// SALVA AS ALTERAÇÕES DO PRODUTO DE FATO
 function updateProduct() {
     const id = document.getElementById('edit-prod-id').value;
     const name = document.getElementById('edit-prod-name').value.trim();
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = document.getElementById('edit-prod-price').value;
-    const descField = document.getElementById('edit-prod-desc');
-    const description = descField ? descField.value.trim() : '';
+    const desc = document.getElementById('edit-prod-desc').value.trim(); // <--- LÊ A DESCRIÇÃO EDITADA
     const image = currentEditImageBase64; 
 
     if (!name || !price) {
-        const alertModal = document.getElementById('alert-modal');
-        if (alertModal) alertModal.classList.remove('hidden');
+        alert("Preencha o nome e o preço.");
         return;
     }
 
@@ -1971,13 +1968,12 @@ function updateProduct() {
     if (storeIndex !== -1) {
         const prodIndex = stores[storeIndex].products.findIndex(p => p.id === id);
         if (prodIndex !== -1) {
-            // Atualiza o produto mantendo as coisas que não mudaram
             stores[storeIndex].products[prodIndex] = {
                 ...stores[storeIndex].products[prodIndex],
                 name: name,
                 categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
-                description: description, // Salva a nova descrição
+                description: desc, // <--- SALVA A EDIÇÃO
                 image: image
             };
             
@@ -1985,7 +1981,7 @@ function updateProduct() {
             currentEditImageBase64 = ""; 
             closeModal('edit-product-modal');
             renderProducts();
-            showSuccess("Produto atualizado com sucesso!"); // Notificação visual bonita
+            showSuccess("Produto atualizado!");
         }
     }
 }

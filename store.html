@@ -128,6 +128,31 @@
 </div>
 <div id="cart-overlay" onclick="toggleCart(false)" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden opacity-0 transition-opacity duration-300"></div>
 
+<div id="product-details-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeProductDetails()"></div>
+    
+    <div class="relative w-full max-w-3xl bg-white rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+        
+        <button onclick="closeProductDetails()" class="absolute top-6 right-6 z-10 w-10 h-10 bg-black/5 rounded-full flex items-center justify-center text-black hover:bg-black hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="w-full md:w-5/12 bg-gray-50 p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 min-h-[250px] shrink-0">
+            <img id="modal-prod-img" src="" class="w-full h-auto max-h-[300px] object-contain hover:scale-105 transition-transform duration-500">
+        </div>
+
+        <div class="w-full md:w-7/12 p-8 md:p-10 flex flex-col bg-white overflow-y-auto custom-scrollbar">
+            <h3 id="modal-prod-name" class="text-3xl font-black text-black mb-6 tracking-tight leading-tight">Nome do Produto</h3>
+            
+            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Detalhes do Produto</h4>
+            
+            <p id="modal-prod-desc" class="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                Nenhuma descrição disponível.
+            </p>
+        </div>
+    </div>
+</div>
+
 <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] space-y-2 pointer-events-none"></div>
 <script src="cart.js"></script>
     <script>
@@ -278,16 +303,11 @@ function openProductDetails(productId) {
     const product = (store.products || []).find(p => p.id === productId);
     if (!product) return;
 
-    // Achar o nome da categoria do produto
-    const category = (store.categories || []).find(c => c.id === product.categoryId);
-
-    // Preencher os dados no modal
+    // Preencher os dados no modal limpo (sem preço, categoria ou botão)
     document.getElementById('modal-prod-img').src = product.image;
     document.getElementById('modal-prod-name').textContent = product.name;
-    document.getElementById('modal-prod-price').textContent = `R$ ${product.price}`;
-    document.getElementById('modal-prod-category').textContent = category ? category.nome : 'Sem Categoria';
     
-    // Inserir a descrição (se houver, senão mostra texto padrão)
+    // Inserir a descrição 
     const descElement = document.getElementById('modal-prod-desc');
     if (product.description && product.description.trim() !== '') {
         descElement.textContent = product.description;
@@ -295,21 +315,14 @@ function openProductDetails(productId) {
         descElement.textContent = "Nenhuma descrição detalhada disponível para este item.";
     }
 
-    // Configurar o botão de adicionar ao carrinho para usar o ID deste produto
-    const buyBtn = document.getElementById('modal-buy-btn');
-    buyBtn.onclick = function() {
-        addToCart(product.id);
-        closeProductDetails(); // Fecha o modal após adicionar
-    };
-
     // Mostrar o modal
     document.getElementById('product-details-modal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden'); // Trava o scroll do fundo
+    document.body.classList.add('overflow-hidden'); // Trava o scroll da página principal
 }
 
 function closeProductDetails() {
     document.getElementById('product-details-modal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden'); // Destrava o scroll do fundo
+    document.body.classList.remove('overflow-hidden'); // Destrava o scroll
 }
     </script>
 </body>

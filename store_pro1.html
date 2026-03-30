@@ -106,6 +106,34 @@
     </div>
     
     <div id="cart-overlay" onclick="toggleCart(false)" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden opacity-0 transition-opacity duration-300"></div>
+    
+    <div id="product-details-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="closeProductDetails()"></div>
+    
+    <div class="relative w-full max-w-4xl pro-card overflow-hidden shadow-[0_0_50px_rgba(212,175,55,0.05)] flex flex-col md:flex-row max-h-[90vh]">
+        
+        <button onclick="closeProductDetails()" class="absolute top-6 right-6 z-10 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-[#D4AF37] hover:text-black transition-all border border-white/10">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="w-full md:w-1/2 bg-zinc-900/40 p-10 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/5 relative min-h-[300px] shrink-0">
+            <div class="absolute top-6 left-6 glass-badge px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.3em] text-[#D4AF37]">Premium Item</div>
+            <img id="modal-prod-img" src="" class="w-full h-auto max-h-[400px] object-contain drop-shadow-[0_20px_50px_rgba(212,175,55,0.15)] hover:scale-105 transition-transform duration-700">
+        </div>
+
+        <div class="w-full md:w-1/2 p-10 flex flex-col bg-black/20 overflow-y-auto custom-scrollbar">
+            <h3 id="modal-prod-name" class="text-3xl md:text-4xl font-black text-white mb-6 tracking-tighter uppercase leading-tight">Nome do Produto</h3>
+            
+            <div class="h-px w-16 bg-[#D4AF37] mb-8"></div>
+            
+            <h4 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4">Sobre a Edição</h4>
+            
+            <p id="modal-prod-desc" class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                Nenhuma descrição disponível.
+            </p>
+        </div>
+    </div>
+</div>
     <script src="cart.js"></script>
     <script>
         const STORAGE_KEYS = { stores: 'protech_stores_v1' };
@@ -187,9 +215,12 @@ function resetFilter() {
                             <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none">Preço</span>
                             <span class="text-xl font-black text-[#D4AF37]">R$ ${prod.price}</span>
                         </div>
-                        <button onclick="addToCart('${prod.id}')" class="w-12 h-12 bg-white text-black rounded-2xl flex items-center justify-center hover:bg-[#D4AF37] transition-all transform active:scale-90">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openProductDetails('${prod.id}')" class="w-12 h-12 bg-zinc-900 border border-white/10 text-white rounded-2xl flex items-center justify-center hover:bg-white hover:text-black transition-all transform active:scale-90 font-black text-xl pb-2" title="Ver Detalhes">...</button>
+                            <button onclick="addToCart('${prod.id}')" class="w-12 h-12 bg-white text-black rounded-2xl flex items-center justify-center hover:bg-[#D4AF37] transition-all transform active:scale-90" title="Adicionar">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -201,6 +232,36 @@ function resetFilter() {
             const filtered = store.products.filter(p => p.categoryId === id);
             document.getElementById('current-cat-display').innerText = name;
             renderProducts(filtered);
+        }
+
+        function openProductDetails(productId) {
+            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+            const store = stores.find(s => s.slug === slug);
+            if (!store) return;
+
+            const product = (store.products || []).find(p => p.id === productId);
+            if (!product) return;
+
+            // Preenche imagem e nome
+            document.getElementById('modal-prod-img').src = product.image;
+            document.getElementById('modal-prod-name').textContent = product.name;
+            
+            // Preenche a descrição com fallback elegante
+            const descElement = document.getElementById('modal-prod-desc');
+            if (product.description && product.description.trim() !== '') {
+                descElement.textContent = product.description;
+            } else {
+                descElement.textContent = "Edição exclusiva sem descrição detalhada. Item de coleção premium.";
+            }
+
+            // Exibe o modal travando o fundo
+            document.getElementById('product-details-modal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeProductDetails() {
+            document.getElementById('product-details-modal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
         }
 
         document.addEventListener('DOMContentLoaded', loadStore);

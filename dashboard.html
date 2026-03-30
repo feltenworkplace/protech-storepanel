@@ -1044,46 +1044,51 @@ select:focus option:checked {
 
     <div id="edit-product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('edit-product-modal')"></div>
-        <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
-            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
-                <h3 class="text-xl font-black tracking-tight text-white">Editar Produto</h3>
-                <button onclick="closeModal('edit-product-modal')" class="text-gray-500 hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-                <input type="hidden" id="edit-prod-id"> <div class="md:col-span-2">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
-                    <input type="text" id="edit-prod-name" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
-                    <div class="relative">
-                        <select id="edit-prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
-                            </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
-                    <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Alterar Imagem</label>
-                    <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
-                         onclick="document.getElementById('edit-prod-file').click()"
-                         ondragover="handleDragOver(event)" 
-                         ondrop="handleDrop(event, 'edit-prod-file', 'edit-prod-preview')">
-                        <input type="file" id="edit-prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-prod-preview')">
-                        <img id="edit-prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover">
-                        <p class="text-blue-500 text-[10px] font-bold">Trocar arquivo <span class="text-gray-500">ou arraste</span></p>
-                    </div>
-                </div>
-                <div class="md:col-span-2 flex gap-3 pt-4">
-                    <button onclick="closeModal('edit-product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
-                    <button onclick="updateProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Alterações</button>
-                </div>
+<div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+    <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+        <h3 class="text-xl font-black tracking-tight text-white">Editar Produto</h3>
+        <button onclick="closeModal('edit-product-modal')" class="text-gray-500 hover:text-white transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <input type="hidden" id="edit-prod-id"> 
+        <div class="md:col-span-2">
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
+            <input type="text" id="edit-prod-name" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
+            <div class="relative">
+                <select id="edit-prod-category" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
+                </select>
             </div>
         </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
+            <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+        </div>
+        <div class="md:col-span-2">
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
+            <textarea id="edit-prod-desc" placeholder="Detalhes, vantagens e entrega..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
+        </div>
+        <div class="md:col-span-2">
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Alterar Imagem</label>
+            <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
+                 onclick="document.getElementById('edit-prod-file').click()"
+                 ondragover="handleDragOver(event)" 
+                 ondrop="handleDrop(event, 'edit-prod-file', 'edit-prod-preview')">
+                <input type="file" id="edit-prod-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-prod-preview')">
+                <img id="edit-prod-preview" src="" class="hidden h-20 mx-auto mb-2 rounded-lg object-cover border border-white/10">
+                <p class="text-blue-500 text-[10px] font-bold">Trocar arquivo <span class="text-gray-500">ou arraste</span></p>
+            </div>
+        </div>
+        <div class="md:col-span-2 flex gap-3 pt-4">
+            <button onclick="closeModal('edit-product-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
+            <button onclick="updateProduct()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
     </div>
 
     <div id="coupon-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -1911,9 +1916,8 @@ function executeProductDelete() {
     }
 }
 
-// Abre o modal carregando os dados do produto
+// ABRE O MODAL E CARREGA OS DADOS ANTIGOS DO PRODUTO
 function openEditProductModal(productId) {
-    // Limpa o seletor de arquivo de edição
     document.getElementById('edit-prod-file').value = "";
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -1922,13 +1926,14 @@ function openEditProductModal(productId) {
 
     if (!product) return;
 
-    // Preenche os campos
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     document.getElementById('edit-prod-price').value = product.price;
-    document.getElementById('edit-prod-desc').value = product.description || '';
     
-    // Atualiza o seletor de categoria e o preview da imagem
+    // Carrega a descrição (se o produto já tiver uma)
+    const descField = document.getElementById('edit-prod-desc');
+    if (descField) descField.value = product.description || '';
+    
     const editSelect = document.getElementById('edit-prod-category');
     editSelect.innerHTML = (store.categories || []).map(cat => `<option value="${cat.id}">${cat.nome}</option>`).join('');
     editSelect.value = product.categoryId;
@@ -1936,23 +1941,25 @@ function openEditProductModal(productId) {
     const imgPreview = document.getElementById('edit-prod-preview');
     imgPreview.src = product.image;
     imgPreview.classList.remove('hidden');
-    currentEditImageBase64 = product.image; // Mantém a imagem atual se não trocar
+    currentEditImageBase64 = product.image; // Guarda a imagem atual
 
     document.getElementById('edit-product-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
 }
 
-// Salva as alterações no localStorage
+// SALVA AS ALTERAÇÕES DO PRODUTO DE FATO
 function updateProduct() {
     const id = document.getElementById('edit-prod-id').value;
     const name = document.getElementById('edit-prod-name').value.trim();
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = document.getElementById('edit-prod-price').value;
-    const description = document.getElementById('edit-prod-desc').value.trim(); // <--- NOVA LINHA
+    const descField = document.getElementById('edit-prod-desc');
+    const description = descField ? descField.value.trim() : '';
     const image = currentEditImageBase64; 
 
     if (!name || !price) {
-        alert("Preencha o nome e o preço.");
+        const alertModal = document.getElementById('alert-modal');
+        if (alertModal) alertModal.classList.remove('hidden');
         return;
     }
 
@@ -1964,12 +1971,13 @@ function updateProduct() {
     if (storeIndex !== -1) {
         const prodIndex = stores[storeIndex].products.findIndex(p => p.id === id);
         if (prodIndex !== -1) {
+            // Atualiza o produto mantendo as coisas que não mudaram
             stores[storeIndex].products[prodIndex] = {
                 ...stores[storeIndex].products[prodIndex],
                 name: name,
                 categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
-                description: description, // <--- ATUALIZANDO A DESCRIÇÃO
+                description: description, // Salva a nova descrição
                 image: image
             };
             
@@ -1977,12 +1985,11 @@ function updateProduct() {
             currentEditImageBase64 = ""; 
             closeModal('edit-product-modal');
             renderProducts();
+            showSuccess("Produto atualizado com sucesso!"); // Notificação visual bonita
         }
     }
 }
 
-// Salva todas as configurações de visual
-// dashboard.html
 // dashboard.html
 function saveTemplateSettings() {
     const params = new URLSearchParams(window.location.search);
@@ -2061,23 +2068,6 @@ function uploadTemplateImage(input, type) {
         }
     };
     reader.readAsDataURL(file);
-}
-
-function updateProduct() {
-    // ... capturas existentes ...
-    const image = document.getElementById('edit-prod-image').value.trim(); // Nova captura
-
-    // ... lógica de encontrar a loja e o produto ...
-    if (prodIndex !== -1) {
-        stores[storeIndex].products[prodIndex].name = name;
-        stores[storeIndex].products[prodIndex].categoryId = categoryId;
-        stores[storeIndex].products[prodIndex].price = parseFloat(price).toFixed(2);
-        stores[storeIndex].products[prodIndex].image = image || 'https://via.placeholder.com/300'; // Salva a imagem
-        
-        setStores(stores);
-        closeModal('edit-product-modal');
-        renderProducts();
-    }
 }
 
 // Variáveis temporárias para armazenar o Base64 das imagens

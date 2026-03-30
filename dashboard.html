@@ -1021,6 +1021,10 @@ select:focus option:checked {
                     <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
                 </div>
                 <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
+                    <textarea id="prod-desc" placeholder="Descreva os detalhes, vantagens e como o cliente receberá o produto..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-[#D4AF37] outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
+                </div>
+                <div class="md:col-span-2">
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Imagem do Produto</label>
                     <div class="glass border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-gold/30 transition cursor-pointer relative" 
                          onclick="document.getElementById('prod-file').click()"
@@ -1744,7 +1748,7 @@ function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
     const categoryId = document.getElementById('prod-category').value;
     const price = document.getElementById('prod-price').value;
-    // Pega a imagem que foi carregada no preview (Base64) ou o placeholder
+    const description = document.getElementById('prod-desc').value.trim(); // <--- NOVA LINHA
     const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
 
     if (!name || !categoryId || !price) {
@@ -1762,9 +1766,10 @@ function saveProduct() {
 
         const newProduct = {
             id: Date.now().toString(),
-            name,
-            categoryId,
+            name: name,
+            categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
+            description: description,
             image: image,
             status: 'Ativo'
         };
@@ -1772,9 +1777,13 @@ function saveProduct() {
         stores[storeIndex].products.push(newProduct);
         setStores(stores);
         
-        // Limpeza Completa
+        // Limpeza
         currentProdImageBase64 = "";
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-price').value = '';
+        document.getElementById('prod-desc').value = '';
         document.getElementById('prod-preview').classList.add('hidden');
+        
         closeModal('product-modal');
         renderProducts();
     }
@@ -1917,6 +1926,7 @@ function openEditProductModal(productId) {
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     document.getElementById('edit-prod-price').value = product.price;
+    document.getElementById('edit-prod-desc').value = product.description || '';
     
     // Atualiza o seletor de categoria e o preview da imagem
     const editSelect = document.getElementById('edit-prod-category');
@@ -1938,9 +1948,13 @@ function updateProduct() {
     const name = document.getElementById('edit-prod-name').value.trim();
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = document.getElementById('edit-prod-price').value;
-    const image = currentEditImageBase64; // Usa a imagem atual ou a nova carregada
+    const description = document.getElementById('edit-prod-desc').value.trim(); // <--- NOVA LINHA
+    const image = currentEditImageBase64; 
 
-    if (!name || !price) return;
+    if (!name || !price) {
+        alert("Preencha o nome e o preço.");
+        return;
+    }
 
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -1952,14 +1966,15 @@ function updateProduct() {
         if (prodIndex !== -1) {
             stores[storeIndex].products[prodIndex] = {
                 ...stores[storeIndex].products[prodIndex],
-                name,
-                categoryId,
+                name: name,
+                categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
-                image
+                description: description, // <--- ATUALIZANDO A DESCRIÇÃO
+                image: image
             };
             
             setStores(stores);
-            currentEditImageBase64 = "";
+            currentEditImageBase64 = ""; 
             closeModal('edit-product-modal');
             renderProducts();
         }

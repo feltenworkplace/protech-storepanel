@@ -78,6 +78,40 @@
         <div id="product-grid" class="grid grid-cols-1 md:grid-cols-4 gap-8 mt-12"></div>
     </main>
 
+<div id="product-details-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeProductDetails()"></div>
+    
+    <div class="relative w-full max-w-2xl bg-white rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+        
+        <button onclick="closeProductDetails()" class="absolute top-6 right-6 z-10 w-10 h-10 bg-black/5 rounded-full flex items-center justify-center text-black hover:bg-black hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="w-full md:w-1/2 bg-gray-50 p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 min-h-[250px]">
+            <img id="modal-prod-img" src="" class="w-full h-auto max-h-[300px] object-contain hover:scale-105 transition-transform duration-500">
+        </div>
+
+        <div class="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-between bg-white overflow-y-auto custom-scrollbar">
+            <div>
+                <p id="modal-prod-category" class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-2">Categoria</p>
+                <h3 id="modal-prod-name" class="text-2xl font-black text-black mb-4 tracking-tight leading-tight">Nome do Produto</h3>
+                <p id="modal-prod-price" class="text-3xl font-black text-[#D4AF37] mb-6 tracking-tighter">R$ 0,00</p>
+                
+                <div class="w-full h-[1px] bg-gray-100 mb-6"></div>
+                
+                <h4 class="text-[10px] font-black text-black uppercase tracking-widest mb-3">Sobre o Produto</h4>
+                <p id="modal-prod-desc" class="text-sm text-gray-500 leading-relaxed whitespace-pre-wrap">Nenhuma descrição disponível para este produto.</p>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <button id="modal-buy-btn" class="w-full py-4 bg-black text-white rounded-2xl flex items-center justify-center hover:bg-[#D4AF37] hover:text-black transition-all duration-300 shadow-xl active:scale-[0.98]">
+                    <span class="text-sm font-black tracking-widest uppercase">Adicionar ao Carrinho</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-[#050505] border-l border-white/10 z-[100] transform translate-x-full transition-transform duration-300">
     <div class="h-full flex flex-col p-6">
         <div class="flex justify-between items-center mb-8">
@@ -144,7 +178,7 @@ function renderProductCard(prod) {
                     <button onclick="addToCart('${prod.id}')" class="flex-grow py-4 bg-[#D4AF37] text-black rounded-2xl flex items-center justify-center hover:bg-black hover:text-[#D4AF37] transition-all duration-300 shadow-lg shadow-[#D4AF37]/20 active:scale-[0.97]">
                         <span class="text-sm font-black tracking-tighter">R$ ${prod.price}</span>
                     </button>
-                    <button class="w-14 h-14 shrink-0 border border-gray-100 bg-gray-50/50 rounded-2xl text-black flex items-center justify-center hover:bg-black hover:text-white transition-all font-black text-lg">...</button>
+                    <button onclick="openProductDetails('${prod.id}')" class="w-14 h-14 shrink-0 border border-gray-100 bg-gray-50/50 rounded-2xl text-black flex items-center justify-center hover:bg-black hover:text-white transition-all font-black text-lg" title="Ver Detalhes">...</button>
                 </div>
             </div>
         </div>`;
@@ -243,6 +277,48 @@ function showToast(productName) {
         toast.style.transition = 'all 0.5s ease';
         setTimeout(() => toast.remove(), 500);
     }, 2500);
+}
+
+function openProductDetails(productId) {
+    const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+    const store = stores.find(s => s.slug === slug);
+    if (!store) return;
+
+    const product = (store.products || []).find(p => p.id === productId);
+    if (!product) return;
+
+    // Achar o nome da categoria do produto
+    const category = (store.categories || []).find(c => c.id === product.categoryId);
+
+    // Preencher os dados no modal
+    document.getElementById('modal-prod-img').src = product.image;
+    document.getElementById('modal-prod-name').textContent = product.name;
+    document.getElementById('modal-prod-price').textContent = `R$ ${product.price}`;
+    document.getElementById('modal-prod-category').textContent = category ? category.nome : 'Sem Categoria';
+    
+    // Inserir a descrição (se houver, senão mostra texto padrão)
+    const descElement = document.getElementById('modal-prod-desc');
+    if (product.description && product.description.trim() !== '') {
+        descElement.textContent = product.description;
+    } else {
+        descElement.textContent = "Nenhuma descrição detalhada disponível para este item.";
+    }
+
+    // Configurar o botão de adicionar ao carrinho para usar o ID deste produto
+    const buyBtn = document.getElementById('modal-buy-btn');
+    buyBtn.onclick = function() {
+        addToCart(product.id);
+        closeProductDetails(); // Fecha o modal após adicionar
+    };
+
+    // Mostrar o modal
+    document.getElementById('product-details-modal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden'); // Trava o scroll do fundo
+}
+
+function closeProductDetails() {
+    document.getElementById('product-details-modal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden'); // Destrava o scroll do fundo
 }
     </script>
 </body>

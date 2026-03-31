@@ -2182,6 +2182,7 @@ function showSuccess(message) {
     }
 }
 
+// Processa o pagamento, define o novo plano e calcula os dias
 function upgradeAccount(planName) {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return alert("Erro: Usuário não identificado.");
@@ -2192,33 +2193,74 @@ function upgradeAccount(planName) {
         'LEGEND': { stores: 10, items: 30 }
     };
 
+    const now = Date.now();
+    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+    
+    // Se ele está renovando o MESMO plano e ainda tem tempo sobrando, soma o tempo!
+    if (user.plan === planName && user.planExpiresAt && user.planExpiresAt > now) {
+        user.planExpiresAt += thirtyDaysInMs;
+    } else {
+        // Se ele fez upgrade/downgrade de plano ou estava com a conta vencida, zera pra 30 dias a partir de agora.
+        user.planExpiresAt = now + thirtyDaysInMs;
+    }
+
     user.plan = planName;
     user.limits = planLimits[planName];
-    
-    // Adiciona 30 dias exatos a partir do momento da compra
-    user.planExpiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); 
 
     localStorage.setItem('usuarioLogado', JSON.stringify(user));
-    showSuccess(`Plano ${planName} ativado por 30 dias!`);
+    
+    showSuccess(`Pagamento aprovado! Plano ${planName} ativado.`);
+    
+    // Destrava a tela e recarrega o painel limpo após 1.5 segundos
     setTimeout(() => window.location.reload(), 1500);
 }
 
 // Lógica para Renovar (Botão da barra de aviso)
+// Abre a Área de Checkout para Renovar ou Trocar de Plano
 function renewPlan() {
-    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-    if (!user || !user.plan) return;
-
-    const now = Date.now();
-    // Se já estiver expirado, ganha 30 dias a partir de hoje. Se ainda tiver tempo, SOMA 30 dias ao que já tem.
-    if (!user.planExpiresAt || user.planExpiresAt < now) {
-        user.planExpiresAt = now + (30 * 24 * 60 * 60 * 1000);
-    } else {
-        user.planExpiresAt += (30 * 24 * 60 * 60 * 1000);
-    }
+    const viewStores = document.getElementById('view-stores');
+    const storeDash = document.getElementById('view-store-dashboard');
     
-    localStorage.setItem('usuarioLogado', JSON.stringify(user));
-    showSuccess(`Plano renovado com sucesso por +30 dias!`);
-    setTimeout(() => window.location.reload(), 1500);
+    // Esconde o dashboard da loja se estiver aberto para focar no pagamento
+    if (storeDash) storeDash.classList.add('hidden');
+    
+    if (viewStores) {
+        viewStores.classList.remove('hidden');
+        // Injeta a tela de Checkout na tela principal
+        viewStores.innerHTML = `
+            <div class="max-w-5xl mx-auto py-10 animate-bounce-short">
+                <div class="text-center mb-12">
+                    <div class="w-16 h-16 bg-gold/10 text-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-gold/20">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-white uppercase">Checkout de Assinatura</h2>
+                    <p class="text-sm text-gray-500 mt-3 uppercase tracking-[0.2em]">Escolha seu plano para renovar ou fazer upgrade</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                    <div class="glass rounded-[2rem] p-8 border-green-400/20 flex flex-col h-full hover:border-green-400/50 transition-all bg-zinc-900/40">
+                        <h3 class="text-xl font-black text-white mb-2 uppercase">VIP</h3>
+                        <p class="text-[10px] text-green-400 font-black uppercase tracking-widest mb-6">Starter</p>
+                        <div class="mb-8"><span class="text-4xl font-black text-green-400">R$ 14,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
+                        <button onclick="upgradeAccount('VIP')" class="w-full py-4 mt-auto rounded-2xl border border-green-400/30 text-green-400 text-xs font-black uppercase hover:bg-green-400 hover:text-black transition tracking-widest shadow-lg shadow-green-400/10">Pagar VIP</button>
+                    </div>
+                    <div class="glass rounded-[2rem] p-8 border-pink-500/30 flex flex-col h-full bg-zinc-900/40 hover:border-pink-500/60 transition-all relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-pink-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl">Popular</div>
+                        <h3 class="text-xl font-black text-white mb-2 uppercase">PRO</h3>
+                        <p class="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-6">Elite</p>
+                        <div class="mb-8"><span class="text-4xl font-black text-pink-500">R$ 29,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
+                        <button onclick="upgradeAccount('PRO')" class="w-full py-4 mt-auto rounded-2xl border border-pink-500/40 text-pink-500 text-xs font-black uppercase hover:bg-pink-500 hover:text-black transition tracking-widest shadow-lg shadow-pink-500/10">Pagar PRO</button>
+                    </div>
+                    <div class="glass rounded-[2rem] p-8 border-cyan-400/20 flex flex-col h-full bg-zinc-900/40 hover:border-cyan-400/50 transition-all">
+                        <h3 class="text-xl font-black text-white mb-2 uppercase">LEGEND</h3>
+                        <p class="text-[10px] text-cyan-400 font-black uppercase tracking-widest mb-6">Expert</p>
+                        <div class="mb-8"><span class="text-4xl font-black text-cyan-400">R$ 59,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
+                        <button onclick="upgradeAccount('LEGEND')" class="w-full py-4 mt-auto rounded-2xl border border-cyan-400/30 text-cyan-400 text-xs font-black uppercase hover:bg-cyan-400 hover:text-black transition tracking-widest shadow-lg shadow-cyan-400/10">Pagar LEGEND</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Verifica o vencimento sempre que a página carrega

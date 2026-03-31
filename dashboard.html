@@ -1499,20 +1499,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const cores = { 'VIP': '#22C55E', 'PRO': '#EC4899', 'LEGEND': '#06B6D4' };
         const corHex = cores[plano] || '#FFFFFF';
         
-        let statusHtml = '<p class="text-[10px] text-gold font-bold uppercase tracking-widest leading-none mt-1">Vitalício</p>';
+        let statusHtml = '<p class="text-[10px] text-gold font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Vitalício</p>';
         
         if (user.planExpiresAt) {
             const daysLeft = Math.ceil((user.planExpiresAt - Date.now()) / (1000 * 60 * 60 * 24));
             if (daysLeft > 0) {
-                statusHtml = `<p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Expira em ${daysLeft} dia(s)</p>`;
+                statusHtml = `<p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Expira em ${daysLeft} dia(s)</p>`;
             } else {
-                statusHtml = `<p class="text-[10px] text-rose-500 font-bold uppercase tracking-widest leading-none mt-1 animate-pulse">Plano Expirado</p>`;
+                statusHtml = `<p class="text-[10px] text-rose-500 font-bold uppercase tracking-widest leading-none mt-1 animate-pulse whitespace-nowrap">Plano Expirado</p>`;
             }
         }
 
         // Esta é a parte que reconstrói as linhas para os dois lugares
         const planHtml = `
-            <p class="text-xs font-bold text-white" id="user-plan-text">
+            <p class="text-xs font-bold text-white whitespace-nowrap" id="user-plan-text">
                 <span style="color: ${corHex}">${plano}</span> PLAN
             </p>
             ${statusHtml}

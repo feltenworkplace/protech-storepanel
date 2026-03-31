@@ -104,29 +104,27 @@
         let upgradeIntent = JSON.parse(localStorage.getItem('checkout_intent'));
         let loggedUser = JSON.parse(localStorage.getItem('usuarioLogado'));
 
-        // Se veio do Dashboard (Renovação/Upgrade)
+        // Verifica de onde o usuário veio
         if (upgradeIntent && upgradeIntent.type === 'plataforma_subscription') {
             checkoutMode = 'upgrade';
             planToBuy = upgradeIntent.plan;
-        } 
-        // Se veio da tela de Registro (Novo usuário)
-        else if (tempUser) {
+        } else if (tempUser) {
             checkoutMode = 'signup';
             planToBuy = tempUser.plan;
         } else {
-            // Se cair aqui de paraquedas, manda pro login
             window.location.href = 'login.html';
         }
 
-        const prices = { 'VIP': '14,90', 'PRO': '29,90', 'LEGEND': '59,90' };
+        // Preços em formato numérico (IMPORTANTE PARA O SERVIDOR)
+        const prices = { 'VIP': 14.90, 'PRO': 29.90, 'LEGEND': 59.90 };
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Preenche os valores visuais do checkout com o plano correto
-            document.getElementById('plan-name').innerText = planToBuy;
-            document.getElementById('plan-price').innerText = `R$ ${prices[planToBuy] || '0,00'}`;
-            document.getElementById('total-price').innerText = `R$ ${prices[planToBuy] || '0,00'}`;
+            const precoFormatado = prices[planToBuy].toFixed(2).replace('.', ',');
             
-            // Auto-preenche os dados se o usuário já estiver logado
+            document.getElementById('plan-name').innerText = planToBuy;
+            document.getElementById('plan-price').innerText = `R$ ${precoFormatado}`;
+            document.getElementById('total-price').innerText = `R$ ${precoFormatado}`;
+            
             if (checkoutMode === 'upgrade' && loggedUser) {
                 document.getElementById('pay-email').value = loggedUser.email || '';
                 if (loggedUser.nome) {
@@ -166,14 +164,25 @@
             btn.innerText = "GERANDO PIX...";
 
             try {
-                // *** CORREÇÃO DO PREÇO AQUI ***
-                // 1. Pega o preço do plano escolhido e converte para número (ex: "29,90" vira 29.90)
-                const valorCobrado = parseFloat(prices[planToBuy].replace(',', '.'));
+                // PEGA O VALOR EXATO DO PLANO
+                const valorCobrado = prices[planToBuy];
 
-                // 2. Monta o envio pro servidor GARANTINDO que o valor exato seja enviado
-                const payloadPix = checkoutMode === 'upgrade' 
-                    ? { plan: planToBuy, price: valorCobrado, amount: valorCobrado, email: email, nome: name, sobrenome: surname, cpf: cpf }
-                    : { ...tempUser, plan: planToBuy, price: valorCobrado, amount: valorCobrado, nome: name, sobrenome: surname, cpf: cpf };
+                // Monta os dados garantindo que o valor vá para o servidor de várias formas
+                let payloadPix = {
+                    plan: planToBuy,
+                    price: valorCobrado,
+                    amount: valorCobrado,
+                    transaction_amount: valorCobrado, // Forma que o Mercado Pago exige
+                    valor: valorCobrado,
+                    nome: name,
+                    sobrenome: surname,
+                    cpf: cpf,
+                    email: email
+                };
+
+                if (checkoutMode === 'signup' && tempUser) {
+                    payloadPix.password = tempUser.password;
+                }
 
                 const responsePix = await fetch('https://storepanel-backend.onrender.com/generate-pix', {
                     method: 'POST',
@@ -198,13 +207,12 @@
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             
-                            // SE FOR RENOVAÇÃO / UPGRADE (DASHBOARD)
+                            // RENOVAÇÃO / UPGRADE (DASHBOARD)
                             if (checkoutMode === 'upgrade') {
                                 const planLimits = { 'VIP': { stores: 1, items: 10 }, 'PRO': { stores: 3, items: 15 }, 'LEGEND': { stores: 10, items: 30 } };
                                 const now = Date.now();
                                 const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
                                 
-                                // Soma os dias se for o mesmo plano, ou reseta pra 30 se trocou
                                 if (loggedUser.plan === planToBuy && loggedUser.planExpiresAt && loggedUser.planExpiresAt > now) {
                                     loggedUser.planExpiresAt += thirtyDaysInMs;
                                 } else {
@@ -215,12 +223,12 @@
                                 loggedUser.limits = planLimits[planToBuy];
                                 
                                 localStorage.setItem('usuarioLogado', JSON.stringify(loggedUser));
-                                localStorage.removeItem('checkout_intent'); // Limpa a intenção de compra
+                                localStorage.removeItem('checkout_intent');
                                 
-                                Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: `Seu plano ${planToBuy} foi ativado/renovado.`, confirmButtonColor: '#D4AF37' })
+                                Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: `Seu plano ${planToBuy} foi ativado.`, confirmButtonColor: '#D4AF37' })
                                 .then(() => window.location.href = 'dashboard.html');
 
-                            // SE FOR CADASTRO NOVO
+                            // CADASTRO NOVO
                             } else {
                                 const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
                                     method: 'POST',
@@ -247,7 +255,6 @@
             }
         }
 
-        // Função para permitir apenas letras e espaços
         function apenasLetras(e) {
             e.target.value = e.target.value.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '');
         }

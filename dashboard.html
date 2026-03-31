@@ -2195,37 +2195,10 @@ function showSuccess(message) {
     }
 }
 
-// Processa o pagamento, define o novo plano e calcula os dias
+// Redireciona o botão de Planos para o Checkout correto
 function upgradeAccount(planName) {
-    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-    if (!user) return alert("Erro: Usuário não identificado.");
-
-    const planLimits = {
-        'VIP': { stores: 1, items: 10 },
-        'PRO': { stores: 3, items: 15 },
-        'LEGEND': { stores: 10, items: 30 }
-    };
-
-    const now = Date.now();
-    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-    
-    // Se ele está renovando o MESMO plano e ainda tem tempo sobrando, soma o tempo!
-    if (user.plan === planName && user.planExpiresAt && user.planExpiresAt > now) {
-        user.planExpiresAt += thirtyDaysInMs;
-    } else {
-        // Se ele fez upgrade/downgrade de plano ou estava com a conta vencida, zera pra 30 dias a partir de agora.
-        user.planExpiresAt = now + thirtyDaysInMs;
-    }
-
-    user.plan = planName;
-    user.limits = planLimits[planName];
-
-    localStorage.setItem('usuarioLogado', JSON.stringify(user));
-    
-    showSuccess(`Pagamento aprovado! Plano ${planName} ativado.`);
-    
-    // Destrava a tela e recarrega o painel limpo após 1.5 segundos
-    setTimeout(() => window.location.reload(), 1500);
+    const prices = { 'VIP': 14.90, 'PRO': 29.90, 'LEGEND': 59.90 };
+    goToPlanCheckout(planName, prices[planName]);
 }
 
 // Abre a Área de Checkout para Renovar ou Trocar de Plano
@@ -2612,14 +2585,6 @@ function executeCouponDelete() {
         couponIdToDelete = null;
     }
 }
-
-// Dentro da parte que você clica em OK no modal do PIX:
-sessionStorage.setItem('userLogado', JSON.stringify({ 
-    nome: name, 
-    email: email, 
-    plan: tempUser.plan 
-}));
-window.location.href = 'dashboard.html';
     </script>
 </body>
 </html>

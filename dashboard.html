@@ -297,14 +297,20 @@ select:focus option:checked {
                 </button>
                 <p class="text-xs md:text-sm text-gray-400 italic">Boa noite, <span id="nome-usuario-header" class="text-white font-bold">Carregando...</span>. Bem-vindo à sua <span class="text-gold">plataforma de marketplace</span>.</p>
             </div>
-            <div class="flex items-center space-x-4">
-                <div class="hidden lg:block text-right">
+            <div class="flex items-center space-x-4 relative">
+                <div class="hidden lg:block text-right" id="desktop-plan-container">
                     <p id="user-plan-text" class="text-[10px] font-black text-white uppercase tracking-[0.15em]">
                         Expert PLAN
                     </p>
                 </div>
-                <div class="w-10 h-10 flex-shrink-0 aspect-square rounded-xl border border-gold/40 p-0.5 overflow-hidden bg-zinc-900">
-                    <img id="user-avatar" src="" class="w-full h-full rounded-lg object-cover">
+                
+                <div onclick="toggleMobilePlanPopup()" class="w-10 h-10 flex-shrink-0 aspect-square rounded-xl border border-gold/40 p-0.5 overflow-hidden bg-zinc-900 cursor-pointer relative z-50">
+                    <img id="user-avatar" src="" class="w-full h-full rounded-lg object-cover pointer-events-none">
+                </div>
+
+                <div id="mobile-plan-popup" class="hidden lg:hidden absolute top-14 right-0 bg-[#0b0b0b] border border-white/10 rounded-2xl p-4 shadow-2xl z-40 min-w-[140px] animate-bounce-short">
+                    <div class="absolute -top-2 right-4 w-4 h-4 bg-[#0b0b0b] border-t border-l border-white/10 transform rotate-45"></div>
+                    <div class="relative z-10 text-right" id="mobile-plan-content"></div>
                 </div>
             </div>
         </header>
@@ -1484,16 +1490,15 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
     }
 
-    // 3. Plano com Cores e Tempo Restante (Juntos)
+    // 3. Plano com Cores e Tempo Restante (Juntos - PC e Mobile)
     const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
-    if (planContainer && user.plan) {
+    const mobilePlanContent = document.getElementById('mobile-plan-content');
+    
+    if (user.plan) {
         const plano = user.plan.toUpperCase();
-        
-        // Cores dos planos
         const cores = { 'VIP': '#22C55E', 'PRO': '#EC4899', 'LEGEND': '#06B6D4' };
         const corHex = cores[plano] || '#FFFFFF';
         
-        // Calcula os dias restantes
         let statusHtml = '<p class="text-[10px] text-gold font-bold uppercase tracking-widest leading-none mt-1">Vitalício</p>';
         
         if (user.planExpiresAt) {
@@ -1505,13 +1510,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Reconstrói as duas linhas juntas no Header
-        planContainer.innerHTML = `
+        // Esta é a parte que reconstrói as linhas para os dois lugares
+        const planHtml = `
             <p class="text-xs font-bold text-white" id="user-plan-text">
                 <span style="color: ${corHex}">${plano}</span> PLAN
             </p>
             ${statusHtml}
         `;
+
+        if (planContainer) planContainer.innerHTML = planHtml;
+        if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
     }
 
     // Restante do seu código (Lojas e Sidebar)
@@ -2585,6 +2593,24 @@ function executeCouponDelete() {
         couponIdToDelete = null;
     }
 }
+
+// --- FUNÇÕES DO BALÃO MOBILE ---
+function toggleMobilePlanPopup() {
+    const popup = document.getElementById('mobile-plan-popup');
+    if (popup) popup.classList.toggle('hidden');
+}
+
+// Fecha o balão se o usuário clicar em qualquer outro lugar da tela
+document.addEventListener('click', (e) => {
+    const popup = document.getElementById('mobile-plan-popup');
+    const avatarBox = document.querySelector('[onclick="toggleMobilePlanPopup()"]');
+    
+    if (popup && !popup.classList.contains('hidden')) {
+        if (!popup.contains(e.target) && !avatarBox.contains(e.target)) {
+            popup.classList.add('hidden');
+        }
+    }
+});
     </script>
 </body>
 </html>

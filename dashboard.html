@@ -1484,21 +1484,33 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
     }
 
-    // 3. Plano com Cores Corretas (Troca o "CARREGANDO...")
-    const planText = document.getElementById('user-plan-text');
-    if (planText && user.plan) {
-        const plano = user.plan.toUpperCase();
+    // 3. Plano com Cores e Tempo Restante
+    const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
+    if (planContainer) {
+        const planText = planContainer.querySelector('p.text-xs');
+        const statusText = planContainer.querySelector('p.text-\\[10px\\]');
         
-        // Cores dos seus cards: Verde (VIP), Rosa (PRO), Ciano (LEGEND)
-        const cores = {
-            'VIP': '#22C55E',    //
-            'PRO': '#EC4899',    //
-            'LEGEND': '#06B6D4'  //
-        };
-
-        const corHex = cores[plano] || '#FFFFFF';
-        // Atualiza o HTML interno para pintar apenas o nome do plano
-        planText.innerHTML = `<span style="color: ${corHex}">${plano}</span> PLAN`;
+        if (planText && user.plan) {
+            const plano = user.plan.toUpperCase();
+            const cores = { 'VIP': '#22C55E', 'PRO': '#EC4899', 'LEGEND': '#06B6D4' };
+            const corHex = cores[plano] || '#FFFFFF';
+            planText.innerHTML = `<span style="color: ${corHex}">${plano}</span> PLAN`;
+        }
+        
+        if (statusText) {
+            if (user.planExpiresAt) {
+                const daysLeft = Math.ceil((user.planExpiresAt - Date.now()) / (1000 * 60 * 60 * 24));
+                if (daysLeft > 0) {
+                    statusText.innerText = `Expira em ${daysLeft} dia(s)`;
+                    statusText.className = "text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1";
+                } else {
+                    statusText.innerText = "Plano Expirado";
+                    statusText.className = "text-[9px] text-rose-500 font-bold uppercase tracking-widest mt-1 animate-pulse";
+                }
+            } else {
+                statusText.innerText = "Vitalício";
+            }
+        }
     }
 
     // Restante do seu código (Lojas e Sidebar)

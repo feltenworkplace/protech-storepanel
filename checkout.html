@@ -104,13 +104,13 @@
         let upgradeIntent = JSON.parse(localStorage.getItem('checkout_intent'));
         let loggedUser = JSON.parse(localStorage.getItem('usuarioLogado'));
 
-        // Verifica de onde o usuário veio
+        // Verifica de onde o usuário veio e GARANTE que o plano fique em MAIÚSCULAS
         if (upgradeIntent && upgradeIntent.type === 'plataforma_subscription') {
             checkoutMode = 'upgrade';
-            planToBuy = upgradeIntent.plan;
+            planToBuy = upgradeIntent.plan.toUpperCase();
         } else if (tempUser) {
             checkoutMode = 'signup';
-            planToBuy = tempUser.plan;
+            planToBuy = tempUser.plan.toUpperCase();
         } else {
             window.location.href = 'login.html';
         }
@@ -172,7 +172,7 @@
                     plan: planToBuy,
                     price: valorCobrado,
                     amount: valorCobrado,
-                    transaction_amount: valorCobrado, // Forma que o Mercado Pago exige
+                    transaction_amount: valorCobrado, 
                     valor: valorCobrado,
                     nome: name,
                     sobrenome: surname,
@@ -213,10 +213,14 @@
                                 const now = Date.now();
                                 const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
                                 
-                                if (loggedUser.plan === planToBuy && loggedUser.planExpiresAt && loggedUser.planExpiresAt > now) {
-                                    loggedUser.planExpiresAt += thirtyDaysInMs;
+                                // CORREÇÃO APLICADA: Compara os planos de forma segura (tudo em maiúsculo)
+                                const planoAtual = (loggedUser.plan || "").toUpperCase();
+                                const planoNovo = planToBuy.toUpperCase();
+
+                                if (planoAtual === planoNovo && loggedUser.planExpiresAt && loggedUser.planExpiresAt > now) {
+                                    loggedUser.planExpiresAt += thirtyDaysInMs; // Soma os dias
                                 } else {
-                                    loggedUser.planExpiresAt = now + thirtyDaysInMs;
+                                    loggedUser.planExpiresAt = now + thirtyDaysInMs; // Reseta os dias
                                 }
                                 
                                 loggedUser.plan = planToBuy;
@@ -255,6 +259,7 @@
             }
         }
 
+        // Função para permitir apenas letras e espaços
         function apenasLetras(e) {
             e.target.value = e.target.value.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '');
         }

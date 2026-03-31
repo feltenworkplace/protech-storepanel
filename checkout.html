@@ -166,6 +166,7 @@
             btn.innerText = "GERANDO PIX...";
 
             try {
+                // *** CORREÇÃO DO PREÇO AQUI ***
                 // 1. Pega o preço do plano escolhido e converte para número (ex: "29,90" vira 29.90)
                 const valorCobrado = parseFloat(prices[planToBuy].replace(',', '.'));
 

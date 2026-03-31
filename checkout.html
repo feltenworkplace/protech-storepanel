@@ -166,10 +166,13 @@
             btn.innerText = "GERANDO PIX...";
 
             try {
-                // Monta o envio pro servidor dependendo se é novo ou upgrade
+                // 1. Pega o preço do plano escolhido e converte para número (ex: "29,90" vira 29.90)
+                const valorCobrado = parseFloat(prices[planToBuy].replace(',', '.'));
+
+                // 2. Monta o envio pro servidor GARANTINDO que o valor exato seja enviado
                 const payloadPix = checkoutMode === 'upgrade' 
-                    ? { plan: planToBuy, email: email, nome: name, sobrenome: surname, cpf: cpf }
-                    : { ...tempUser, nome: name, sobrenome: surname, cpf: cpf };
+                    ? { plan: planToBuy, price: valorCobrado, amount: valorCobrado, email: email, nome: name, sobrenome: surname, cpf: cpf }
+                    : { ...tempUser, plan: planToBuy, price: valorCobrado, amount: valorCobrado, nome: name, sobrenome: surname, cpf: cpf };
 
                 const responsePix = await fetch('https://storepanel-backend.onrender.com/generate-pix', {
                     method: 'POST',

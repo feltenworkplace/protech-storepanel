@@ -1264,31 +1264,29 @@ function visitStore() {
         }
 
         function renderStoresGrid() {
-    // 1. Pega os dados do usuário logado (Admin ou Cliente)
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     const grid = document.getElementById('stores-grid');
     
     if (!grid || !user) return;
 
-    // 2. Busca todas as lojas do localStorage
     let allStores = getStores() || [];
-    
-    // 3. FILTRO CRÍTICO: Só mantém as lojas onde o dono é o usuário atual
-    // Se a loja não tiver 'ownerEmail' (lojas antigas), ela não aparecerá para evitar confusão
     const userStores = allStores.filter(store => store.ownerEmail === user.email);
 
-    // 4. Prepara o Grid (Mantém o botão de criar)
     const createBtn = grid.querySelector('button[onclick*="toggleStoreDrawer"]')?.cloneNode(true);
     grid.innerHTML = '';
     if (createBtn) grid.appendChild(createBtn);
 
-    // 5. Renderiza apenas as lojas do usuário
     userStores.forEach((store) => {
         const card = document.createElement('div');
-        card.className = "aspect-video glass rounded-[2rem] p-8 flex flex-col justify-between border-white/10 hover:border-gold/30 transition shadow-xl";
+        // Adicionado 'relative group' para podermos posicionar a lixeira e o efeito de hover
+        card.className = "aspect-video glass rounded-[2rem] p-8 flex flex-col justify-between border-white/10 hover:border-gold/30 transition shadow-xl relative group";
         card.innerHTML = `
+            <button onclick="event.stopPropagation(); deleteStore('${store.id}')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white border border-rose-500/20" title="Excluir Loja">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+
             <div>
-                <h4 class="font-black text-xl mb-1">${store.name}</h4>
+                <h4 class="font-black text-xl mb-1 pr-8">${store.name}</h4>
                 <p class="text-xs text-gray-500">Link: protech.gg/${store.slug}</p>
             </div>
             <button onclick="openStoreDashboard('${store.id}')" class="w-full mt-6 py-3 text-[10px] font-black uppercase bg-white/5 rounded-xl hover:bg-gold hover:text-black transition-all">
@@ -1471,6 +1469,41 @@ function switchTab(tabName) {
     toggleStoreDrawer(false);
     renderStoresGrid();
     openStoreDashboard(store.id);
+}
+
+// --- LÓGICA DE EXCLUIR LOJA ---
+let storeIdToDelete = null;
+
+function deleteStore(id) {
+    storeIdToDelete = id;
+    const modal = document.getElementById('confirm-modal');
+    
+    if (modal) {
+        // Aproveitamos o modal existente e trocamos os textos dinamicamente
+        modal.querySelector('h3').textContent = "Excluir Loja?";
+        modal.querySelector('p').textContent = "Esta ação apagará a loja, produtos, cupons e categorias permanentemente.";
+        
+        modal.classList.remove('hidden');
+        document.body.classList.add('no-scroll');
+
+        // Aponta o botão vermelho de confirmação para a função certa
+        document.getElementById('confirm-delete-btn').onclick = executeStoreDelete;
+    }
+}
+
+function executeStoreDelete() {
+    if (!storeIdToDelete) return;
+    
+    let stores = getStores();
+    // Filtra o array removendo a loja que tem o ID selecionado
+    stores = stores.filter(s => s.id !== storeIdToDelete);
+    
+    setStores(stores); // Salva no LocalStorage
+    closeModal('confirm-modal');
+    
+    renderStoresGrid(); // Recarrega a grade de lojas na tela
+    showSuccess("Loja excluída com sucesso!");
+    storeIdToDelete = null;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

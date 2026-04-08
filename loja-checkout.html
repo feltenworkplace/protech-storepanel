@@ -380,11 +380,57 @@
             }
         }
 
-        function finalizeOrder() {
+        async function finalizeOrder() {
             const method = document.querySelector('input[name="payment_method"]:checked').value;
+            const btnFinalize = document.getElementById('btn-finalize');
+            
+            // 1. Pega os dados do cliente
+            const nome = document.getElementById('cli-name').value;
+            const cpf = document.getElementById('cli-cpf').value;
+            const email = document.getElementById('cli-email').value;
+
+            // 2. Descobre de qual loja estamos a falar pelo link (?s=slug_da_loja)
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+            const store = stores.find(s => s.slug === slug);
+
+            // 3. VERIFICAÇÃO CRUCIAL: A loja configurou o pagamento?
+            if (!store || !store.settings || !store.settings.mpToken) {
+                alert("Esta loja ainda não configurou uma forma de recebimento. Tente novamente mais tarde.");
+                return;
+            }
+
+            // 4. Calcula o total a pagar
+            const valorTotal = (subtotalCart - totalDiscount).toFixed(2);
+
+            // Se for PIX
             if (method === 'pix') {
-                // Aqui depois entraremos com a integração do Mercado Pago para a loja!
-                alert("Gerando o seu QR Code PIX...");
+                btnFinalize.innerText = "Gerando PIX...";
+                btnFinalize.classList.add('opacity-50', 'pointer-events-none');
+
+                try {
+                    // Mais para frente, aqui enviaremos os dados para o seu servidor (Render)
+                    // Ele receberá o valor, o cliente e, PRINCIPALMENTE, o store.settings.mpToken 
+                    // para saber para qual conta do Mercado Pago o dinheiro deve ir!
+                    
+                    console.log("Enviando para o servidor:", {
+                        lojaToken: store.settings.mpToken,
+                        cliente: { nome, cpf, email },
+                        valor: valorTotal,
+                        itens: cartItems
+                    });
+
+                    // Simulação visual para o cliente:
+                    setTimeout(() => {
+                        alert(`Sucesso! No backend, um PIX de R$ ${valorTotal} seria gerado para a conta Mercado Pago vinculada à loja ${store.name}.`);
+                        btnFinalize.innerText = "Gerar PIX";
+                        btnFinalize.classList.remove('opacity-50', 'pointer-events-none');
+                    }, 1500);
+
+                } catch (error) {
+                    alert("Erro ao gerar pagamento.");
+                }
             } else {
                 alert("Processando pagamento via Cartão de Crédito...");
             }

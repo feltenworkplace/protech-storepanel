@@ -2682,6 +2682,44 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+
+// --- INTEGRAÇÃO DE PAGAMENTOS (MERCADO PAGO) ---
+function openPaymentConfig() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    
+    // Se já tiver um token salvo, preenche o campo
+    if (store && store.settings && store.settings.mpToken) {
+        document.getElementById('mp-access-token').value = store.settings.mpToken;
+    } else {
+        document.getElementById('mp-access-token').value = '';
+    }
+
+    document.getElementById('payment-config-modal').classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+}
+
+function savePaymentConfig() {
+    const token = document.getElementById('mp-access-token').value.trim();
+    if (!token) return showAlert("Cole o seu Access Token do Mercado Pago.");
+
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
+        
+        // Salva o token de pagamento dentro das configurações desta loja
+        stores[storeIndex].settings.mpToken = token;
+        setStores(stores);
+        
+        closeModal('payment-config-modal');
+        showSuccess("Mercado Pago vinculado com sucesso!");
+    }
+}
     </script>
 </body>
 </html>

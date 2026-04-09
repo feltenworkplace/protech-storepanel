@@ -424,6 +424,33 @@
                     const dados = await resposta.json();
 
                     if (dados.success) {
+                        // --- CÓDIGO NOVO: INJETAR VENDA NO DASHBOARD ---
+                        let storesAtualizadas = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+                        let indexLoja = storesAtualizadas.findIndex(s => s.slug === slug);
+                        
+                        if (indexLoja !== -1) {
+                            if (!storesAtualizadas[indexLoja].orders) storesAtualizadas[indexLoja].orders = [];
+                            
+                            const novoPedido = {
+                                id: 'PED-' + Math.floor(Math.random() * 100000), // Gera um ID único
+                                cliente: nome,
+                                email: email,
+                                cpf: cpf,
+                                total: Number(valorTotal),
+                                metodo: 'PIX',
+                                status: 'Aprovado', // Simulando aprovação instantânea para testar o Dashboard
+                                data: new Date().toISOString(),
+                                itens: cartItems
+                            };
+                            
+                            storesAtualizadas[indexLoja].orders.push(novoPedido);
+                            localStorage.setItem('protech_stores_v1', JSON.stringify(storesAtualizadas));
+                            
+                            // Esvazia o carrinho para a próxima compra
+                            localStorage.removeItem('protech_active_cart'); 
+                        }
+                        // -----------------------------------------------
+
                         // MÁGICA VISUAL: Troca o formulário pelo QR CODE!
                         const wRight = document.querySelector('.w-1\\/2.pl-4');
                         wRight.innerHTML = `

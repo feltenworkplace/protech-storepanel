@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | ProTech Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #fff; margin: 0; }
@@ -367,8 +368,8 @@ select:focus option:checked {
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20 min-h-[300px]">
                             <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Métodos de Pagamento</p>
-                            <div class="h-[200px] flex items-center justify-center text-xs text-gray-600 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-                                <span class="text-emerald-500 font-black tracking-widest uppercase">PIX: 100%</span>
+                            <div class="h-[200px] relative w-full flex items-center justify-center">
+                                <canvas id="chart-metodos"></canvas>
                             </div>
                         </div>
                         <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20 min-h-[300px]">
@@ -378,9 +379,9 @@ select:focus option:checked {
                         </div>
                     </div>
                     <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20 w-full min-h-[320px]">
-                        <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Vendas</p>
-                        <div class="h-[240px] flex items-center justify-center text-[10px] text-gray-600 border border-dashed border-white/10 rounded-2xl uppercase tracking-widest font-bold">
-                            O gráfico de linha ficará disponível após 3 vendas.
+                        <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Receita de Vendas</p>
+                        <div class="h-[240px] relative w-full">
+                            <canvas id="chart-vendas"></canvas>
                         </div>
                     </div>
                 </div>
@@ -2739,7 +2740,11 @@ function savePaymentConfig() {
     }
 }
 
-// --- LÓGICA DO DASHBOARD GERAL (TEMPO REAL) ---
+// --- VARIÁVEIS GLOBAIS DOS GRÁFICOS ---
+let chartMetodos = null;
+let chartVendas = null;
+
+// --- LÓGICA DO DASHBOARD GERAL (TEMPO REAL + GRÁFICOS) ---
 function renderDashboardGeral() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -2748,37 +2753,32 @@ function renderDashboardGeral() {
 
     const orders = store.orders || [];
     const expenses = store.expenses || []; 
-    
     const hoje = new Date().toDateString();
     
-    // Filtra os pedidos aprovados (Por enquanto estamos simulando que todos entram como aprovados)
+    // Filtra os pedidos aprovados
     const aprovados = orders.filter(o => o.status === 'Aprovado');
     const aprovadosHoje = aprovados.filter(o => new Date(o.data).toDateString() === hoje);
     
-    // Cálculos
+    // Cálculos Financeiros
     const brutoDiario = aprovadosHoje.reduce((acc, o) => acc + Number(o.total), 0);
-    const liquidoDiario = brutoDiario * 0.99; // Simula a taxa de 1% do Mercado Pago no PIX
-    
+    const liquidoDiario = brutoDiario * 0.99; 
     const brutoTotal = aprovados.reduce((acc, o) => acc + Number(o.total), 0);
     const despesasTotal = expenses.reduce((acc, e) => acc + Number(e.valor), 0);
     const lucroTotal = (brutoTotal * 0.99) - despesasTotal;
 
-    // Formatação de Moeda
     const formatBRL = (valor) => 'R$ ' + valor.toFixed(2).replace('.', ',');
 
-    // Animação e Atualização dos Textos
+    // Atualiza Textos
     document.getElementById('dash-bruto-diario').innerText = formatBRL(brutoDiario);
     document.getElementById('dash-liquido-diario').innerText = formatBRL(liquidoDiario);
-    
     document.getElementById('dash-resumo-bruto').innerText = formatBRL(brutoTotal);
     document.getElementById('dash-resumo-lucro').innerText = formatBRL(lucroTotal);
     document.getElementById('dash-resumo-despesas').innerText = formatBRL(despesasTotal);
 
-    // Renderiza Lista de Vendas Recentes
+    // Lista de Vendas Recentes
     const listaRecentes = document.getElementById('dash-vendas-recentes');
     listaRecentes.innerHTML = '';
-    
-    const recentes = [...orders].reverse().slice(0, 5); // Pega os 5 últimos
+    const recentes = [...orders].reverse().slice(0, 5); 
     
     if (recentes.length === 0) {
         listaRecentes.innerHTML = '<div class="h-12 border border-dashed border-white/5 rounded-2xl flex items-center justify-center"><p class="text-[9px] text-gray-600 font-black uppercase tracking-[0.2em]">Nenhuma venda hoje</p></div>';
@@ -2804,6 +2804,90 @@ function renderDashboardGeral() {
             `;
         });
     }
+
+    // ==========================================
+    // MÁGICA DOS GRÁFICOS (CHART.JS)
+    // ==========================================
+    
+    let countPix = aprovados.filter(o => o.metodo === 'PIX').length;
+    let countCartao = aprovados.filter(o => o.metodo !== 'PIX').length;
+    
+    // Se não tiver vendas, cria um dado fictício lindo só de amostra
+    const isDemo = (countPix === 0 && countCartao === 0);
+    if (isDemo) { countPix = 1; countCartao = 0; } 
+
+    // 1. GRÁFICO DE ROSCA (MÉTODOS)
+    const ctxMetodos = document.getElementById('chart-metodos');
+    if (chartMetodos) chartMetodos.destroy(); // Apaga o velho antes de desenhar o novo
+    
+    chartMetodos = new Chart(ctxMetodos, {
+        type: 'doughnut',
+        data: {
+            labels: ['PIX', 'Cartão'],
+            datasets: [{
+                data: [countPix, countCartao],
+                backgroundColor: ['#10B981', '#D4AF37'], // Esmeralda (Pix) e Dourado (Cartão)
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%', // Deixa o buraco no meio bem grande e premium
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#9CA3AF', font: { family: 'Inter', size: 10, weight: 'bold' }, usePointStyle: true, padding: 20 } },
+                tooltip: { backgroundColor: '#000', titleColor: '#D4AF37', bodyColor: '#fff', borderColor: 'rgba(212,175,55,0.2)', borderWidth: 1 }
+            }
+        }
+    });
+
+    // 2. GRÁFICO DE LINHA (RECEITA)
+    const ctxVendas = document.getElementById('chart-vendas').getContext('2d');
+    if (chartVendas) chartVendas.destroy();
+
+    // Criando o Gradiente Dourado perfeito que some para baixo
+    let gradientVendas = ctxVendas.createLinearGradient(0, 0, 0, 300);
+    gradientVendas.addColorStop(0, 'rgba(212, 175, 55, 0.4)'); // Topo Dourado
+    gradientVendas.addColorStop(1, 'rgba(212, 175, 55, 0.0)'); // Base Transparente
+
+    // Dados Fictícios vs Dados Reais
+    const labelsEixoX = ['Dia 1', 'Dia 2', 'Dia 3', 'Dia 4', 'Dia 5', 'Dia 6', 'Hoje'];
+    const dadosLinha = isDemo ? [10, 45, 30, 90, 60, 120, 200] : [0, 0, 0, 0, 0, 0, brutoDiario]; // Se for real, projeta a venda de hoje no final do gráfico
+
+    chartVendas = new Chart(ctxVendas, {
+        type: 'line',
+        data: {
+            labels: labelsEixoX,
+            datasets: [{
+                label: 'Receita Diária (R$)',
+                data: dadosLinha,
+                borderColor: isDemo ? 'rgba(212, 175, 55, 0.3)' : '#D4AF37', // Gráfico real brilha mais
+                backgroundColor: gradientVendas,
+                borderWidth: 3,
+                pointBackgroundColor: '#000',
+                pointBorderColor: '#D4AF37',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4 // Faz a linha ser curvada e suave em vez de pontiaguda
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#0b0b0b', titleColor: '#D4AF37', bodyColor: '#fff', borderColor: 'rgba(212,175,55,0.2)', borderWidth: 1, padding: 12, displayColors: false }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 10 } } },
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 10 }, beginAtZero: true, callback: function(value) { return 'R$ ' + value; } } }
+            },
+            interaction: { mode: 'index', intersect: false }
+        }
+    });
 }
 
 // O Truque de Mágica do Tempo Real: 

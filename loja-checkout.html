@@ -384,52 +384,76 @@
             const method = document.querySelector('input[name="payment_method"]:checked').value;
             const btnFinalize = document.getElementById('btn-finalize');
             
-            // 1. Pega os dados do cliente
             const nome = document.getElementById('cli-name').value;
             const cpf = document.getElementById('cli-cpf').value;
             const email = document.getElementById('cli-email').value;
 
-            // 2. Descobre de qual loja estamos a falar pelo link (?s=slug_da_loja)
+            if(!nome || !cpf || !email) return alert("Preencha seus dados primeiro!");
+
             const params = new URLSearchParams(window.location.search);
             const slug = params.get('s');
             const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
             const store = stores.find(s => s.slug === slug);
 
-            // 3. VERIFICAÇÃO CRUCIAL: A loja configurou o pagamento?
             if (!store || !store.settings || !store.settings.mpToken) {
-                alert("Esta loja ainda não configurou uma forma de recebimento. Tente novamente mais tarde.");
+                alert("Esta loja ainda não configurou o Mercado Pago.");
                 return;
             }
 
-            // 4. Calcula o total a pagar
             const valorTotal = (subtotalCart - totalDiscount).toFixed(2);
 
-            // Se for PIX
             if (method === 'pix') {
-                btnFinalize.innerText = "Gerando PIX...";
+                btnFinalize.innerText = "Conectando ao Banco...";
                 btnFinalize.classList.add('opacity-50', 'pointer-events-none');
 
                 try {
-                    // Mais para frente, aqui enviaremos os dados para o seu servidor (Render)
-                    // Ele receberá o valor, o cliente e, PRINCIPALMENTE, o store.settings.mpToken 
-                    // para saber para qual conta do Mercado Pago o dinheiro deve ir!
-                    
-                    console.log("Enviando para o servidor:", {
-                        lojaToken: store.settings.mpToken,
-                        cliente: { nome, cpf, email },
-                        valor: valorTotal,
-                        itens: cartItems
+                    // ATENÇÃO: Se estiver a testar a partir do GitHub Pages (online), 
+                    // tem de usar o link do seu Render aqui! 
+                    // Exemplo: fetch('https://seu-backend-render.onrender.com/create-pix'
+                    const resposta = await fetch('http://localhost:3000/create-pix', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            lojaToken: store.settings.mpToken, 
+                            cliente: { nome, cpf, email }, 
+                            valor: valorTotal, 
+                            itens: cartItems 
+                        })
                     });
 
-                    // Simulação visual para o cliente:
-                    setTimeout(() => {
-                        alert(`Sucesso! No backend, um PIX de R$ ${valorTotal} seria gerado para a conta Mercado Pago vinculada à loja ${store.name}.`);
-                        btnFinalize.innerText = "Gerar PIX";
+                    const dados = await resposta.json();
+
+                    if (dados.success) {
+                        // MÁGICA VISUAL: Troca o formulário pelo QR CODE!
+                        const wRight = document.querySelector('.w-1\\/2.pl-4');
+                        wRight.innerHTML = `
+                            <div class="text-center animate-bounce-short">
+                                <h2 class="text-2xl font-black text-[#D4AF37] mb-2">PIX Gerado!</h2>
+                                <p class="text-xs text-gray-400 mb-6 uppercase tracking-widest">Escaneie para pagar</p>
+                                
+                                <div class="bg-white p-4 rounded-3xl inline-block mb-6 shadow-[0_0_30px_rgba(212,175,55,0.2)]">
+                                    <img src="data:image/jpeg;base64,${dados.qr_code_base64}" class="w-48 h-48 rounded-xl">
+                                </div>
+                                
+                                <div>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Ou use o PIX Copia e Cola</p>
+                                    <div class="flex gap-2">
+                                        <input type="text" readonly value="${dados.qr_code}" class="input-premium !py-3 text-[10px] text-gray-400 font-mono">
+                                        <button onclick="navigator.clipboard.writeText('${dados.qr_code}'); alert('Copiado com sucesso!')" class="bg-white/10 hover:bg-[#D4AF37] hover:text-black transition-colors px-4 rounded-xl text-xs font-black uppercase">Copiar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        alert("Erro: " + dados.message);
+                        btnFinalize.innerText = "Tentar Novamente";
                         btnFinalize.classList.remove('opacity-50', 'pointer-events-none');
-                    }, 1500);
+                    }
 
                 } catch (error) {
-                    alert("Erro ao gerar pagamento.");
+                    alert("Erro ao conectar com o servidor.");
+                    btnFinalize.innerText = "Gerar PIX";
+                    btnFinalize.classList.remove('opacity-50', 'pointer-events-none');
                 }
             } else {
                 alert("Processando pagamento via Cartão de Crédito...");

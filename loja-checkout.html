@@ -407,9 +407,6 @@
                 btnFinalize.classList.add('opacity-50', 'pointer-events-none');
 
                 try {
-                    // ATENÇÃO: Se estiver a testar a partir do GitHub Pages (online), 
-                    // tem de usar o link do seu Render aqui! 
-                    // Exemplo: fetch('https://seu-backend-render.onrender.com/create-pix'
                     const resposta = await fetch('https://storepanel-backend.onrender.com/create-pix', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -424,33 +421,7 @@
                     const dados = await resposta.json();
 
                     if (dados.success) {
-                        // --- CÓDIGO NOVO: INJETAR VENDA NO DASHBOARD ---
-                        let storesAtualizadas = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-                        let indexLoja = storesAtualizadas.findIndex(s => s.slug === slug);
-                        
-                        if (indexLoja !== -1) {
-                            if (!storesAtualizadas[indexLoja].orders) storesAtualizadas[indexLoja].orders = [];
-                            
-                            const novoPedido = {
-                                id: 'PED-' + Math.floor(Math.random() * 100000), 
-                                cliente: nome,
-                                email: email,
-                                cpf: cpf,
-                                total: Number(valorTotal),
-                                metodo: 'PIX',
-                                status: 'Aprovado', 
-                                data: new Date().toISOString(),
-                                itens: cartItems
-                            };
-                            
-                            storesAtualizadas[indexLoja].orders.push(novoPedido);
-                            localStorage.setItem('protech_stores_v1', JSON.stringify(storesAtualizadas));
-                            
-                            localStorage.removeItem('protech_active_cart'); 
-                        }
-                        // -----------------------------------------------
-
-                        // 1. MÁGICA VISUAL: Troca o formulário pelo QR CODE!
+                        // 1. MÁGICA VISUAL: Mostra o QR CODE e o ícone a girar
                         const wRight = document.querySelector('.w-1\\/2.pl-4');
                         wRight.innerHTML = `
                             <div class="text-center animate-bounce-short">
@@ -471,37 +442,80 @@
                                 
                                 <div class="mt-8 flex items-center justify-center gap-3 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
                                     <svg class="w-4 h-4 animate-spin text-[#D4AF37]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    Aguardando Pagamento...
+                                    Aguardando pagamento no banco...
                                 </div>
                             </div>
                         `;
 
-                        // 2. SIMULAÇÃO DE APROVAÇÃO (Espera 5 segundos e muda a tela)
-                        setTimeout(() => {
-                            wRight.innerHTML = `
-                                <div class="text-center animate-bounce-short">
-                                    <div class="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                    </div>
-                                    <h2 class="text-3xl font-black text-white mb-2 tracking-tight">Pagamento Aprovado!</h2>
-                                    <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest">Obrigado pela sua compra.</p>
+                        // 2. O VERIFICADOR CONSTANTE (A cada 5 segundos)
+                        const verificador = setInterval(async () => {
+                            try {
+                                const checkRes = await fetch('https://storepanel-backend.onrender.com/check-payment', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                        paymentId: dados.payment_id,
+                                        lojaToken: store.settings.mpToken
+                                    })
+                                });
+                                
+                                const checkData = await checkRes.json();
+
+                                // SE O BANCO APROVAR, FAZ A MÁGICA ACONTECER!
+                                if (checkData.approved) {
+                                    clearInterval(verificador); // Para de perguntar ao banco
+
+                                    // --- 3. SÓ AGORA INJETA A VENDA NO DASHBOARD ---
+                                    let storesAtualizadas = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+                                    let indexLoja = storesAtualizadas.findIndex(s => s.slug === slug);
                                     
-                                    <div class="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 text-left relative overflow-hidden">
-                                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 blur-[50px] rounded-full"></div>
+                                    if (indexLoja !== -1) {
+                                        if (!storesAtualizadas[indexLoja].orders) storesAtualizadas[indexLoja].orders = [];
                                         
-                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Status do Pedido</p>
-                                        <p class="text-emerald-500 font-black text-sm mb-4">Concluído e Entregue</p>
+                                        const novoPedido = {
+                                            id: 'PED-' + Math.floor(Math.random() * 100000), 
+                                            cliente: nome,
+                                            email: email,
+                                            cpf: cpf,
+                                            total: Number(valorTotal),
+                                            metodo: 'PIX',
+                                            status: 'Aprovado', 
+                                            data: new Date().toISOString(),
+                                            itens: cartItems
+                                        };
                                         
-                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">ID da Transação</p>
-                                        <p class="text-white font-mono text-xs">${dados.payment_id}</p>
-                                    </div>
-                                    
-                                    <button onclick="window.history.back()" class="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] px-8 py-4 rounded-xl transition-all duration-300 w-full">
-                                        Voltar para a Loja
-                                    </button>
-                                </div>
-                            `;
-                        }, 5000); // 5000 milissegundos = 5 segundos
+                                        storesAtualizadas[indexLoja].orders.push(novoPedido);
+                                        localStorage.setItem('protech_stores_v1', JSON.stringify(storesAtualizadas));
+                                        localStorage.removeItem('protech_active_cart'); 
+                                    }
+
+                                    // --- 4. TELA DE SUCESSO VERDADEIRA ---
+                                    wRight.innerHTML = `
+                                        <div class="text-center animate-bounce-short">
+                                            <div class="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                            </div>
+                                            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">Pagamento Aprovado!</h2>
+                                            <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest">Obrigado pela sua compra.</p>
+                                            
+                                            <div class="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 text-left relative overflow-hidden">
+                                                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 blur-[50px] rounded-full"></div>
+                                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Status do Pedido</p>
+                                                <p class="text-emerald-500 font-black text-sm mb-4">Concluído e Entregue</p>
+                                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">ID da Transação</p>
+                                                <p class="text-white font-mono text-xs">${dados.payment_id}</p>
+                                            </div>
+                                            
+                                            <button onclick="window.history.back()" class="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] px-8 py-4 rounded-xl transition-all duration-300 w-full">
+                                                Voltar para a Loja
+                                            </button>
+                                        </div>
+                                    `;
+                                }
+                            } catch (e) {
+                                console.log("Aguardando confirmação do banco...");
+                            }
+                        }, 5000); // 5000ms = 5 segundos
 
                     } else {
                         alert("Erro: " + dados.message);

@@ -348,12 +348,38 @@ select:focus option:checked {
                 </div>
                 <div id="tab-geral" class="space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="glass rounded-[2rem] p-10 border-white/10 bg-zinc-900/20 lg:col-span-2">
-                            <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-10">Ganho diário</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                <div><p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Bruto</p><p id="dash-bruto-diario" class="text-4xl font-black mt-2 text-white transition-all">R$ 0,00</p></div>
-                                <div><p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Líquido</p><p id="dash-liquido-diario" class="text-4xl font-black mt-2 text-white transition-all">R$ 0,00</p></div>
+                        <div class="glass rounded-[2rem] p-10 border-white/10 bg-zinc-900/20 lg:col-span-2 flex flex-col justify-between">
+                            
+                            <div>
+                                <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Ganho diário</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                    <div>
+                                        <p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Bruto</p>
+                                        <p id="dash-bruto-diario" class="text-4xl font-black mt-2 text-white transition-all">R$ 0,00</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Líquido</p>
+                                        <p id="dash-liquido-diario" class="text-4xl font-black mt-2 text-white transition-all">R$ 0,00</p>
+                                    </div>
+                                </div>
                             </div>
+
+                            <div class="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-8"></div>
+
+                            <div>
+                                <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Ganho mensal</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                    <div>
+                                        <p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Bruto</p>
+                                        <p id="dash-bruto-mensal" class="text-3xl font-black mt-2 text-gray-300 transition-all">R$ 0,00</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold">Líquido</p>
+                                        <p id="dash-liquido-mensal" class="text-3xl font-black mt-2 text-gray-300 transition-all">R$ 0,00</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </div>
                         <div class="glass rounded-[2rem] p-8 border-white/10 bg-zinc-900/20">
                             <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-6">Resumo</p>
@@ -2753,24 +2779,43 @@ function renderDashboardGeral() {
 
     const orders = store.orders || [];
     const expenses = store.expenses || []; 
-    const hoje = new Date().toDateString();
     
-    // Filtra os pedidos aprovados
+    // Datas atuais para os filtros
+    const dataAtual = new Date();
+    const hojeStr = dataAtual.toDateString();
+    const mesAtual = dataAtual.getMonth();
+    const anoAtual = dataAtual.getFullYear();
+    
+    // Filtra os pedidos aprovados gerais, de hoje e do mês
     const aprovados = orders.filter(o => o.status === 'Aprovado');
-    const aprovadosHoje = aprovados.filter(o => new Date(o.data).toDateString() === hoje);
+    
+    const aprovadosHoje = aprovados.filter(o => new Date(o.data).toDateString() === hojeStr);
+    
+    const aprovadosMes = aprovados.filter(o => {
+        const d = new Date(o.data);
+        return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+    });
     
     // Cálculos Financeiros
     const brutoDiario = aprovadosHoje.reduce((acc, o) => acc + Number(o.total), 0);
     const liquidoDiario = brutoDiario * 0.99; 
+
+    const brutoMensal = aprovadosMes.reduce((acc, o) => acc + Number(o.total), 0);
+    const liquidoMensal = brutoMensal * 0.99;
+    
     const brutoTotal = aprovados.reduce((acc, o) => acc + Number(o.total), 0);
     const despesasTotal = expenses.reduce((acc, e) => acc + Number(e.valor), 0);
     const lucroTotal = (brutoTotal * 0.99) - despesasTotal;
 
     const formatBRL = (valor) => 'R$ ' + valor.toFixed(2).replace('.', ',');
 
-    // Atualiza Textos
+    // Atualiza Textos na Tela
     document.getElementById('dash-bruto-diario').innerText = formatBRL(brutoDiario);
     document.getElementById('dash-liquido-diario').innerText = formatBRL(liquidoDiario);
+    
+    document.getElementById('dash-bruto-mensal').innerText = formatBRL(brutoMensal);
+    document.getElementById('dash-liquido-mensal').innerText = formatBRL(liquidoMensal);
+    
     document.getElementById('dash-resumo-bruto').innerText = formatBRL(brutoTotal);
     document.getElementById('dash-resumo-lucro').innerText = formatBRL(lucroTotal);
     document.getElementById('dash-resumo-despesas').innerText = formatBRL(despesasTotal);

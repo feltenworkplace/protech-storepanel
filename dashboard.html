@@ -2893,21 +2893,45 @@ function renderDashboardGeral() {
 
     // Criando o Gradiente Dourado perfeito que some para baixo
     let gradientVendas = ctxVendas.createLinearGradient(0, 0, 0, 300);
-    gradientVendas.addColorStop(0, 'rgba(212, 175, 55, 0.4)'); // Topo Dourado
-    gradientVendas.addColorStop(1, 'rgba(212, 175, 55, 0.0)'); // Base Transparente
+    gradientVendas.addColorStop(0, 'rgba(212, 175, 55, 0.4)'); 
+    gradientVendas.addColorStop(1, 'rgba(212, 175, 55, 0.0)'); 
 
-    // Dados Fictícios vs Dados Reais
-    const labelsEixoX = ['Dia 1', 'Dia 2', 'Dia 3', 'Dia 4', 'Dia 5', 'Dia 6', 'Hoje'];
-    const dadosLinha = isDemo ? [10, 45, 30, 90, 60, 120, 200] : [0, 0, 0, 0, 0, 0, brutoDiario]; // Se for real, projeta a venda de hoje no final do gráfico
+    // --- CÁLCULO DINÂMICO DOS ÚLTIMOS 7 DIAS ---
+    const labelsEixoX = [];
+    const dadosLinhaReal = [];
+
+    // O loop volta 6 dias no passado e vem até Hoje (i = 0)
+    for (let i = 6; i >= 0; i--) {
+        const dataDia = new Date();
+        dataDia.setDate(dataDia.getDate() - i);
+        
+        // Cria a etiqueta do dia (Ex: "10/04")
+        if (i === 0) {
+            labelsEixoX.push('Hoje');
+        } else {
+            const diaFormatado = String(dataDia.getDate()).padStart(2, '0') + '/' + String(dataDia.getMonth() + 1).padStart(2, '0');
+            labelsEixoX.push(diaFormatado);
+        }
+
+        // Procura se teve vendas neste dia exato
+        const vendasNesseDia = aprovados.filter(o => new Date(o.data).toDateString() === dataDia.toDateString());
+        const totalNesseDia = vendasNesseDia.reduce((acc, o) => acc + Number(o.total), 0);
+        dadosLinhaReal.push(totalNesseDia);
+    }
+
+    // Se não tiver nehuma venda nos últimos 7 dias, mostra a demonstração bonita
+    const temVendaNosUltimos7Dias = dadosLinhaReal.some(valor => valor > 0);
+    const dadosLinha = temVendaNosUltimos7Dias ? dadosLinhaReal : [10, 45, 30, 90, 60, 120, 200];
+    const isDemoChart = !temVendaNosUltimos7Dias;
 
     chartVendas = new Chart(ctxVendas, {
         type: 'line',
         data: {
-            labels: labelsEixoX,
+            labels: labelsEixoX, // Aqui entram as datas dinâmicas!
             datasets: [{
                 label: 'Receita Diária (R$)',
-                data: dadosLinha,
-                borderColor: isDemo ? 'rgba(212, 175, 55, 0.3)' : '#D4AF37', // Gráfico real brilha mais
+                data: dadosLinha, // Aqui entram as vendas reais diárias!
+                borderColor: isDemoChart ? 'rgba(212, 175, 55, 0.3)' : '#D4AF37', 
                 backgroundColor: gradientVendas,
                 borderWidth: 3,
                 pointBackgroundColor: '#000',
@@ -2916,7 +2940,7 @@ function renderDashboardGeral() {
                 pointRadius: 4,
                 pointHoverRadius: 6,
                 fill: true,
-                tension: 0.4 // Faz a linha ser curvada e suave em vez de pontiaguda
+                tension: 0.4 
             }]
         },
         options: {

@@ -3058,16 +3058,26 @@ function openAdvancedSearchModal() {
 }
 
 function applyAdvancedSearch() {
-    closeModal('advanced-search-modal');
+    // Esconde o modal manualmente sem apagar os campos que você digitou
+    document.getElementById('advanced-search-modal').classList.add('hidden');
+    document.body.classList.remove('no-scroll');
+    
+    // Filtra a tabela com os dados intactos
     renderOrders(); 
 }
 
 function clearAdvancedSearch() {
+    // Apaga tudo manualmente
     document.getElementById('adv-search-name').value = '';
     document.getElementById('adv-search-cpf').value = '';
     document.getElementById('adv-search-email').value = '';
     document.getElementById('adv-search-status').value = '';
-    closeModal('advanced-search-modal');
+    
+    // Esconde o modal
+    document.getElementById('advanced-search-modal').classList.add('hidden');
+    document.body.classList.remove('no-scroll');
+    
+    // Atualiza a tabela (agora sem filtros)
     renderOrders();
 }
 

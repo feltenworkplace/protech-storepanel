@@ -849,7 +849,7 @@ select:focus option:checked {
             <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                 <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
-            <input type="text" placeholder="Buscar um pedido por referência, email ou documento..." class="w-full bg-white/[0.03] border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+            <input type="text" id="search-order" oninput="renderOrders()" placeholder="Buscar um pedido por referência, email ou documento..." class="w-full bg-white/[0.03] border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
         </div>
 
         <div class="flex items-center gap-3 w-full lg:w-auto">
@@ -1475,6 +1475,10 @@ function switchTab(tabName) {
     // 6. CARREGAMENTO DE DADOS ESPECÍFICOS
     if (tabName === 'geral') {
         renderDashboardGeral();
+    }
+
+    if (tabName === 'pedidos') {
+        renderOrders();
     }
 
     if (tabName === 'configuracoes') {
@@ -2957,6 +2961,92 @@ function renderDashboardGeral() {
             interaction: { mode: 'index', intersect: false }
         }
     });
+}
+
+// --- LÓGICA DA ABA DE PEDIDOS ---
+function renderOrders() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    
+    const tbody = document.getElementById('orders-table-body');
+    const emptyMsg = document.getElementById('empty-orders');
+    const searchInput = document.getElementById('search-order');
+    
+    if (!tbody || !store) return;
+
+    let orders = store.orders || [];
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+    // Filtra pelo que for digitado na barra de pesquisa
+    if (searchTerm) {
+        orders = orders.filter(o => 
+            (o.id && o.id.toLowerCase().includes(searchTerm)) ||
+            (o.cliente && o.cliente.toLowerCase().includes(searchTerm)) ||
+            (o.email && o.email.toLowerCase().includes(searchTerm)) ||
+            (o.cpf && o.cpf.includes(searchTerm))
+        );
+    }
+
+    // Ordena do mais recente para o mais antigo
+    orders.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    // Se não houver pedidos (ou a pesquisa não encontrar nada)
+    if (orders.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyMsg) emptyMsg.classList.remove('hidden');
+        return;
+    }
+
+    if (emptyMsg) emptyMsg.classList.add('hidden');
+
+    const formatBRL = (valor) => 'R$ ' + Number(valor).toFixed(2).replace('.', ',');
+    
+    const formatDate = (isoString) => {
+        const d = new Date(isoString);
+        return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Monta a Tabela
+    tbody.innerHTML = orders.map(pedido => {
+        const isApproved = pedido.status === 'Aprovado';
+        const statusClass = isApproved 
+            ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
+            : 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+        const dotClass = isApproved ? 'bg-emerald-500' : 'bg-amber-500';
+
+        return `
+            <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">
+                <td class="px-8 py-5 text-white font-mono text-[10px]">${pedido.id}</td>
+                <td class="px-8 py-5">
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold text-sm">${pedido.cliente}</span>
+                        <span class="text-[10px] text-gray-500">${pedido.email || 'Sem email'}</span>
+                    </div>
+                </td>
+                <td class="px-8 py-5 font-black text-gold text-sm">${formatBRL(pedido.total)}</td>
+                <td class="px-8 py-5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-[10px] border border-white/5 font-black">${pedido.metodo === 'PIX' ? 'PX' : 'CC'}</span>
+                        <span class="text-xs text-gray-400 font-bold">${pedido.metodo}</span>
+                    </div>
+                </td>
+                <td class="px-8 py-5 text-center">
+                    <span class="inline-flex items-center gap-2 text-[9px] font-black uppercase ${statusClass} py-1.5 px-3 rounded-lg border">
+                        <span class="w-1.5 h-1.5 ${dotClass} rounded-full"></span> ${pedido.status}
+                    </span>
+                </td>
+                <td class="px-8 py-5 text-gray-500 text-[10px] font-medium uppercase tracking-wider">
+                    ${formatDate(pedido.data)}
+                </td>
+                <td class="px-8 py-5 text-right">
+                    <button onclick="alert('Em breve: Detalhes completos do pedido ${pedido.id}')" class="bg-white/5 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-gray-400 hover:text-white hover:bg-gold/20 hover:border-gold/30 hover:text-gold transition-all border border-white/5 tracking-widest shadow-md">
+                        Ver Mais
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // O Truque de Mágica do Tempo Real: 

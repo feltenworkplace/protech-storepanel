@@ -853,7 +853,7 @@ select:focus option:checked {
         </div>
 
         <div class="flex items-center gap-3 w-full lg:w-auto">
-            <button class="flex-1 lg:flex-none bg-white/5 border border-white/10 text-gray-400 text-[11px] font-black px-8 py-4 rounded-2xl hover:bg-white/10 hover:text-white transition uppercase tracking-widest">
+            <button onclick="openAdvancedSearchModal()" class="flex-1 lg:flex-none bg-white/5 border border-white/10 text-gray-400 text-[11px] font-black px-8 py-4 rounded-2xl hover:bg-white/10 hover:text-white transition uppercase tracking-widest">
                 Busca Avançada
             </button>
             <button onclick="openOrderModal()" class="flex-1 lg:flex-none bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
@@ -1256,6 +1256,48 @@ select:focus option:checked {
                 <div class="flex justify-between items-end bg-gradient-to-r from-[#D4AF37]/10 to-transparent p-6 rounded-2xl border border-[#D4AF37]/20">
                     <span class="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest">Total Pago</span>
                     <span class="text-3xl font-black text-[#D4AF37] tracking-tighter" id="modal-order-total">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="advanced-search-modal" class="hidden fixed inset-0 z-[600] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('advanced-search-modal')"></div>
+        <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl flex flex-col animate-bounce-short">
+            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
+                <h3 class="text-xl font-black tracking-tight text-white flex items-center gap-3">
+                    <svg class="w-6 h-6 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Busca Avançada
+                </h3>
+                <button onclick="closeModal('advanced-search-modal')" class="text-gray-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Cliente</label>
+                    <input type="text" id="adv-search-name" placeholder="Ex: Marcos Silva" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">CPF</label>
+                    <input type="text" id="adv-search-cpf" placeholder="000.000.000-00" maxlength="14" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Status do Pedido</label>
+                    <select id="adv-search-status" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
+                        <option value="">Todos os Status</option>
+                        <option value="Aprovado">Aprovado</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Recusado">Recusado</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">E-mail</label>
+                    <input type="email" id="adv-search-email" placeholder="cliente@email.com" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                </div>
+                <div class="md:col-span-2 flex gap-3 pt-4">
+                    <button onclick="clearAdvancedSearch()" class="flex-1 py-4 text-xs font-black uppercase text-rose-500 hover:text-white transition rounded-2xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500">Limpar Filtros</button>
+                    <button onclick="applyAdvancedSearch()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Aplicar Filtros</button>
                 </div>
             </div>
         </div>
@@ -3009,7 +3051,36 @@ function renderDashboardGeral() {
     });
 }
 
-// --- LÓGICA DA ABA DE PEDIDOS ---
+// --- LÓGICA DA ABA DE PEDIDOS E BUSCA AVANÇADA ---
+function openAdvancedSearchModal() {
+    document.getElementById('advanced-search-modal').classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+}
+
+function applyAdvancedSearch() {
+    closeModal('advanced-search-modal');
+    renderOrders(); 
+}
+
+function clearAdvancedSearch() {
+    document.getElementById('adv-search-name').value = '';
+    document.getElementById('adv-search-cpf').value = '';
+    document.getElementById('adv-search-email').value = '';
+    document.getElementById('adv-search-status').value = '';
+    closeModal('advanced-search-modal');
+    renderOrders();
+}
+
+// Máscara para o CPF no modal
+document.getElementById('adv-search-cpf').addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    e.target.value = v;
+});
+
 function renderOrders() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -3017,27 +3088,48 @@ function renderOrders() {
     
     const tbody = document.getElementById('orders-table-body');
     const emptyMsg = document.getElementById('empty-orders');
-    const searchInput = document.getElementById('search-order');
     
     if (!tbody || !store) return;
 
     let orders = store.orders || [];
+    
+    // Captura o que foi digitado na pesquisa rápida
+    const searchInput = document.getElementById('search-order');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
-    // Filtra pelo que for digitado na barra de pesquisa
-    if (searchTerm) {
-        orders = orders.filter(o => 
-            (o.id && o.id.toLowerCase().includes(searchTerm)) ||
-            (o.cliente && o.cliente.toLowerCase().includes(searchTerm)) ||
-            (o.email && o.email.toLowerCase().includes(searchTerm)) ||
-            (o.cpf && o.cpf.includes(searchTerm))
-        );
-    }
+    // Captura o que foi preenchido no modal de Busca Avançada
+    const advName = document.getElementById('adv-search-name')?.value.toLowerCase();
+    const advCpf = document.getElementById('adv-search-cpf')?.value.replace(/\D/g, ''); // Pega só os números
+    const advEmail = document.getElementById('adv-search-email')?.value.toLowerCase();
+    const advStatus = document.getElementById('adv-search-status')?.value;
+
+    // Filtra os pedidos usando todas as regras juntas
+    orders = orders.filter(o => {
+        let match = true;
+
+        // 1. Filtro Rápido (Barra principal)
+        if (searchTerm) {
+            const matchesSearch = 
+                (o.id && o.id.toLowerCase().includes(searchTerm)) ||
+                (o.cliente && o.cliente.toLowerCase().includes(searchTerm)) ||
+                (o.email && o.email.toLowerCase().includes(searchTerm)) ||
+                (o.cpf && o.cpf.includes(searchTerm));
+            if (!matchesSearch) match = false;
+        }
+
+        // 2. Filtros Avançados (Se preenchidos no Modal)
+        if (advName && !o.cliente?.toLowerCase().includes(advName)) match = false;
+        if (advCpf && !o.cpf?.replace(/\D/g, '').includes(advCpf)) match = false;
+        if (advEmail && !o.email?.toLowerCase().includes(advEmail)) match = false;
+        if (advStatus && o.status !== advStatus) match = false;
+
+        return match;
+    });
 
     // Ordena do mais recente para o mais antigo
     orders.sort((a, b) => new Date(b.data) - new Date(a.data));
 
-    // Se não houver pedidos (ou a pesquisa não encontrar nada)
+    // Exibe ou esconde a mensagem de "Nenhuma venda"
     if (orders.length === 0) {
         tbody.innerHTML = '';
         if (emptyMsg) emptyMsg.classList.remove('hidden');
@@ -3047,7 +3139,6 @@ function renderOrders() {
     if (emptyMsg) emptyMsg.classList.add('hidden');
 
     const formatBRL = (valor) => 'R$ ' + Number(valor).toFixed(2).replace('.', ',');
-    
     const formatDate = (isoString) => {
         const d = new Date(isoString);
         return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -3061,7 +3152,6 @@ function renderOrders() {
             : 'text-amber-500 bg-amber-500/10 border-amber-500/20';
         const dotClass = isApproved ? 'bg-emerald-500' : 'bg-amber-500';
 
-        // Lógica do Ícone (Pix ou Cartão)
         const metodoIcon = pedido.metodo === 'PIX' 
             ? '<img src="https://logospng.org/download/pix/logo-pix-icone-1024.png" class="w-4 h-4 object-contain opacity-80">' 
             : '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>';

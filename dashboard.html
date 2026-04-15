@@ -1720,7 +1720,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
     }
 
-    // Restante do seu código (Lojas e Sidebar)
     renderStoresGrid();
 
     document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
@@ -1730,6 +1729,8 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab(tabName);
         });
     });
+
+    updateDateRangeLabel();
 });
 
 function renderCategories() {
@@ -3249,6 +3250,29 @@ function openOrderDetailsModal(orderId) {
     // Abre o Modal
     document.getElementById('order-details-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
+}
+
+// --- ATUALIZA O CALENDÁRIO DO CABEÇALHO ---
+function updateDateRangeLabel() {
+    const label = document.getElementById('date-range-label');
+    if (!label) return;
+
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = agora.getMonth();
+
+    // Calcula o primeiro e o último dia do mês atual
+    const primeiroDia = new Date(ano, mes, 1);
+    const ultimoDia = new Date(ano, mes + 1, 0);
+
+    // Formata no padrão "01 de abr de 2026"
+    const opcoes = { day: '2-digit', month: 'short', year: 'numeric' };
+    
+    // O .replace('.', '') serve para tirar o ponto que alguns navegadores colocam na abreviação do mês
+    const strPrimeiro = primeiroDia.toLocaleDateString('pt-BR', opcoes).replace('.', '');
+    const strUltimo = ultimoDia.toLocaleDateString('pt-BR', opcoes).replace('.', '');
+
+    label.innerText = `${strPrimeiro} - ${strUltimo}`;
 }
 
 // O Truque de Mágica do Tempo Real: 

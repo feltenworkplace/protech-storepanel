@@ -605,6 +605,13 @@ select:focus option:checked {
                             <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Nome da Instância</label>
                             <input type="text" id="cfg-store-name" placeholder="Ex: ProCity Market" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
                         </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Status da Loja</label>
+                            <select id="cfg-store-status" onchange="changeStoreStatus(this.value)" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all appearance-none cursor-pointer">
+                                <option value="Ativo">🟢 Loja Ativa (Online)</option>
+                                <option value="Inativo">🔴 Loja Inativa (Offline)</option>
+                            </select>
+                        </div>
                     </div>
                 
                     <button onclick="saveStoreGeneralSettings()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/20">
@@ -1438,16 +1445,20 @@ function visitStore() {
     if (createBtn) grid.appendChild(createBtn);
 
     userStores.forEach((store) => {
+        const isInactive = store.status === 'Inativo';
+        const opacityClass = isInactive ? 'opacity-50 grayscale' : '';
+        const badge = isInactive ? `<span class="absolute top-4 left-4 bg-rose-500/20 text-rose-500 text-[8px] font-black px-2 py-1 rounded border border-rose-500/20 uppercase tracking-widest">Inativa</span>` : '';
+
         const card = document.createElement('div');
-        // Adicionado 'relative group' para podermos posicionar a lixeira e o efeito de hover
-        card.className = "aspect-video glass rounded-[2rem] p-8 flex flex-col justify-between border-white/10 hover:border-gold/30 transition shadow-xl relative group";
+        card.className = `aspect-video glass rounded-[2rem] p-8 flex flex-col justify-between border-white/10 hover:border-gold/30 transition shadow-xl relative group ${opacityClass}`;
         card.innerHTML = `
+            ${badge}
             <button onclick="event.stopPropagation(); deleteStore('${store.id}')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white border border-rose-500/20" title="Excluir Loja">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
 
             <div>
-                <h4 class="font-black text-xl mb-1 pr-8">${store.name}</h4>
+                <h4 class="font-black text-xl mb-1 pr-8 mt-2">${store.name}</h4>
                 <p class="text-xs text-gray-500">Link: protech.gg/${store.slug}</p>
             </div>
             <button onclick="openStoreDashboard('${store.id}')" class="w-full mt-6 py-3 text-[10px] font-black uppercase bg-white/5 rounded-xl hover:bg-gold hover:text-black transition-all">
@@ -1685,6 +1696,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!user) return window.location.href = 'login.html';
 
     checkPlanExpiration();
+    enforceStoreLimits();
 
     // 1. Nome do Usuário
     if (document.getElementById('nome-usuario-header')) {
@@ -3466,6 +3478,68 @@ function updatePlanButtons() {
             }
         }
     });
+}
+
+// --- SISTEMA ANTI-ESPERTINHO (VERIFICADOR DE LIMITES) ---
+function enforceStoreLimits() {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!user) return;
+    
+    let stores = getStores();
+    const limit = user.limits ? parseInt(user.limits.stores) : 1;
+    let activeCount = 0;
+    let changed = false;
+
+    stores.forEach(store => {
+        if (store.ownerEmail === user.email) {
+            // Se for uma loja antiga que não tem status, define como Ativa
+            if (!store.status) {
+                store.status = 'Ativo';
+                changed = true;
+            }
+            
+            // Conta as ativas. Se passar do limite do plano, desativa a força!
+            if (store.status === 'Ativo') {
+                activeCount++;
+                if (activeCount > limit) {
+                    store.status = 'Inativo';
+                    changed = true;
+                }
+            }
+        }
+    });
+
+    if (changed) setStores(stores);
+}
+
+// --- FUNÇÃO PARA O UTILIZADOR ATIVAR/DESATIVAR LOJA MANUALMENTE ---
+function changeStoreStatus(newStatus) {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+    
+    if (storeIndex === -1) return;
+
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    const limit = user && user.limits ? parseInt(user.limits.stores) : 1;
+
+    // Se ele está tentando ativar uma loja...
+    if (newStatus === 'Ativo') {
+        const activeCount = stores.filter(s => s.status === 'Ativo' && s.ownerEmail === user.email).length;
+        
+        // Verifica se já atingiu o limite do plano atual
+        if (activeCount >= limit) {
+            document.getElementById('cfg-store-status').value = 'Inativo'; // Devolve o botão para Inativo
+            return showAlert(`Limite atingido! O seu plano ${user.plan} permite apenas ${limit} loja(s) ativa(s). Desative outra loja primeiro.`);
+        }
+    }
+
+    // Se passou na verificação, aplica o novo status
+    stores[storeIndex].status = newStatus;
+    setStores(stores);
+    showSuccess(newStatus === 'Ativo' ? "Loja ativada com sucesso!" : "Loja desativada!");
+    renderStoresGrid(); // Atualiza a grade visual no fundo
 }
     </script>
 </body>

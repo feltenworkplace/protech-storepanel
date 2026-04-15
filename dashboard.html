@@ -249,7 +249,7 @@ select:focus option:checked {
                     <div id="submenu-financeiro" class="hidden flex flex-col mt-2 ml-4 border-l border-white/5 space-y-1">
                         <a href="javascript:void(0)" id="menu-pedidos" onclick="switchTab('pedidos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Pedidos</a>
                         <a href="javascript:void(0)" id="menu-metodos" onclick="switchTab('metodos')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Pagamentos</a>
-                        <a href="javascript:void(0)" id="menu-despesas" onclick="switchTab('despesas')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Despesas</a>
+                        <a href="javascript:void(0)" id="menu-despesas" onclick="switchTab('despesas')" class="px-8 py-2 text-xs font-medium text-gray-500 hover:text-white transition-colors">Balanço</a>
                     </div>
                 </div>
                 <div class="px-4 mb-2">
@@ -3342,28 +3342,50 @@ function renderMonthlyReport() {
     let bestDayStr = '-';
     let worstDayStr = '-';
 
+    // 1. PRIMEIRO: Descobrir o Max e Min absoluto do mês (maior que zero)
+    for (let d = 1; d <= lastDayOfMonth; d++) {
+        const t = dailyStats[d].total;
+        if (t > 0) {
+            if (t > maxVal) maxVal = t;
+            if (t < minVal) minVal = t;
+        }
+    }
+
     const tbody = document.getElementById('monthly-report-table-body');
     tbody.innerHTML = '';
     const formatBRL = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
 
-    // Renderiza a tabela do dia mais novo para o mais antigo
+    // 2. SEGUNDO: Renderizar a tabela aplicando o contorno
     Object.keys(dailyStats).reverse().forEach(day => {
         const data = dailyStats[day];
         totalMonthlyBruto += data.total;
 
-        // Lógica para destacar melhor/pior dia (apenas se houver venda)
-        if (data.total > maxVal && data.total > 0) { 
-            maxVal = data.total; 
-            bestDayStr = `${day}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(maxVal)})`; 
+        // Atualiza as strings para os cards superiores (Pega o dia mais recente que bateu o recorde)
+        if (data.total === maxVal && data.total > 0 && bestDayStr === '-') {
+            bestDayStr = `${String(day).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(maxVal)})`;
         }
-        if (data.total < minVal && data.total > 0) { 
-            minVal = data.total; 
-            worstDayStr = `${day}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(minVal)})`; 
+        if (data.total === minVal && data.total > 0 && worstDayStr === '-') {
+            worstDayStr = `${String(day).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(minVal)})`;
+        }
+
+        // Define as classes de destaque da linha
+        let rowClasses = "hover:bg-white/[0.02] transition-colors border-b border-white/5";
+        let tagBadge = "";
+
+        if (data.total === maxVal && data.total > 0) {
+            rowClasses = "bg-emerald-500/10 border-l-2 border-emerald-500 transition-colors";
+            tagBadge = `<span class="ml-3 bg-emerald-500/20 text-emerald-500 text-[8px] font-black uppercase px-2 py-0.5 rounded border border-emerald-500/20">Maior Faturamento</span>`;
+        } else if (data.total === minVal && data.total > 0) {
+            rowClasses = "bg-rose-500/10 border-l-2 border-rose-500 transition-colors";
+            tagBadge = `<span class="ml-3 bg-rose-500/20 text-rose-500 text-[8px] font-black uppercase px-2 py-0.5 rounded border border-rose-500/20">Menor Faturamento</span>`;
         }
 
         const row = `
-            <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
-                <td class="px-8 py-5 text-gray-400 font-mono text-xs">${String(day).padStart(2, '0')}/${String(selectedMonth+1).padStart(2, '0')}</td>
+            <tr class="${rowClasses}">
+                <td class="px-8 py-5 text-gray-400 font-mono text-xs flex items-center">
+                    ${String(day).padStart(2, '0')}/${String(selectedMonth+1).padStart(2, '0')}
+                    ${tagBadge}
+                </td>
                 <td class="px-8 py-5 text-white font-bold text-xs">${data.count} venda(s)</td>
                 <td class="px-8 py-5 text-right font-black text-gold text-sm">${formatBRL(data.total)}</td>
             </tr>
@@ -3371,7 +3393,7 @@ function renderMonthlyReport() {
         tbody.innerHTML += row;
     });
 
-    // Atualiza os cartões superiores (Líquido = Bruto - 1% taxa simulada)
+    // Atualiza os cartões superiores
     document.getElementById('report-total-profit').innerText = formatBRL(totalMonthlyBruto * 0.99); 
     document.getElementById('report-best-day').innerText = bestDayStr;
     document.getElementById('report-worst-day').innerText = worstDayStr;

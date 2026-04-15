@@ -184,63 +184,83 @@
                 const dataPix = await responsePix.json();
 
                 if (dataPix.success) {
+                    // Abre o modal SEM o botão de confirmação, apenas com o de cancelar
                     Swal.fire({
                         title: 'Escaneie para pagar',
                         html: `
                             <img src="data:image/jpeg;base64,${dataPix.qrCodeBase64}" class="mx-auto w-48 h-48 mb-4 border-2 border-gray-100 p-2">
                             <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Copia e Cola:</p>
                             <textarea readonly class="w-full text-[10px] bg-gray-50 p-2 rounded border font-mono h-20 outline-none">${dataPix.qrCodeCopiaCola}</textarea>
+                            <div id="pix-loading-text" class="mt-4 text-xs font-bold text-[#D4AF37] animate-pulse">Aguardando pagamento...</div>
                         `,
                         showCancelButton: true,
+                        showConfirmButton: false, // REMOVE O BOTÃO "JÁ Paguei"
                         cancelButtonText: 'Cancelar',
-                        confirmButtonText: 'Já paguei (Confirmar)',
-                        confirmButtonColor: '#D4AF37'
-                    }).then(async (result) => {
-                        if (result.isConfirmed) {
-                            
-                            // SE FOR RENOVAÇÃO / UPGRADE (DASHBOARD)
-                            if (checkoutMode === 'upgrade') {
-                                const planLimits = { 'VIP': { stores: 1, items: 10 }, 'PRO': { stores: 3, items: 15 }, 'LEGEND': { stores: 10, items: 30 } };
-                                const now = Date.now();
-                                const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-                                
-                                // Lê os dias atuais garantindo que é um número real
-                                const expiracaoAtual = Number(loggedUser.planExpiresAt || 0);
+                        allowOutsideClick: false // Impede de fechar clicando fora para não quebrar a verificação
+                    });
 
-                                // LIBERADO: Soma os dias sempre que houver tempo sobrando, INDEPENDENTE do plano!
-                                if (expiracaoAtual > now) {
-                                    loggedUser.planExpiresAt = expiracaoAtual + thirtyDaysInMs;
+                    // INICIA A VERIFICAÇÃO CONSTANTE DO PIX (a cada 5 segundos)
+                    const verificador = setInterval(async () => {
+                        try {
+                            const checkRes = await fetch(`https://storepanel-backend.onrender.com/check-payment/${dataPix.paymentId}`);
+                            const checkData = await checkRes.json();
+
+                            if (checkData.approved) {
+                                clearInterval(verificador); // Pára de perguntar ao servidor
+                                Swal.close(); // Fecha o QR Code
+                                
+                                // --- LÓGICA DE APROVAÇÃO (UPGRADE OU CADASTRO) ---
+                                if (checkoutMode === 'upgrade') {
+                                    const planLimits = { 'VIP': { stores: 1, items: 10 }, 'PRO': { stores: 3, items: 15 }, 'LEGEND': { stores: 10, items: 30 } };
+                                    const now = Date.now();
+                                    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+                                    
+                                    const expiracaoAtual = Number(loggedUser.planExpiresAt || 0);
+
+                                    if (expiracaoAtual > now) {
+                                        loggedUser.planExpiresAt = expiracaoAtual + thirtyDaysInMs;
+                                    } else {
+                                        loggedUser.planExpiresAt = now + thirtyDaysInMs;
+                                    }
+                                    
+                                    loggedUser.plan = planToBuy;
+                                    loggedUser.limits = planLimits[planToBuy];
+                                    
+                                    localStorage.setItem('usuarioLogado', JSON.stringify(loggedUser));
+                                    localStorage.removeItem('checkout_intent');
+                                    
+                                    Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: 'Sua assinatura foi renovada.', confirmButtonColor: '#D4AF37' })
+                                    .then(() => window.location.href = 'dashboard.html');
+
                                 } else {
-                                    loggedUser.planExpiresAt = now + thirtyDaysInMs;
-                                }
-                                
-                                loggedUser.plan = planToBuy;
-                                loggedUser.limits = planLimits[planToBuy];
-                                
-                                localStorage.setItem('usuarioLogado', JSON.stringify(loggedUser));
-                                localStorage.removeItem('checkout_intent');
-                                
-                                Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: 'Sua assinatura foi renovada e os dias atualizados.', confirmButtonColor: '#D4AF37' })
-                                .then(() => window.location.href = 'dashboard.html');
-
-                            // SE FOR CADASTRO NOVO
-                            } else {
-                                const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ ...tempUser, nome: `${name} ${surname}`, email: email, plan: planToBuy })
-                                });
-
-                                if (responseSignup.ok) {
-                                    Swal.fire({ icon: 'success', title: 'Cadastro Realizado!', text: 'Sua conta foi ativada com sucesso.', confirmButtonColor: '#000' })
-                                    .then(() => {
-                                        sessionStorage.removeItem('tempSignupData');
-                                        window.location.href = 'login.html';
+                                    const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ ...tempUser, nome: `${name} ${surname}`, email: email, plan: planToBuy })
                                     });
+
+                                    if (responseSignup.ok) {
+                                        Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: 'Sua conta foi criada com sucesso.', confirmButtonColor: '#000' })
+                                        .then(() => {
+                                            sessionStorage.removeItem('tempSignupData');
+                                            window.location.href = 'login.html';
+                                        });
+                                    }
                                 }
                             }
+                        } catch (e) {
+                            console.log("Aguardando confirmação...");
                         }
+                    }, 5000); // 5 segundos
+
+                    // Se o usuário clicar em "Cancelar", pára a verificação do PIX
+                    const swalCancelBtn = Swal.getCancelButton();
+                    swalCancelBtn.addEventListener('click', () => {
+                        clearInterval(verificador);
                     });
+
+                } else {
+                    throw new Error("Falha ao obter QR Code");
                 }
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o pagamento.' });

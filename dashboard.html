@@ -909,50 +909,55 @@ select:focus option:checked {
     </div>
 </div>
 
-<div id="tab-despesas" class="hidden space-y-6">
-    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
-        <div class="flex flex-col md:flex-row gap-4 w-full lg:w-auto flex-grow">
-            <div class="relative min-w-[180px]">
-                <select class="select-field w-full bg-white/[0.03] border border-white/10 p-4 pr-12 rounded-2xl outline-none focus:border-gold/30 text-xs text-gray-400 appearance-none">
-                    <option value="todos">Todas as Situações</option>
-                    <option value="pago">Pago</option>
-                    <option value="pendente">Pendente</option>
-                    <option value="atrasado">Atrasado</option>
-                </select>
-            </div>
-
-            <div class="group relative flex-grow">
-                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gold/50 group-focus-within:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input type="text" placeholder="Buscar uma despesa pelo nome..." class="w-full bg-white/[0.03] border border-white/10 p-4 pl-14 rounded-2xl outline-none focus:border-gold/30 text-xs transition-all placeholder:text-gray-600 text-white">
+<div id="tab-despesas" class="hidden space-y-8">
+    <div class="flex flex-col md:flex-row justify-between items-end gap-6 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5">
+        <div>
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 block">Período de Análise</label>
+            <div class="relative min-w-[240px]">
+                <select id="report-month-select" onchange="renderMonthlyReport()" class="select-field w-full bg-black/40 border border-white/10 p-4 pr-12 rounded-2xl outline-none focus:border-gold/30 text-sm text-white appearance-none cursor-pointer">
+                    </select>
             </div>
         </div>
+        
+        <div class="flex-grow md:text-right">
+            <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Lucro Líquido Estimado (Mês)</p>
+            <p id="report-total-profit" class="text-4xl font-black text-gold tracking-tighter">R$ 0,00</p>
+        </div>
+    </div>
 
-        <button onclick="openExpenseModal()" class="w-full lg:w-auto bg-gold text-black text-[11px] font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/10 uppercase tracking-widest whitespace-nowrap">
-            Cadastrar Despesa
-        </button>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass p-6 rounded-3xl border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            </div>
+            <div>
+                <p class="text-[9px] text-emerald-500/60 font-black uppercase tracking-widest">Melhor Faturamento</p>
+                <p id="report-best-day" class="text-white font-black text-lg">-</p>
+            </div>
+        </div>
+        <div class="glass p-6 rounded-3xl border-rose-500/20 bg-rose-500/5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/10">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+            </div>
+            <div>
+                <p class="text-[9px] text-rose-500/60 font-black uppercase tracking-widest">Menor Faturamento</p>
+                <p id="report-worst-day" class="text-white font-black text-lg">-</p>
+            </div>
+        </div>
     </div>
 
     <div class="glass rounded-[2rem] overflow-hidden border-white/10 bg-zinc-900/10">
         <table class="w-full text-left text-sm border-collapse">
             <thead class="bg-white/[0.02] text-gray-500 font-black uppercase text-[9px] tracking-[0.2em]">
                 <tr>
-                    <th class="px-8 py-6">ID</th>
-                    <th class="px-8 py-6">Nome</th>
-                    <th class="px-8 py-6">Valor</th>
-                    <th class="px-8 py-6 text-center">Situação</th>
-                    <th class="px-8 py-6 text-center">Vencimento</th>
-                    <th class="px-8 py-6 text-right">Ações</th>
+                    <th class="px-8 py-6">Data</th>
+                    <th class="px-8 py-6">Vendas Realizadas</th>
+                    <th class="px-8 py-6 text-right">Faturamento Diário</th>
                 </tr>
             </thead>
-            <tbody id="expenses-table-body" class="divide-y divide-white/5">
+            <tbody id="monthly-report-table-body" class="divide-y divide-white/5">
                 </tbody>
         </table>
-
-        <div id="empty-expenses" class="p-20 text-center">
-            <p class="text-[10px] text-gray-600 font-black uppercase tracking-widest">Nenhuma despesa registrada no sistema</p>
-        </div>
     </div>
 </div>
 
@@ -1567,6 +1572,11 @@ function switchTab(tabName) {
 
     if (tabName === 'pedidos') {
         renderOrders();
+    }
+
+    if (tabName === 'despesas') {
+        populateMonthSelect();
+        renderMonthlyReport();
     }
 
     if (tabName === 'configuracoes') {
@@ -3273,6 +3283,98 @@ function updateDateRangeLabel() {
     const strUltimo = ultimoDia.toLocaleDateString('pt-BR', opcoes).replace('.', '');
 
     label.innerText = `${strPrimeiro} - ${strUltimo}`;
+}
+
+// --- LÓGICA DO RELATÓRIO MENSAL (ANTIGA ABA DESPESAS) ---
+
+function populateMonthSelect() {
+    const select = document.getElementById('report-month-select');
+    if (!select || select.options.length > 0) return;
+
+    const agora = new Date();
+    // Gera os últimos 12 meses
+    for (let i = 0; i < 12; i++) {
+        const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+        const mesNome = d.toLocaleDateString('pt-BR', { month: 'long' });
+        const ano = d.getFullYear();
+        const option = document.createElement('option');
+        option.value = `${d.getMonth()}-${ano}`;
+        option.textContent = `${mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} de ${ano}`;
+        select.appendChild(option);
+    }
+}
+
+function renderMonthlyReport() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const store = getStores().find(s => s.slug === currentSlug);
+    if (!store) return;
+
+    const select = document.getElementById('report-month-select');
+    if (!select.value) return;
+    const [selectedMonth, selectedYear] = select.value.split('-').map(Number);
+    
+    // Pega apenas pedidos aprovados
+    const orders = (store.orders || []).filter(o => o.status === 'Aprovado');
+    const ordersInMonth = orders.filter(o => {
+        const d = new Date(o.data);
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+    });
+
+    const dailyStats = {};
+    const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+    // Inicializa todos os dias do mês com zero
+    for (let d = 1; d <= lastDayOfMonth; d++) {
+        dailyStats[d] = { count: 0, total: 0 };
+    }
+
+    // Soma as vendas reais por dia
+    ordersInMonth.forEach(o => {
+        const day = new Date(o.data).getDate();
+        dailyStats[day].count++;
+        dailyStats[day].total += Number(o.total);
+    });
+
+    let totalMonthlyBruto = 0;
+    let maxVal = -1;
+    let minVal = Infinity;
+    let bestDayStr = '-';
+    let worstDayStr = '-';
+
+    const tbody = document.getElementById('monthly-report-table-body');
+    tbody.innerHTML = '';
+    const formatBRL = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
+
+    // Renderiza a tabela do dia mais novo para o mais antigo
+    Object.keys(dailyStats).reverse().forEach(day => {
+        const data = dailyStats[day];
+        totalMonthlyBruto += data.total;
+
+        // Lógica para destacar melhor/pior dia (apenas se houver venda)
+        if (data.total > maxVal && data.total > 0) { 
+            maxVal = data.total; 
+            bestDayStr = `${day}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(maxVal)})`; 
+        }
+        if (data.total < minVal && data.total > 0) { 
+            minVal = data.total; 
+            worstDayStr = `${day}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(minVal)})`; 
+        }
+
+        const row = `
+            <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
+                <td class="px-8 py-5 text-gray-400 font-mono text-xs">${String(day).padStart(2, '0')}/${String(selectedMonth+1).padStart(2, '0')}</td>
+                <td class="px-8 py-5 text-white font-bold text-xs">${data.count} venda(s)</td>
+                <td class="px-8 py-5 text-right font-black text-gold text-sm">${formatBRL(data.total)}</td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+
+    // Atualiza os cartões superiores (Líquido = Bruto - 1% taxa simulada)
+    document.getElementById('report-total-profit').innerText = formatBRL(totalMonthlyBruto * 0.99); 
+    document.getElementById('report-best-day').innerText = bestDayStr;
+    document.getElementById('report-worst-day').innerText = worstDayStr;
 }
 
 // O Truque de Mágica do Tempo Real: 

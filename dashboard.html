@@ -3339,15 +3339,27 @@ function renderMonthlyReport() {
     let totalMonthlyBruto = 0;
     let maxVal = -1;
     let minVal = Infinity;
+    
+    // VARIÁVEIS NOVAS: Vão guardar exatamente QUAL dia foi o melhor/pior
+    let bestDayNum = -1;
+    let worstDayNum = -1;
+    
     let bestDayStr = '-';
     let worstDayStr = '-';
 
-    // 1. PRIMEIRO: Descobrir o Max e Min absoluto do mês (maior que zero)
-    for (let d = 1; d <= lastDayOfMonth; d++) {
+    // 1. PRIMEIRO: Descobrir o Max/Min e QUAL DIA ganhou
+    // Rodamos do último dia para o primeiro, assim em caso de empate, o dia mais recente ganha
+    for (let d = lastDayOfMonth; d >= 1; d--) {
         const t = dailyStats[d].total;
         if (t > 0) {
-            if (t > maxVal) maxVal = t;
-            if (t < minVal) minVal = t;
+            if (t > maxVal) {
+                maxVal = t;
+                bestDayNum = d;
+            }
+            if (t < minVal) {
+                minVal = t;
+                worstDayNum = d;
+            }
         }
     }
 
@@ -3355,27 +3367,28 @@ function renderMonthlyReport() {
     tbody.innerHTML = '';
     const formatBRL = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
 
-    // 2. SEGUNDO: Renderizar a tabela aplicando o contorno
-    Object.keys(dailyStats).reverse().forEach(day => {
+    // Preenche as strings dos cartões de cima se encontrou vencedores
+    if (bestDayNum !== -1) {
+        bestDayStr = `${String(bestDayNum).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(maxVal)})`;
+    }
+    if (worstDayNum !== -1) {
+        worstDayStr = `${String(worstDayNum).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(minVal)})`;
+    }
+
+    // 2. SEGUNDO: Renderizar a tabela aplicando o contorno SÓ no dia exato
+    Object.keys(dailyStats).reverse().forEach(dayStr => {
+        const day = Number(dayStr);
         const data = dailyStats[day];
         totalMonthlyBruto += data.total;
 
-        // Atualiza as strings para os cards superiores (Pega o dia mais recente que bateu o recorde)
-        if (data.total === maxVal && data.total > 0 && bestDayStr === '-') {
-            bestDayStr = `${String(day).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(maxVal)})`;
-        }
-        if (data.total === minVal && data.total > 0 && worstDayStr === '-') {
-            worstDayStr = `${String(day).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(minVal)})`;
-        }
-
-        // Define as classes de destaque da linha
+        // Define as classes de destaque da linha comparando o dia exato
         let rowClasses = "hover:bg-white/[0.02] transition-colors border-b border-white/5";
         let tagBadge = "";
 
-        if (data.total === maxVal && data.total > 0) {
+        if (day === bestDayNum) {
             rowClasses = "bg-emerald-500/10 border-l-2 border-emerald-500 transition-colors";
             tagBadge = `<span class="ml-3 bg-emerald-500/20 text-emerald-500 text-[8px] font-black uppercase px-2 py-0.5 rounded border border-emerald-500/20">Maior Faturamento</span>`;
-        } else if (data.total === minVal && data.total > 0) {
+        } else if (day === worstDayNum) {
             rowClasses = "bg-rose-500/10 border-l-2 border-rose-500 transition-colors";
             tagBadge = `<span class="ml-3 bg-rose-500/20 text-rose-500 text-[8px] font-black uppercase px-2 py-0.5 rounded border border-rose-500/20">Menor Faturamento</span>`;
         }

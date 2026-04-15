@@ -1741,6 +1741,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updateDateRangeLabel();
+    updatePlanButtons();
 });
 
 function renderCategories() {
@@ -2430,6 +2431,17 @@ function upgradeAccount(planName) {
 
 // Abre a Área de Checkout para Renovar ou Trocar de Plano
 function renewPlan() {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado')) || { plan: 'VIP' };
+    const currentPlan = user.plan ? user.plan.toUpperCase() : 'VIP';
+
+    // Função ajudante para gerar o botão (ou a etiqueta de Plano Atual)
+    const getBtnHtml = (planName, price, color) => {
+        if (planName === currentPlan) {
+            return `<div class="w-full py-4 mt-auto rounded-2xl bg-${color}/10 border border-${color}/30 text-${color} text-xs font-black uppercase text-center tracking-widest cursor-default">Plano Atual</div>`;
+        }
+        return `<button onclick="goToPlanCheckout('${planName}', ${price})" class="w-full py-4 mt-auto rounded-2xl border border-${color}/40 text-${color} text-xs font-black uppercase hover:bg-${color} hover:text-black transition tracking-widest shadow-lg shadow-${color}/10">Trocar Plano</button>`;
+    };
+
     const viewStores = document.getElementById('view-stores');
     const storeDash = document.getElementById('view-store-dashboard');
     
@@ -2452,20 +2464,20 @@ function renewPlan() {
                         <h3 class="text-xl font-black text-white mb-2 uppercase">VIP</h3>
                         <p class="text-[10px] text-green-400 font-black uppercase tracking-widest mb-6">Starter</p>
                         <div class="mb-8"><span class="text-4xl font-black text-green-400">R$ 14,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
-                        <button onclick="goToPlanCheckout('VIP', 14.90)" class="w-full py-4 mt-auto rounded-2xl border border-green-400/30 text-green-400 text-xs font-black uppercase hover:bg-green-400 hover:text-black transition tracking-widest shadow-lg shadow-green-400/10">Trocar Plano</button>
+                        ${getBtnHtml('VIP', 14.90, 'green-400')}
                     </div>
                     <div class="glass rounded-[2rem] p-8 border-pink-500/30 flex flex-col h-full bg-zinc-900/40 hover:border-pink-500/60 transition-all relative overflow-hidden">
                         <div class="absolute top-0 right-0 bg-pink-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl">Popular</div>
                         <h3 class="text-xl font-black text-white mb-2 uppercase">PRO</h3>
                         <p class="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-6">Elite</p>
                         <div class="mb-8"><span class="text-4xl font-black text-pink-500">R$ 29,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
-                        <button onclick="goToPlanCheckout('PRO', 29.90)" class="w-full py-4 mt-auto rounded-2xl border border-pink-500/40 text-pink-500 text-xs font-black uppercase hover:bg-pink-500 hover:text-black transition tracking-widest shadow-lg shadow-pink-500/10">Trocar Plano</button>
+                        ${getBtnHtml('PRO', 29.90, 'pink-500')}
                     </div>
                     <div class="glass rounded-[2rem] p-8 border-cyan-400/20 flex flex-col h-full bg-zinc-900/40 hover:border-cyan-400/50 transition-all">
                         <h3 class="text-xl font-black text-white mb-2 uppercase">LEGEND</h3>
                         <p class="text-[10px] text-cyan-400 font-black uppercase tracking-widest mb-6">Expert</p>
                         <div class="mb-8"><span class="text-4xl font-black text-cyan-400">R$ 59,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
-                        <button onclick="goToPlanCheckout('LEGEND', 59.90)" class="w-full py-4 mt-auto rounded-2xl border border-cyan-400/30 text-cyan-400 text-xs font-black uppercase hover:bg-cyan-400 hover:text-black transition tracking-widest shadow-lg shadow-cyan-400/10">Trocar Plano</button>
+                        ${getBtnHtml('LEGEND', 59.90, 'cyan-400')}
                     </div>
                 </div>
             </div>
@@ -3421,6 +3433,40 @@ window.addEventListener('storage', function(e) {
         }
     }
 });
+
+// --- ATUALIZA BOTÕES NA ABA DASHBOARD > PLANOS ---
+function updatePlanButtons() {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!user) return;
+    const currentPlan = user.plan ? user.plan.toUpperCase() : 'VIP';
+
+    const buttons = document.querySelectorAll('#tab-planos button[onclick^="upgradeAccount"]');
+    
+    buttons.forEach(btn => {
+        const planMatch = btn.getAttribute('onclick').match(/'([^']+)'/);
+        if (planMatch) {
+            const planName = planMatch[1];
+            if (planName === currentPlan) {
+                // Cria a etiqueta inativa "Plano Atual"
+                const parent = btn.parentElement;
+                const div = document.createElement('div');
+                
+                let colorClass = 'gray-500';
+                if (planName === 'VIP') colorClass = 'green-400';
+                if (planName === 'PRO') colorClass = 'pink-500';
+                if (planName === 'LEGEND') colorClass = 'cyan-400';
+
+                div.className = `w-full py-4 mt-8 rounded-2xl bg-${colorClass}/10 border border-${colorClass}/30 text-${colorClass} text-[10px] font-black uppercase text-center tracking-widest cursor-default`;
+                div.innerText = 'Plano Atual';
+                
+                parent.replaceChild(div, btn);
+            } else {
+                // Deixa os outros como "Trocar Plano"
+                btn.innerText = 'Trocar Plano';
+            }
+        }
+    });
+}
     </script>
 </body>
 </html>

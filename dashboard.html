@@ -1706,8 +1706,24 @@ function executeStoreDelete() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    let user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return window.location.href = 'login.html';
+
+    // --- VACINA ANTI-CACHE / ANTI-CRASH ---
+    // Se o login tiver vindo do código antigo (bugado), nós consertamos o objeto na hora!
+    if (user.user && user.user.nome) {
+        user = {
+            nome: user.user.nome,
+            email: user.user.email,
+            plan: user.user.plano || 'VIP',
+            planExpiresAt: user.user.planExpiresAt || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
+            limits: user.user.limites || { stores: 1, items: 10 }
+        };
+        localStorage.setItem('usuarioLogado', JSON.stringify(user)); // Guarda o formato certo
+    }
+
+    // Se mesmo assim não houver nome, cria um fallback seguro para não crashar
+    if (!user.nome) user.nome = "Administrador";
 
     checkPlanExpiration();
     enforceStoreLimits();
@@ -1716,12 +1732,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('nome-usuario-header')) {
         document.getElementById('nome-usuario-header').innerText = user.nome;
     }
+    // Coloca o primeiro nome lá no canto superior direito
+    if (document.getElementById('top-right-name')) {
+        document.getElementById('top-right-name').innerText = user.nome.split(' ')[0];
+    }
 
-    // 2. Avatar (Sempre Dourado como você pediu)
+    // 2. Avatar (Com proteção contra Adblock)
     const avatarImg = document.getElementById('user-avatar');
+    const avatarFallback = document.getElementById('avatar-fallback');
     if (avatarImg) {
-        // background=D4AF37 é o seu dourado padrão
         avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
+        if (avatarFallback) avatarFallback.innerText = user.nome.charAt(0).toUpperCase();
     }
 
     // --- DOWNLOAD AUTOMÁTICO DA NUVEM ---

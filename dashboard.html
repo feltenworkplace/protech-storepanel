@@ -1361,7 +1361,7 @@ select:focus option:checked {
 
         const STORAGE_KEYS = { stores: 'protech_stores_v1', activeStoreId: 'protech_active_store_id_v1' };
         function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
-        function getStores() { const raw = localStorage.getItem(STORAGE_KEYS.stores); return safeParse(raw, []); }
+        function getStores() { const raw = localStorage.getItem(STORAGE_KEYS.stores); if (!raw) return []; const parsed = safeParse(raw, []); return Array.isArray(parsed) ? parsed : []; }
         function getActiveStoreId() { return localStorage.getItem(STORAGE_KEYS.activeStoreId) || ''; }
         function setActiveStoreId(id) { if (!id) localStorage.removeItem(STORAGE_KEYS.activeStoreId); else localStorage.setItem(STORAGE_KEYS.activeStoreId, id); }
         function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
@@ -1709,43 +1709,49 @@ document.addEventListener('DOMContentLoaded', () => {
     let user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return window.location.href = 'login.html';
 
-    // --- VACINA ANTI-CACHE / ANTI-CRASH ---
-    // Se o login tiver vindo do código antigo (bugado), nós consertamos o objeto na hora!
+    // --- VACINA ANTI-CRASH DO USUÁRIO ---
     if (user.user && user.user.nome) {
         user = {
             nome: user.user.nome,
             email: user.user.email,
             plan: user.user.plano || 'VIP',
             planExpiresAt: user.user.planExpiresAt || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
-            limits: user.user.limites || { stores: 1, items: 10 }
+            limits: typeof user.user.limites === 'string' ? JSON.parse(user.user.limites) : (user.user.limites || { stores: 1, items: 10 })
         };
-        localStorage.setItem('usuarioLogado', JSON.stringify(user)); // Guarda o formato certo
+        localStorage.setItem('usuarioLogado', JSON.stringify(user));
     }
-
-    // Se mesmo assim não houver nome, cria um fallback seguro para não crashar
     if (!user.nome) user.nome = "Administrador";
+    if (!user.plan) user.plan = "VIP";
+
+    // Conserta os limites caso o banco de dados envie como texto (importante!)
+    let limitStores = 1;
+    try {
+        if (typeof user.limits === 'string') user.limits = JSON.parse(user.limits);
+        if (user.limits && user.limits.stores) limitStores = parseInt(user.limits.stores);
+    } catch(e) {}
+    user.limits = { stores: limitStores, items: 10 };
 
     checkPlanExpiration();
     enforceStoreLimits();
 
-    // 1. Nome do Usuário
+    // 1. Atualiza o SEU cabeçalho original
     if (document.getElementById('nome-usuario-header')) {
         document.getElementById('nome-usuario-header').innerText = user.nome;
     }
-    // Coloca o primeiro nome lá no canto superior direito
-    if (document.getElementById('top-right-name')) {
-        document.getElementById('top-right-name').innerText = user.nome.split(' ')[0];
-    }
 
-    // 2. Avatar (Com proteção contra Adblock)
+    // 2. Atualiza o SEU Avatar original (com proteção pura em JS contra AdBlock, sem mexer no HTML)
     const avatarImg = document.getElementById('user-avatar');
-    const avatarFallback = document.getElementById('avatar-fallback');
     if (avatarImg) {
         avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
-        if (avatarFallback) avatarFallback.innerText = user.nome.charAt(0).toUpperCase();
+        
+        // Se o AdBlock do seu amigo bloquear a imagem, o JS desenha uma letra dourada na hora!
+        avatarImg.onerror = function() {
+            const inicial = user.nome.charAt(0).toUpperCase();
+            this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#D4AF37"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif" font-weight="bold" fill="#000">${inicial}</text></svg>`);
+        };
     }
 
-    // --- DOWNLOAD AUTOMÁTICO DA NUVEM ---
+    // --- DOWNLOAD DA NUVEM (Essencial para as lojas aparecerem) ---
     fetch('https://storepanel-backend.onrender.com/get-stores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1753,16 +1759,11 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success && data.lojas && data.lojas.length > 0) {
-            // Guarda no PC as lojas que vieram do banco de dados
+        if (data.success && data.lojas && Array.isArray(data.lojas)) {
             localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
-            
-            // Força a atualização visual da página com os dados frescos
             enforceStoreLimits();
             renderStoresGrid();
             updateCategoryDropdowns();
-            
-            // Se o usuário estiver dentro do painel de uma loja, atualiza os dados dela
             const params = new URLSearchParams(window.location.search);
             if (params.get('s')) {
                 renderDashboardGeral();
@@ -1771,10 +1772,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCoupons();
             }
         }
-    })
-    .catch(err => console.error("Erro ao puxar dados da nuvem:", err));
+    }).catch(err => console.error("Erro na nuvem:", err));
 
-    // 3. Plano com Cores e Tempo Restante (Juntos - PC e Mobile)
+    // 3. Renderiza os cartões de plano (Desktop e Mobile) do SEU design
     const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
     const mobilePlanContent = document.getElementById('mobile-plan-content');
     
@@ -1794,19 +1794,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Esta é a parte que reconstrói as linhas para os dois lugares
         const planHtml = `
             <p class="text-xs font-bold text-white whitespace-nowrap" id="user-plan-text">
                 <span style="color: ${corHex}">${plano}</span> PLAN
             </p>
             ${statusHtml}
         `;
-
         if (planContainer) planContainer.innerHTML = planHtml;
         if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
     }
 
     renderStoresGrid();
+    updateDateRangeLabel();
+    updatePlanButtons();
 
     document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
         const tabName = link.id.replace(/^menu-/, '');
@@ -1815,9 +1815,6 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab(tabName);
         });
     });
-
-    updateDateRangeLabel();
-    updatePlanButtons();
 });
 
 function renderCategories() {

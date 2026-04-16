@@ -274,11 +274,10 @@
         formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const email = document.querySelector('#email').value;
+            const email = document.querySelector('#email').value.trim(); // .trim() tira espaços invisíveis!
             const senha = document.querySelector('#senha').value;
             const btnEntrar = document.querySelector('#btn-entrar');
 
-            // Feedback visual no botão
             btnEntrar.disabled = true;
             btnEntrar.innerText = "VERIFICANDO...";
 
@@ -286,28 +285,30 @@
                 const response = await fetch('https://storepanel-backend.onrender.com/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, senha })
+                    // Envia senha e password para o servidor nunca falhar
+                    body: JSON.stringify({ email: email, senha: senha, password: senha })
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // MÁGICA: Extraímos apenas as informações do 'user' e formatamos para o Dashboard ler
+                    // Limpa os limites caso venham como texto
+                    let limitesParse = { stores: 1, items: 10 };
+                    if (data.user && data.user.limites) {
+                        try { limitesParse = typeof data.user.limites === 'string' ? JSON.parse(data.user.limites) : data.user.limites; } catch(e){}
+                    }
+
                     const userDataToSave = {
-                        nome: data.user.nome,
-                        email: data.user.email,
-                        plan: data.user.plano || 'VIP',
-                        planExpiresAt: data.user.planExpiresAt || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
-                        limits: data.user.limites || { stores: 1, items: 10 }
+                        nome: data.user ? data.user.nome : "Administrador",
+                        email: data.user ? data.user.email : email,
+                        plan: data.user ? data.user.plano : 'VIP',
+                        planExpiresAt: data.user ? data.user.planExpiresAt : (Date.now() + (30 * 24 * 60 * 60 * 1000)),
+                        limits: limitesParse
                     };
 
-                    // Salva os dados processados no localStorage para a Dashboard
                     localStorage.setItem('usuarioLogado', JSON.stringify(userDataToSave));
-
-                    // Redireciona para o Dashboard
                     window.location.href = 'dashboard.html';
                 } else {
-                    // NOTIFICAÇÃO MODERNA DE ERRO
                     Swal.fire({
                         icon: 'error',
                         title: 'Acesso Negado',

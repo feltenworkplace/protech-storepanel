@@ -289,11 +289,20 @@
                     body: JSON.stringify({ email, senha })
                 });
 
-                if (response.ok) {
-                    const dadosDoUsuario = await response.json();
+                const data = await response.json();
 
-                    // Salva os dados (nome, plano) no localStorage para a Dashboard
-                    localStorage.setItem('usuarioLogado', JSON.stringify(dadosDoUsuario));
+                if (response.ok && data.success) {
+                    // MÁGICA: Extraímos apenas as informações do 'user' e formatamos para o Dashboard ler
+                    const userDataToSave = {
+                        nome: data.user.nome,
+                        email: data.user.email,
+                        plan: data.user.plano || 'VIP',
+                        planExpiresAt: data.user.planExpiresAt || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
+                        limits: data.user.limites || { stores: 1, items: 10 }
+                    };
+
+                    // Salva os dados processados no localStorage para a Dashboard
+                    localStorage.setItem('usuarioLogado', JSON.stringify(userDataToSave));
 
                     // Redireciona para o Dashboard
                     window.location.href = 'dashboard.html';
@@ -302,7 +311,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Acesso Negado',
-                        text: 'E-mail ou senha incorretos.',
+                        text: data.message || 'E-mail ou senha incorretos.',
                         background: '#121212',
                         color: '#fff',
                         confirmButtonColor: '#D4AF37'

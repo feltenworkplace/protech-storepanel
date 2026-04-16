@@ -1362,13 +1362,27 @@ select:focus option:checked {
         const STORAGE_KEYS = { stores: 'protech_stores_v1', activeStoreId: 'protech_active_store_id_v1' };
         function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
         function getStores() { const raw = localStorage.getItem(STORAGE_KEYS.stores); return safeParse(raw, []); }
-        function setStores(stores) { localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); }
         function getActiveStoreId() { return localStorage.getItem(STORAGE_KEYS.activeStoreId) || ''; }
         function setActiveStoreId(id) { if (!id) localStorage.removeItem(STORAGE_KEYS.activeStoreId); else localStorage.setItem(STORAGE_KEYS.activeStoreId, id); }
         function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
         function createId() { return `store_${Date.now()}_${Math.random().toString(16).slice(2)}`; }
         function createStore({ name, slug }) { const now = Date.now(); return { id: createId(), name: String(name || '').trim(), slug: normalizeSlug(slug), createdAt: now, trialEndsAt: now + 15 * 24 * 60 * 60 * 1000, plan: null }; }
 
+        function setStores(stores) { 
+            // 1. Salva no PC local para ser super rápido
+            localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
+            
+            // 2. MÁGICA: Sincroniza silenciosamente com o banco de dados na Nuvem!
+            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+            if (user && user.email) {
+                fetch('https://storepanel-backend.onrender.com/sync-stores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, stores: stores })
+                }).catch(err => console.log("Erro na sincronização:", err));
+            }
+        }
+        
         function openStoreDashboard(storeId) {
     const stores = getStores();
     const store = stores.find(s => s.id === storeId);
@@ -1709,6 +1723,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // background=D4AF37 é o seu dourado padrão
         avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
     }
+
+    // --- DOWNLOAD AUTOMÁTICO DA NUVEM ---
+    fetch('https://storepanel-backend.onrender.com/get-stores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.lojas && data.lojas.length > 0) {
+            // Guarda no PC as lojas que vieram do banco de dados
+            localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+            
+            // Força a atualização visual da página com os dados frescos
+            enforceStoreLimits();
+            renderStoresGrid();
+            updateCategoryDropdowns();
+            
+            // Se o usuário estiver dentro do painel de uma loja, atualiza os dados dela
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('s')) {
+                renderDashboardGeral();
+                renderProducts();
+                renderCategories();
+                renderCoupons();
+            }
+        }
+    })
+    .catch(err => console.error("Erro ao puxar dados da nuvem:", err));
 
     // 3. Plano com Cores e Tempo Restante (Juntos - PC e Mobile)
     const planContainer = document.querySelector('.hidden.lg\\:block.text-right');

@@ -1361,13 +1361,20 @@ select:focus option:checked {
 
         const STORAGE_KEYS = { stores: 'protech_stores_v1', activeStoreId: 'protech_active_store_id_v1' };
         function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
-        function getStores() { const raw = localStorage.getItem(STORAGE_KEYS.stores); if (!raw) return []; const parsed = safeParse(raw, []); return Array.isArray(parsed) ? parsed : []; }
         function getActiveStoreId() { return localStorage.getItem(STORAGE_KEYS.activeStoreId) || ''; }
         function setActiveStoreId(id) { if (!id) localStorage.removeItem(STORAGE_KEYS.activeStoreId); else localStorage.setItem(STORAGE_KEYS.activeStoreId, id); }
         function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
         function createId() { return `store_${Date.now()}_${Math.random().toString(16).slice(2)}`; }
         function createStore({ name, slug }) { const now = Date.now(); return { id: createId(), name: String(name || '').trim(), slug: normalizeSlug(slug), createdAt: now, trialEndsAt: now + 15 * 24 * 60 * 60 * 1000, plan: null }; }
 
+        function getStores() { 
+        const raw = localStorage.getItem(STORAGE_KEYS.stores); 
+        // Se não houver nada no disco, retorna uma lista vazia [] em vez de null
+        if (!raw || raw === "null") return []; 
+        const parsed = safeParse(raw, []); 
+        return Array.isArray(parsed) ? parsed : [];
+        }
+        
         function setStores(stores) { 
             // 1. Salva no PC local para ser super rápido
             localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 

@@ -3465,6 +3465,17 @@ window.addEventListener('storage', function(e) {
     }
 });
 
+function processCheckout(planName, price) {
+    const checkoutIntent = { 
+        type: 'plataforma_subscription', 
+        plan: planName, 
+        price: price, 
+        name: `Assinatura Plano ${planName} (30 dias)` 
+    };
+    localStorage.setItem('checkout_intent', JSON.stringify(checkoutIntent));
+    window.location.href = 'checkout.html';
+}
+
 function extendCurrentPlan(planName, price) {
     const modal = document.getElementById('confirm-modal');
     

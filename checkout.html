@@ -217,9 +217,16 @@
                                     
                                     const expiracaoAtual = Number(loggedUser.planExpiresAt || 0);
 
-                                    if (expiracaoAtual > now) {
-                                        loggedUser.planExpiresAt = expiracaoAtual + thirtyDaysInMs;
+                                    // --- O SISTEMA ANTI-ESPERTINHO (SOMA VS RESET) ---
+                                    if (loggedUser.plan === planToBuy) {
+                                        // Se ele comprou o MESMO plano, a gente soma os dias aos que ele já tem
+                                        if (expiracaoAtual > now) {
+                                            loggedUser.planExpiresAt = expiracaoAtual + thirtyDaysInMs;
+                                        } else {
+                                            loggedUser.planExpiresAt = now + thirtyDaysInMs;
+                                        }
                                     } else {
+                                        // Se for um plano DIFERENTE, os dias são resetados e contam a partir de AGORA!
                                         loggedUser.planExpiresAt = now + thirtyDaysInMs;
                                     }
                                     
@@ -229,10 +236,10 @@
                                     localStorage.setItem('usuarioLogado', JSON.stringify(loggedUser));
                                     localStorage.removeItem('checkout_intent');
                                     
-                                    Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: 'Sua assinatura foi renovada.', confirmButtonColor: '#D4AF37' })
+                                    Swal.fire({ icon: 'success', title: 'Pagamento Aprovado!', text: 'Sua assinatura foi atualizada.', confirmButtonColor: '#D4AF37' })
                                     .then(() => window.location.href = 'dashboard.html');
 
-                                } else {
+                                    }  else {
                                     const responseSignup = await fetch('https://storepanel-backend.onrender.com/signup', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },

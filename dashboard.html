@@ -2441,22 +2441,25 @@ function upgradeAccount(planName) {
     goToPlanCheckout(planName, prices[planName]);
 }
 
-// Abre a Área de Checkout para Renovar ou Trocar de Plano
 function renewPlan() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado')) || { plan: 'VIP' };
     const currentPlan = user.plan ? user.plan.toUpperCase() : 'VIP';
 
-    // Função ajudante para gerar o botão (ou a etiqueta de Plano Atual)
     const getBtnHtml = (planName, price, color) => {
         if (planName === currentPlan) {
-            return `<div class="w-full py-4 mt-auto rounded-2xl bg-${color}/10 border border-${color}/30 text-${color} text-xs font-black uppercase text-center tracking-widest cursor-default">Plano Atual</div>`;
+            return `
+            <div class="flex gap-2 mt-auto">
+                <div class="flex-grow py-4 rounded-2xl bg-${color}/10 border border-${color}/30 text-${color} text-[10px] font-black uppercase text-center tracking-widest cursor-default flex items-center justify-center">Plano Atual</div>
+                <button onclick="extendCurrentPlan('${planName}', ${price})" class="w-12 h-[46px] flex-shrink-0 flex items-center justify-center rounded-2xl bg-${color}/10 border border-${color}/30 text-${color} hover:bg-${color} hover:text-black transition-all shadow-lg shadow-${color}/10" title="Adicionar 30 dias">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                </button>
+            </div>`;
         }
-        return `<button onclick="goToPlanCheckout('${planName}', ${price})" class="w-full py-4 mt-auto rounded-2xl border border-${color}/40 text-${color} text-xs font-black uppercase hover:bg-${color} hover:text-black transition tracking-widest shadow-lg shadow-${color}/10">Trocar Plano</button>`;
+        return `<button onclick="goToPlanCheckout('${planName}', ${price})" class="w-full py-4 mt-auto rounded-2xl border border-${color}/40 text-${color} text-[10px] font-black uppercase hover:bg-${color} hover:text-black transition tracking-widest shadow-lg shadow-${color}/10">Trocar Plano</button>`;
     };
 
     const viewStores = document.getElementById('view-stores');
     const storeDash = document.getElementById('view-store-dashboard');
-    
     if (storeDash) storeDash.classList.add('hidden');
     
     if (viewStores) {
@@ -2470,7 +2473,6 @@ function renewPlan() {
                     <h2 class="text-3xl md:text-4xl font-black tracking-tight text-white uppercase">Checkout de Assinatura</h2>
                     <p class="text-sm text-gray-500 mt-3 uppercase tracking-[0.2em]">Escolha seu plano para renovar ou fazer upgrade</p>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
                     <div class="glass rounded-[2rem] p-8 border-green-400/20 flex flex-col h-full hover:border-green-400/50 transition-all bg-zinc-900/40">
                         <h3 class="text-xl font-black text-white mb-2 uppercase">VIP</h3>
@@ -2498,17 +2500,34 @@ function renewPlan() {
 }
 
 function goToPlanCheckout(planName, price) {
-    // Cria uma "intenção de compra" para a página de checkout saber o que cobrar
-    const checkoutIntent = {
-        type: 'plataforma_subscription',
-        plan: planName,
-        price: price,
-        name: `Assinatura Plano ${planName} (30 dias)`
-    };
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     
-    // Salva no navegador e redireciona
-    localStorage.setItem('checkout_intent', JSON.stringify(checkoutIntent));
-    window.location.href = 'checkout.html';
+    // Se ele tem um plano e está TENTANDO MUDAR DE PLANO com dias sobrando...
+    if (user && user.plan && user.plan !== planName && user.planExpiresAt > Date.now()) {
+        const modal = document.getElementById('confirm-modal');
+        
+        const btn = document.getElementById('confirm-delete-btn');
+        btn.className = "flex-1 py-4 bg-amber-500 text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-amber-900/20 hover:bg-amber-400 transition";
+        btn.innerText = "Estou ciente, Trocar";
+
+        modal.querySelector('h3').textContent = "Atenção ao Trocar de Plano!";
+        modal.querySelector('p').textContent = `Você possui dias sobrando no plano ${user.plan}. Ao mudar para o ${planName}, esse tempo restante SERÁ PERDIDO e resetado para 30 dias.`;
+        
+        const iconDiv = modal.querySelector('.rounded-full.flex');
+        if(iconDiv) {
+            iconDiv.className = "w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-500/20";
+            iconDiv.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+        }
+
+        modal.classList.remove('hidden');
+        
+        btn.onclick = () => {
+            closeModal('confirm-modal');
+            processCheckout(planName, price);
+        };
+    } else {
+        processCheckout(planName, price);
+    }
 }
 
 // Verifica o vencimento sempre que a página carrega
@@ -3446,7 +3465,50 @@ window.addEventListener('storage', function(e) {
     }
 });
 
-// --- ATUALIZA BOTÕES NA ABA DASHBOARD > PLANOS ---
+function extendCurrentPlan(planName, price) {
+    const modal = document.getElementById('confirm-modal');
+    
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.className = "flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg shadow-emerald-900/20 hover:bg-emerald-500 transition";
+    btn.innerText = "Ir para Pagamento";
+    
+    modal.querySelector('h3').textContent = "Renovar Plano?";
+    modal.querySelector('p').textContent = `Deseja adicionar mais 30 dias ao seu plano ${planName} atual? O tempo será acumulado.`;
+    
+    const iconDiv = modal.querySelector('.rounded-full.flex');
+    if(iconDiv) {
+        iconDiv.className = "w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20";
+        iconDiv.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>';
+    }
+    
+    modal.classList.remove('hidden');
+    
+    btn.onclick = () => {
+        closeModal('confirm-modal');
+        processCheckout(planName, price);
+    };
+}
+
+function resetConfirmModalStyles() {
+    const btn = document.getElementById('confirm-delete-btn');
+    if (btn) {
+        btn.className = "flex-1 py-4 bg-rose-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg shadow-rose-900/20 hover:bg-rose-500 transition";
+        btn.innerText = "Excluir";
+    }
+    const iconDiv = document.querySelector('#confirm-modal .rounded-full.flex');
+    if (iconDiv) {
+        iconDiv.className = "w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20";
+        iconDiv.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+    }
+}
+
+// Adiciona o reset ao fechar modais
+const originalCloseModal = closeModal;
+closeModal = function(id) {
+    originalCloseModal(id);
+    if (id === 'confirm-modal') resetConfirmModalStyles();
+};
+
 function updatePlanButtons() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return;
@@ -3459,21 +3521,32 @@ function updatePlanButtons() {
         if (planMatch) {
             const planName = planMatch[1];
             if (planName === currentPlan) {
-                // Cria a etiqueta inativa "Plano Atual"
                 const parent = btn.parentElement;
-                const div = document.createElement('div');
+                const container = document.createElement('div');
+                container.className = 'flex gap-2 mt-8 w-full';
                 
                 let colorClass = 'gray-500';
                 if (planName === 'VIP') colorClass = 'green-400';
                 if (planName === 'PRO') colorClass = 'pink-500';
                 if (planName === 'LEGEND') colorClass = 'cyan-400';
 
-                div.className = `w-full py-4 mt-8 rounded-2xl bg-${colorClass}/10 border border-${colorClass}/30 text-${colorClass} text-[10px] font-black uppercase text-center tracking-widest cursor-default`;
+                const prices = { 'VIP': 14.90, 'PRO': 29.90, 'LEGEND': 59.90 };
+                const currentPrice = prices[planName];
+
+                const div = document.createElement('div');
+                div.className = `flex-grow py-4 rounded-2xl bg-${colorClass}/10 border border-${colorClass}/30 text-${colorClass} text-[10px] font-black uppercase text-center tracking-widest cursor-default flex items-center justify-center`;
                 div.innerText = 'Plano Atual';
                 
-                parent.replaceChild(div, btn);
+                const addBtn = document.createElement('button');
+                addBtn.className = `w-12 h-[46px] flex-shrink-0 flex items-center justify-center rounded-2xl bg-${colorClass}/10 border border-${colorClass}/30 text-${colorClass} hover:bg-${colorClass} hover:text-black transition-all shadow-lg shadow-${colorClass}/10`;
+                addBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>`;
+                addBtn.title = "Adicionar 30 dias";
+                addBtn.onclick = () => extendCurrentPlan(planName, currentPrice);
+
+                container.appendChild(div);
+                container.appendChild(addBtn);
+                parent.replaceChild(container, btn);
             } else {
-                // Deixa os outros como "Trocar Plano"
                 btn.innerText = 'Trocar Plano';
             }
         }

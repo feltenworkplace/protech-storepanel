@@ -296,17 +296,20 @@ select:focus option:checked {
                 <button onclick="toggleSidebar()" class="md:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
-                <p class="text-xs md:text-sm text-gray-400 italic">Boa noite, <span id="nome-usuario-header" class="text-white font-bold">Carregando...</span>. Bem-vindo à sua <span class="text-gold">plataforma de marketplace</span>.</p>
+                <p class="text-xs md:text-sm text-gray-400 italic">Boa noite, <span id="nome-usuario-header" class="text-white font-bold">Carregando...</span>.</p>
             </div>
             <div class="flex items-center space-x-4 relative">
                 <div class="hidden lg:block text-right" id="desktop-plan-container">
-                    <p id="user-plan-text" class="text-[10px] font-black text-white uppercase tracking-[0.15em]">
-                        Expert PLAN
-                    </p>
+                    <p id="user-plan-text" class="text-[10px] font-black text-white uppercase tracking-[0.15em]">Plano...</p>
                 </div>
                 
-                <div onclick="toggleMobilePlanPopup()" class="w-10 h-10 flex-shrink-0 aspect-square rounded-xl border border-gold/40 p-0.5 overflow-hidden bg-zinc-900 cursor-pointer relative z-50">
-                    <img id="user-avatar" src="" class="w-full h-full rounded-lg object-cover pointer-events-none">
+                <div onclick="toggleMobilePlanPopup()" class="flex items-center gap-3 bg-white/5 border border-white/10 p-1.5 pr-4 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors relative z-50">
+                    <div class="w-8 h-8 flex-shrink-0 aspect-square rounded-xl overflow-hidden bg-zinc-900 border border-gold/40 flex items-center justify-center text-gold font-black text-xs">
+                        <img id="user-avatar" src="" class="w-full h-full object-cover pointer-events-none" onerror="this.style.display='none'; document.getElementById('avatar-fallback').classList.remove('hidden');">
+                        <span id="avatar-fallback" class="hidden">U</span>
+                    </div>
+                    <span id="top-right-name" class="text-xs font-bold text-white hidden sm:block">Carregando...</span>
+                    <svg class="w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
 
                 <div id="mobile-plan-popup" class="hidden lg:hidden absolute top-14 right-0 bg-[#0b0b0b] border border-white/10 rounded-2xl p-4 shadow-2xl z-40 min-w-[140px] animate-bounce-short">
@@ -1724,6 +1727,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Se mesmo assim não houver nome, cria um fallback seguro para não crashar
     if (!user.nome) user.nome = "Administrador";
+    if (!user.plan) user.plan = "VIP";
 
     checkPlanExpiration();
     enforceStoreLimits();

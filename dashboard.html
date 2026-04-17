@@ -3070,10 +3070,6 @@ function renderDashboardGeral() {
     
     let countPix = aprovados.filter(o => o.metodo === 'PIX').length;
     let countCartao = aprovados.filter(o => o.metodo !== 'PIX').length;
-    
-    // Se não tiver vendas, cria um dado fictício lindo só de amostra
-    const isDemo = (countPix === 0 && countCartao === 0);
-    if (isDemo) { countPix = 1; countCartao = 0; } 
 
     // 1. GRÁFICO DE ROSCA (MÉTODOS)
     const ctxMetodos = document.getElementById('chart-metodos');
@@ -3084,6 +3080,7 @@ function renderDashboardGeral() {
         data: {
             labels: ['PIX', 'Cartão'],
             datasets: [{
+                // Passa os valores reais (mesmo que sejam 0)
                 data: [countPix, countCartao],
                 backgroundColor: ['#10B981', '#D4AF37'], // Esmeralda (Pix) e Dourado (Cartão)
                 borderWidth: 0,
@@ -3133,19 +3130,15 @@ function renderDashboardGeral() {
         dadosLinhaReal.push(totalNesseDia);
     }
 
-    // Se não tiver nehuma venda nos últimos 7 dias, mostra a demonstração bonita
-    const temVendaNosUltimos7Dias = dadosLinhaReal.some(valor => valor > 0);
-    const dadosLinha = temVendaNosUltimos7Dias ? dadosLinhaReal : [10, 45, 30, 90, 60, 120, 200];
-    const isDemoChart = !temVendaNosUltimos7Dias;
-
     chartVendas = new Chart(ctxVendas, {
         type: 'line',
         data: {
             labels: labelsEixoX, // Aqui entram as datas dinâmicas!
             datasets: [{
                 label: 'Receita Diária (R$)',
-                data: dadosLinha, // Aqui entram as vendas reais diárias!
-                borderColor: isDemoChart ? 'rgba(212, 175, 55, 0.3)' : '#D4AF37', 
+                // Usa sempre os dados reais (zerados se não houver vendas na semana)
+                data: dadosLinhaReal, 
+                borderColor: '#D4AF37', 
                 backgroundColor: gradientVendas,
                 borderWidth: 3,
                 pointBackgroundColor: '#000',

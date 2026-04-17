@@ -3158,8 +3158,22 @@ function renderDashboardGeral() {
                 tooltip: { backgroundColor: '#0b0b0b', titleColor: '#D4AF37', bodyColor: '#fff', borderColor: 'rgba(212,175,55,0.2)', borderWidth: 1, padding: 12, displayColors: false }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 10 } } },
-                y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 10 }, beginAtZero: true, callback: function(value) { return 'R$ ' + value; } } }
+                x: { 
+                    grid: { display: false }, 
+                    ticks: { color: '#6B7280', font: { family: 'Inter', size: 10 } } 
+                },
+                y: { 
+                    min: 0, // TRAVA O GRÁFICO NO ZERO (Acaba com os negativos!)
+                    suggestedMax: 100, // Dá um fôlego visual para cima quando a loja está zerada
+                    grid: { color: 'rgba(255,255,255,0.05)' }, 
+                    border: { display: false }, 
+                    ticks: { 
+                        color: '#6B7280', 
+                        font: { family: 'Inter', size: 10 }, 
+                        beginAtZero: true, 
+                        callback: function(value) { return 'R$ ' + value; } 
+                    } 
+                }
             },
             interaction: { mode: 'index', intersect: false }
         }

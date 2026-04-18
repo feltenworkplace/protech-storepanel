@@ -1746,6 +1746,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('nome-usuario-header').innerText = user.nome;
     }
 
+    // Atualiza o nome na tabela de Auditoria
+    document.querySelectorAll('.dynamic-user-name').forEach(elemento => {
+        elemento.innerText = user.nome;
+    });
+
     // 2. Atualiza o SEU Avatar original (com proteção pura em JS contra AdBlock, sem mexer no HTML)
     const avatarImg = document.getElementById('user-avatar');
     if (avatarImg) {

@@ -121,7 +121,7 @@ app.post('/generate-pix', async (req, res) => {
                 first_name: nome,
                 identification: {
                     type: 'CPF',
-                    number: cpfLimpo // Usa o CPF limpo aqui!
+                    number: cpfLimpo
                 }
             }
         };

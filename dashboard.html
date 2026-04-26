@@ -1062,21 +1062,21 @@ select:focus option:checked {
         </div>
     </div>
 
-    <div id="product-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('product-modal')"></div>
-    <div class="relative w-full max-w-lg glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short flex flex-col max-h-[95vh]">
-        <div class="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
-            <h3 class="text-xl font-black tracking-tight text-white">Novo Produto</h3>
-            <button onclick="closeModal('product-modal')" class="text-gray-500 hover:text-white transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        
-        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5 overflow-y-auto custom-scrollbar">
+    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5 overflow-y-auto custom-scrollbar">
             <div class="md:col-span-2">
-                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto</label>
-                <input type="text" id="prod-name" placeholder="Ex: Ak-47 Vulcan" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do Produto (Visível na Loja)</label>
+                <input type="text" id="prod-name" placeholder="Ex: Ak-47 Vulcan ou BMW M5" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
             </div>
+            
+            <div class="md:col-span-2 bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-2xl">
+                <div class="flex items-center gap-3 mb-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Código de Spawn no Jogo (Entrega Automática)</label>
+                </div>
+                <input type="text" id="prod-gamecode" placeholder="Ex: t20, panto, weapon_ak47" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl focus:border-indigo-400 outline-none text-sm text-white font-mono transition-all">
+                <p class="text-[9px] text-gray-500 mt-2">A ProTech entregará este item automaticamente quando o pagamento for aprovado.</p>
+            </div>
+
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Categoria</label>
                 <div class="relative">
@@ -1174,7 +1174,7 @@ select:focus option:checked {
         <div class="p-8 space-y-6">
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Comando (Sem a /)</label>
-                <input type="text" id="cmd-text" placeholder="protech_darcarro {id} t20" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                <input type="text" id="cmd-text" placeholder="addcar {id} {nome}" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
                 <p class="text-[9px] text-gray-600 mt-2">Use <span class="text-gold">{id}</span> para o ID do jogador e <span class="text-gold">{nome}</span> para o nome.</p>
             </div>
             <div>
@@ -2217,9 +2217,10 @@ function openProductModal() {
 
 function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
+    const gameCode = document.getElementById('prod-gamecode').value.trim(); // NOVO CAMPO
     const categoryId = document.getElementById('prod-category').value;
     const price = document.getElementById('prod-price').value;
-    const description = document.getElementById('prod-desc').value.trim(); // Lendo a descrição
+    const description = document.getElementById('prod-desc').value.trim(); 
     const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
 
     if (!name || !categoryId || !price) {
@@ -2239,9 +2240,10 @@ function saveProduct() {
         const newProduct = {
             id: Date.now().toString(),
             name: name,
+            gameCode: gameCode, // Salva o comando de spawn aqui!
             categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
-            description: description, // Salvando a descrição no objeto
+            description: description, 
             image: image,
             status: 'Ativo'
         };
@@ -2249,9 +2251,9 @@ function saveProduct() {
         stores[storeIndex].products.push(newProduct);
         setStores(stores);
         
-        // Limpeza dos campos
         currentProdImageBase64 = "";
         document.getElementById('prod-name').value = '';
+        document.getElementById('prod-gamecode').value = ''; // Limpa o campo
         document.getElementById('prod-price').value = '';
         document.getElementById('prod-desc').value = '';
         document.getElementById('prod-preview').classList.add('hidden');

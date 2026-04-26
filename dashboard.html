@@ -1101,12 +1101,11 @@ select:focus option:checked {
                 <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl">
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Vinculado (Entrega Automática)</label>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon</label>
                 </div>
-                <div class="relative">
-                    <select id="prod-command" class="select-field w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-xl focus:border-indigo-500/50 outline-none text-sm text-gray-300 appearance-none cursor-pointer">
-                        <option value="">Sem comando vinculado (Entrega manual)</option>
-                    </select>
+                <div class="flex">
+                    <span class="bg-black/40 border border-white/5 border-r-0 rounded-l-xl px-4 py-4 text-sm text-gray-500 font-mono select-none">/</span>
+                    <input type="text" id="prod-command" placeholder="Ex: rbuwu" class="w-full bg-black/40 border border-white/5 rounded-r-xl p-4 pl-0 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all">
                 </div>
                 </div>
                 <div class="md:col-span-2">
@@ -1162,12 +1161,11 @@ select:focus option:checked {
             <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl">
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Vinculado (Entrega Automática)</label>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon</label>
                 </div>
-                <div class="relative">
-                    <select id="prod-command" class="select-field w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-xl focus:border-indigo-500/50 outline-none text-sm text-gray-300 appearance-none cursor-pointer">
-                        <option value="">Sem comando vinculado (Entrega manual)</option>
-                    </select>
+                <div class="flex">
+                    <span class="bg-black/40 border border-white/5 border-r-0 rounded-l-xl px-4 py-4 text-sm text-gray-500 font-mono select-none">/</span>
+                    <input type="text" id="edit-prod-command" placeholder="Ex: rbuwu" class="w-full bg-black/40 border border-white/5 rounded-r-xl p-4 pl-0 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all">
                 </div>
             </div>
             <div class="md:col-span-2">
@@ -2139,28 +2137,6 @@ function openCommandModal() {
     document.body.classList.add('no-scroll');
 }
 
-function updateCommandDropdowns() {
-    const params = new URLSearchParams(window.location.search);
-    const store = getStores().find(s => s.slug === params.get('s'));
-    const commands = store?.commands || [];
-    
-    const dropdowns = [document.getElementById('prod-command'), document.getElementById('edit-prod-command')];
-    
-    dropdowns.forEach(select => {
-        if (!select) return;
-        const defaultValue = select.firstElementChild; // Mantém a opção "Sem comando"
-        select.innerHTML = '';
-        select.appendChild(defaultValue);
-        
-        commands.forEach(cmd => {
-            const opt = document.createElement('option');
-            opt.value = cmd.id;
-            opt.textContent = `/${cmd.command}`;
-            select.appendChild(opt);
-        });
-    });
-}
-
 function saveCommand() {
     const cmdText = document.getElementById('cmd-text').value.trim();
 
@@ -2267,7 +2243,7 @@ function openProductModal() {
 
 function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
-    const gameCode = document.getElementById('prod-gamecode').value.trim(); // NOVO CAMPO
+    const gameCode = document.getElementById('prod-command').value.trim(); // Pega o texto digitado (Ex: rbuwu)
     const categoryId = document.getElementById('prod-category').value;
     const price = document.getElementById('prod-price').value;
     const description = document.getElementById('prod-desc').value.trim(); 
@@ -2290,7 +2266,7 @@ function saveProduct() {
         const newProduct = {
             id: Date.now().toString(),
             name: name,
-            gameCode: gameCode, // Salva o comando de spawn aqui!
+            gameCode: gameCode, // Salva o nome do Addon
             categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
             description: description, 
@@ -2301,9 +2277,10 @@ function saveProduct() {
         stores[storeIndex].products.push(newProduct);
         setStores(stores);
         
+        // Limpa os campos
         currentProdImageBase64 = "";
         document.getElementById('prod-name').value = '';
-        document.getElementById('prod-gamecode').value = ''; // Limpa o campo
+        document.getElementById('prod-command').value = ''; 
         document.getElementById('prod-price').value = '';
         document.getElementById('prod-desc').value = '';
         document.getElementById('prod-preview').classList.add('hidden');
@@ -2449,6 +2426,7 @@ function openEditProductModal(productId) {
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     document.getElementById('edit-prod-price').value = product.price;
+    document.getElementById('edit-prod-command').value = product.gameCode || ''; // Puxa o Comando Addon
     
     // Puxa a descrição salva
     const descField = document.getElementById('edit-prod-desc');
@@ -2470,9 +2448,10 @@ function openEditProductModal(productId) {
 function updateProduct() {
     const id = document.getElementById('edit-prod-id').value;
     const name = document.getElementById('edit-prod-name').value.trim();
+    const gameCode = document.getElementById('edit-prod-command').value.trim(); // Pega o Addon atualizado
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = document.getElementById('edit-prod-price').value;
-    const description = document.getElementById('edit-prod-desc').value.trim(); // Lendo a descrição editada
+    const description = document.getElementById('edit-prod-desc').value.trim(); 
     const image = currentEditImageBase64; 
 
     if (!name || !price) {
@@ -2491,9 +2470,10 @@ function updateProduct() {
             stores[storeIndex].products[prodIndex] = {
                 ...stores[storeIndex].products[prodIndex],
                 name: name,
+                gameCode: gameCode, // Salva a edição
                 categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
-                description: description, // Salvando a edição
+                description: description, 
                 image: image
             };
             

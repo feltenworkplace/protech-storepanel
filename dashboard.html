@@ -804,7 +804,6 @@ select:focus option:checked {
                     <th class="px-8 py-6">ID</th>
                     <th class="px-8 py-6">Comando</th>
                     <th class="px-8 py-6">Resultado</th>
-                    <th class="px-8 py-6 text-center">Escopo</th>
                     <th class="px-8 py-6 text-right">Ações</th>
                 </tr>
             </thead>
@@ -1099,6 +1098,17 @@ select:focus option:checked {
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
                     <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
                 </div>
+                <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Vinculado (Entrega Automática)</label>
+                </div>
+                <div class="relative">
+                    <select id="prod-command" class="select-field w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-xl focus:border-indigo-500/50 outline-none text-sm text-gray-300 appearance-none cursor-pointer">
+                        <option value="">Sem comando vinculado (Entrega manual)</option>
+                    </select>
+                </div>
+                </div>
                 <div class="md:col-span-2">
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
                     <textarea id="prod-desc" placeholder="Descreva os detalhes, vantagens e como o cliente receberá o produto..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-[#D4AF37] outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
@@ -1149,6 +1159,17 @@ select:focus option:checked {
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
                 <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
             </div>
+            <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Vinculado (Entrega Automática)</label>
+                </div>
+                <div class="relative">
+                    <select id="prod-command" class="select-field w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-xl focus:border-indigo-500/50 outline-none text-sm text-gray-300 appearance-none cursor-pointer">
+                        <option value="">Sem comando vinculado (Entrega manual)</option>
+                    </select>
+                </div>
+            </div>
             <div class="md:col-span-2">
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
                 <textarea id="edit-prod-desc" placeholder="Detalhes, vantagens e entrega..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all min-h-[100px]"></textarea>
@@ -1184,17 +1205,17 @@ select:focus option:checked {
         <div class="p-8 space-y-6">
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Comando (Sem a /)</label>
-                <input type="text" id="cmd-text" placeholder="addcar {id} {nome}" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                <p class="text-[9px] text-gray-600 mt-2">Use <span class="text-gold">{id}</span> para o ID do jogador e <span class="text-gold">{nome}</span> para o nome.</p>
+                <input type="text" id="cmd-text" placeholder="protech_entrega_veiculo {id} t20" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                <p class="text-[9px] text-gray-600 mt-2">Use <span class="text-gold">{id}</span> para o ID do jogador.</p>
             </div>
-            <div>
-                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Escopo de Execução</label>
-                <select id="cmd-scope" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white appearance-none cursor-pointer">
-                    <option value="Online">Apenas Online</option>
-                    <option value="Imediato">Imediato (Mesmo Offline)</option>
-                </select>
+            
+            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl">
+                <p class="text-[9px] text-gray-500 italic text-center leading-relaxed">
+                    Nota: O produto será entregue automaticamente no ID que o cliente preencher na página de checkout da loja. A entrega funciona independentemente do jogador estar online ou offline.
+                </p>
             </div>
-            <div class="flex gap-3 pt-4">
+
+            <div class="flex gap-3 pt-2">
                 <button onclick="closeModal('command-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
                 <button onclick="saveCommand()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Comando</button>
             </div>
@@ -2118,9 +2139,30 @@ function openCommandModal() {
     document.body.classList.add('no-scroll');
 }
 
+function updateCommandDropdowns() {
+    const params = new URLSearchParams(window.location.search);
+    const store = getStores().find(s => s.slug === params.get('s'));
+    const commands = store?.commands || [];
+    
+    const dropdowns = [document.getElementById('prod-command'), document.getElementById('edit-prod-command')];
+    
+    dropdowns.forEach(select => {
+        if (!select) return;
+        const defaultValue = select.firstElementChild; // Mantém a opção "Sem comando"
+        select.innerHTML = '';
+        select.appendChild(defaultValue);
+        
+        commands.forEach(cmd => {
+            const opt = document.createElement('option');
+            opt.value = cmd.id;
+            opt.textContent = `/${cmd.command}`;
+            select.appendChild(opt);
+        });
+    });
+}
+
 function saveCommand() {
     const cmdText = document.getElementById('cmd-text').value.trim();
-    const cmdScope = document.getElementById('cmd-scope').value;
 
     if (!cmdText) return showAlert("Digite o comando que será executado.");
 
@@ -2135,7 +2177,6 @@ function saveCommand() {
         const newCommand = {
             id: 'CMD' + Math.floor(Math.random() * 9000 + 1000),
             command: cmdText,
-            scope: cmdScope,
             date: new Date().toLocaleString('pt-BR')
         };
 
@@ -2145,6 +2186,7 @@ function saveCommand() {
         document.getElementById('cmd-text').value = '';
         closeModal('command-modal');
         renderCommands();
+        updateCommandDropdowns();
         showSuccess("Comando cadastrado!");
     }
 }
@@ -2171,12 +2213,9 @@ function renderCommands() {
         <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
             <td class="px-8 py-5 text-gray-500 font-mono text-[10px]">${cmd.id}</td>
             <td class="px-8 py-5 text-white font-bold text-sm">/${cmd.command}</td>
-            <td class="px-8 py-5 text-gray-400 text-xs italic">Aguardando gatilho...</td>
-            <td class="px-8 py-5 text-center">
-                <span class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase border border-blue-500/20">${cmd.scope}</span>
-            </td>
+            <td class="px-8 py-5 text-emerald-400 text-xs italic">Pronto para uso</td>
             <td class="px-8 py-5 text-right">
-                <button onclick="deleteCommand('${cmd.id}')" class="bg-white/5 p-2 rounded-lg text-gray-500 hover:text-red-400 transition-all">
+                <button onclick="deleteCommand('${cmd.id}')" class="bg-white/5 p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 border border-white/5 transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
             </td>
@@ -2194,6 +2233,7 @@ function deleteCommand(id) {
         stores[storeIndex].commands = stores[storeIndex].commands.filter(c => c.id !== id);
         setStores(stores);
         renderCommands();
+        updateCommandDropdowns();
     }
 }
 

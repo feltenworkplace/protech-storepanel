@@ -1098,15 +1098,20 @@ select:focus option:checked {
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
                     <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
                 </div>
-                <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl">
+                <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl transition-colors duration-300" id="prod-command-container">
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon</label>
                 </div>
-                <div class="flex">
-                    <span class="bg-black/40 border border-white/5 border-r-0 rounded-l-xl px-4 py-4 text-sm text-gray-500 font-mono select-none">/</span>
-                    <input type="text" id="prod-command" placeholder="Ex: rbuwu" class="w-full bg-black/40 border border-white/5 rounded-r-xl p-4 pl-0 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all">
+                <div class="relative flex items-center">
+                    <input type="text" id="prod-command" oninput="validateCommandMatch(this, 'prod-command-container', 'prod-command-id-badge')" placeholder="Pesquise o nome do comando (Ex: Camaro)" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
+                    
+                    <div class="absolute right-4 flex items-center gap-2 opacity-0 transition-opacity duration-300 pointer-events-none" id="prod-command-id-badge">
+                        <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 command-id-text">CMD0000</span>
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
                 </div>
+                <p class="text-[9px] text-gray-500 mt-2">O ID será validado e gerado automaticamente. Requer registo prévio em <span class="text-gold">Integrações > Comandos</span>.</p>
                 </div>
                 <div class="md:col-span-2">
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Descrição do Produto</label>
@@ -1158,14 +1163,18 @@ select:focus option:checked {
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
                 <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
             </div>
-            <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl">
+            <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl transition-colors duration-300" id="edit-prod-command-container">
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon</label>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon Vinculado</label>
                 </div>
-                <div class="flex">
-                    <span class="bg-black/40 border border-white/5 border-r-0 rounded-l-xl px-4 py-4 text-sm text-gray-500 font-mono select-none">/</span>
-                    <input type="text" id="edit-prod-command" placeholder="Ex: rbuwu" class="w-full bg-black/40 border border-white/5 rounded-r-xl p-4 pl-0 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all">
+                <div class="relative flex items-center">
+                    <input type="text" id="edit-prod-command" oninput="validateCommandMatch(this, 'edit-prod-command-container', 'edit-prod-command-id-badge')" placeholder="Pesquise o nome do comando (Ex: Camaro)" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
+                    
+                    <div class="absolute right-4 flex items-center gap-2 opacity-0 transition-opacity duration-300 pointer-events-none" id="edit-prod-command-id-badge">
+                        <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 command-id-text">CMD0000</span>
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
                 </div>
             </div>
             <div class="md:col-span-2">
@@ -2241,9 +2250,48 @@ function openProductModal() {
     document.body.classList.add('no-scroll');
 }
 
+// --- VALIDAÇÃO VISUAL DO COMANDO EM TEMPO REAL ---
+function validateCommandMatch(inputEl, containerId, badgeId) {
+    const typedValue = inputEl.value.trim().toLowerCase();
+    const container = document.getElementById(containerId);
+    const badge = document.getElementById(badgeId);
+    const idText = badge.querySelector('.command-id-text');
+    
+    const params = new URLSearchParams(window.location.search);
+    const store = getStores().find(s => s.slug === params.get('s'));
+    const commands = store?.commands || [];
+    
+    // Procura se alguma palavra salva em Integrações bate exatamente com o que ele digitou
+    const match = commands.find(c => c.command.toLowerCase() === typedValue);
+    
+    if (match) {
+        // Encontrou! Fica tudo verde e mostra o Checkmark + ID
+        container.classList.replace('border-indigo-500/10', 'border-emerald-500/30');
+        container.classList.replace('bg-indigo-500/5', 'bg-emerald-500/5');
+        inputEl.classList.replace('focus:border-indigo-500/50', 'focus:border-emerald-500/50');
+        
+        idText.innerText = match.id; // Mostra o CMD1930
+        badge.classList.remove('opacity-0');
+        badge.classList.add('opacity-100');
+        
+        inputEl.dataset.matchedId = match.id; // Guarda o ID invisivelmente para podermos salvar depois
+    } else {
+        // Não encontrou ou apagou o texto: Volta para o visual normal roxo
+        container.classList.replace('border-emerald-500/30', 'border-indigo-500/10');
+        container.classList.replace('bg-emerald-500/5', 'bg-indigo-500/5');
+        inputEl.classList.replace('focus:border-emerald-500/50', 'focus:border-indigo-500/50');
+        
+        badge.classList.remove('opacity-100');
+        badge.classList.add('opacity-0');
+        
+        inputEl.dataset.matchedId = "";
+    }
+}
+
 function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
-    const gameCode = document.getElementById('prod-command').value.trim(); // Pega o texto digitado (Ex: rbuwu)
+    // Pega o ID (CMDxxx) que a validação escondeu ali. Se não tiver ID válido, fica vazio.
+    const commandId = document.getElementById('prod-command').dataset.matchedId || ''; 
     const categoryId = document.getElementById('prod-category').value;
     const price = document.getElementById('prod-price').value;
     const description = document.getElementById('prod-desc').value.trim(); 
@@ -2266,7 +2314,7 @@ function saveProduct() {
         const newProduct = {
             id: Date.now().toString(),
             name: name,
-            gameCode: gameCode, // Salva o nome do Addon
+            commandId: commandId, // Salva o CMD1930
             categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
             description: description, 
@@ -2277,10 +2325,11 @@ function saveProduct() {
         stores[storeIndex].products.push(newProduct);
         setStores(stores);
         
-        // Limpa os campos
         currentProdImageBase64 = "";
         document.getElementById('prod-name').value = '';
         document.getElementById('prod-command').value = ''; 
+        document.getElementById('prod-command').dataset.matchedId = '';
+        validateCommandMatch(document.getElementById('prod-command'), 'prod-command-container', 'prod-command-id-badge'); // Reseta a cor verde
         document.getElementById('prod-price').value = '';
         document.getElementById('prod-desc').value = '';
         document.getElementById('prod-preview').classList.add('hidden');
@@ -2426,9 +2475,20 @@ function openEditProductModal(productId) {
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     document.getElementById('edit-prod-price').value = product.price;
-    document.getElementById('edit-prod-command').value = product.gameCode || ''; // Puxa o Comando Addon
     
-    // Puxa a descrição salva
+    // Tenta encontrar qual é a palavra "Camaro" baseada no ID "CMD1930" guardado no produto
+    const linkedCmd = store.commands?.find(c => c.id === product.commandId);
+    const cmdInput = document.getElementById('edit-prod-command');
+    
+    if (linkedCmd) {
+        cmdInput.value = linkedCmd.command; // Escreve "Camaro"
+    } else {
+        cmdInput.value = '';
+    }
+    
+    // Dispara a validação para a caixa já abrir verdinha caso exista o comando!
+    validateCommandMatch(cmdInput, 'edit-prod-command-container', 'edit-prod-command-id-badge');
+    
     const descField = document.getElementById('edit-prod-desc');
     if (descField) descField.value = product.description || '';
     
@@ -2448,7 +2508,8 @@ function openEditProductModal(productId) {
 function updateProduct() {
     const id = document.getElementById('edit-prod-id').value;
     const name = document.getElementById('edit-prod-name').value.trim();
-    const gameCode = document.getElementById('edit-prod-command').value.trim(); // Pega o Addon atualizado
+    // Pega o novo ID validado caso ele tenha editado
+    const commandId = document.getElementById('edit-prod-command').dataset.matchedId || ''; 
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = document.getElementById('edit-prod-price').value;
     const description = document.getElementById('edit-prod-desc').value.trim(); 
@@ -2470,10 +2531,10 @@ function updateProduct() {
             stores[storeIndex].products[prodIndex] = {
                 ...stores[storeIndex].products[prodIndex],
                 name: name,
-                gameCode: gameCode, // Salva a edição
+                commandId: commandId, // Salva o novo ID do comando
                 categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
-                description: description, 
+                description: description,
                 image: image
             };
             

@@ -1087,7 +1087,7 @@ select:focus option:checked {
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
-                    <input type="number" id="prod-price" placeholder="0.00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                    <input type="text" id="prod-price" oninput="maskMoney(this)" placeholder="R$ 0,00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
                 </div>
                 <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl transition-colors duration-300" id="prod-command-container">
                 <div class="flex items-center gap-2 mb-2">
@@ -1152,7 +1152,7 @@ select:focus option:checked {
             </div>
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Preço (R$)</label>
-                <input type="number" id="edit-prod-price" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                <input type="text" id="edit-prod-price" oninput="maskMoney(this)" placeholder="R$ 0,00" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
             </div>
             <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl transition-colors duration-300" id="edit-prod-command-container">
                 <div class="flex items-center gap-2 mb-2">
@@ -1837,9 +1837,19 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
         if (data.success && data.lojas && Array.isArray(data.lojas)) {
-            // PROTEÇÃO: Só sobrescreve o local se a nuvem trouxer dados reais
+            const localStores = getStores();
+            
+            // LÓGICA DE PERSISTÊNCIA REFORÇADA:
+            // Só sobrescreve se a nuvem tiver lojas E você não tiver criado nada novo localmente ainda
             if (data.lojas.length > 0) {
-                localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+                // Se você tem produtos locais, mas a nuvem veio vazia, NÃO sobrescreve.
+                // Isso protege contra falhas temporárias de sincronização do banco.
+                const cloudHasProducts = data.lojas.some(s => s.products && s.products.length > 0);
+                const localHasProducts = localStores.some(s => s.products && s.products.length > 0);
+
+                if (cloudHasProducts || !localHasProducts) {
+                    localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+                }
             }
             
             enforceStoreLimits();
@@ -1848,7 +1858,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const params = new URLSearchParams(window.location.search);
             if (params.get('s')) {
-                // MÁGICA: Carrega banners e favicons logo no refresh!
                 loadTemplateSettings(); 
                 renderDashboardGeral();
                 renderProducts();
@@ -2291,7 +2300,7 @@ function saveProduct() {
     // Pega o ID (CMDxxx) que a validação escondeu ali. Se não tiver ID válido, fica vazio.
     const commandId = document.getElementById('prod-command').dataset.matchedId || ''; 
     const categoryId = document.getElementById('prod-category').value;
-    const price = document.getElementById('prod-price').value;
+    const price = parseMoneyValue(document.getElementById('prod-price').value);
     const description = document.getElementById('prod-desc').value.trim(); 
     const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
 
@@ -2509,7 +2518,7 @@ function updateProduct() {
     // Pega o novo ID validado caso ele tenha editado
     const commandId = document.getElementById('edit-prod-command').dataset.matchedId || ''; 
     const categoryId = document.getElementById('edit-prod-category').value;
-    const price = document.getElementById('edit-prod-price').value;
+    const price = parseMoneyValue(document.getElementById('edit-prod-price').value);
     const description = document.getElementById('edit-prod-desc').value.trim(); 
     const image = currentEditImageBase64; 
 
@@ -3974,6 +3983,21 @@ function changeStoreStatus(newStatus) {
     setStores(stores);
     showSuccess(newStatus === 'Ativo' ? "Loja ativada com sucesso!" : "Loja desativada!");
     renderStoresGrid(); // Atualiza a grade visual no fundo
+}
+
+function maskMoney(input) {
+    let value = input.value.replace(/\D/g, ""); // Remove tudo que não é número
+    value = (value / 100).toFixed(2) + ""; // Transforma em decimal
+    value = value.replace(".", ","); // Troca ponto por vírgula
+    value = value.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,"); // Pontos de milhar
+    value = value.replace(/(\d)(\d{3}),/g, "$1.$2,");
+    input.value = "R$ " + value;
+}
+
+// Função auxiliar para converter o texto da máscara de volta para número real antes de salvar
+function parseMoneyValue(formattedValue) {
+    if (!formattedValue) return "0.00";
+    return formattedValue.replace("R$ ", "").replace(/\./g, "").replace(",", ".");
 }
     </script>
 </body>

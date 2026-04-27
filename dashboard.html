@@ -2567,17 +2567,17 @@ function saveTemplateSettings() {
 function loadTemplateSettings() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
-    const store = getStores().find(s => s.slug === currentSlug);
+    const stores = getStores();
+    const store = stores.find(s => s.slug === currentSlug);
 
     if (store && store.settings) {
-        // Carrega as cores nos inputs
+        // Carrega as cores e textos
         if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
         if (store.settings.secondaryColor) document.getElementById('store-secondary-color').value = store.settings.secondaryColor;
-        
         document.getElementById('temp-css').value = store.settings.customCss || '';
         document.getElementById('temp-html').value = store.settings.customHtml || '';
 
-        // CARREGA E APLICA AS IMAGENS
+        // CARREGA AS IMAGENS APENAS PARA O PREVIEW (Não muda a aba do Dashboard)
         const types = ['logo', 'banner', 'favicon'];
         types.forEach(type => {
             if (store.settings[type]) {
@@ -2586,17 +2586,6 @@ function loadTemplateSettings() {
                 if (img && container) {
                     img.src = store.settings[type];
                     container.classList.remove('hidden');
-                }
-                
-                // APLICA O FAVICON NA ABA DO NAVEGADOR
-                if (type === 'favicon') {
-                    let link = document.querySelector("link[rel~='icon']");
-                    if (!link) { 
-                        link = document.createElement('link'); 
-                        link.rel = 'icon'; 
-                        document.head.appendChild(link); 
-                    }
-                    link.href = store.settings[type];
                 }
             }
         });
@@ -2624,28 +2613,55 @@ function uploadTemplateImage(input, type) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const base64 = e.target.result;
-        
-        // Atualiza o quadradinho de preview
-        const img = document.getElementById(`preview-${type}`);
-        const container = document.getElementById(`preview-${type}-container`);
-        if (img && container) {
-            img.src = base64;
-            container.classList.remove('hidden');
-        }
+        // Cria uma imagem na memória para podermos comprimir
+        const imgObj = new Image();
+        imgObj.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Limites inteligentes para deixar a imagem super leve (sem perder qualidade visual)
+            let maxWidth = type === 'banner' ? 1200 : (type === 'logo' ? 400 : 64);
+            let maxHeight = type === 'banner' ? 400 : (type === 'logo' ? 400 : 64);
+            
+            let width = imgObj.width;
+            let height = imgObj.height;
 
-        // Salva no banco de dados da loja
-        const params = new URLSearchParams(window.location.search);
-        const currentSlug = params.get('s');
-        let stores = getStores();
-        const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+            // Redimensiona se for maior que o limite
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = width * ratio;
+                height = height * ratio;
+            }
 
-        if (storeIndex !== -1) {
-            if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
-            stores[storeIndex].settings[type] = base64;
-            setStores(stores);
-            showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} atualizado!`);
-        }
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(imgObj, 0, 0, width, height);
+
+            // MÁGICA: Converte para JPEG com 80% de qualidade (Reduz o peso em até 90%)
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Atualiza o quadradinho de preview
+            const previewImg = document.getElementById(`preview-${type}`);
+            const container = document.getElementById(`preview-${type}-container`);
+            if (previewImg && container) {
+                previewImg.src = base64;
+                container.classList.remove('hidden');
+            }
+
+            // Salva no banco de dados
+            const params = new URLSearchParams(window.location.search);
+            const currentSlug = params.get('s');
+            let stores = getStores();
+            const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+            if (storeIndex !== -1) {
+                if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
+                stores[storeIndex].settings[type] = base64;
+                setStores(stores);
+                showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} otimizado e salvo!`);
+            }
+        };
+        imgObj.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }

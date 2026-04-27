@@ -3,6 +3,7 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
+const { Rcon } = require('rcon-client'); // <-- NOSSO MOTOR RCON AQUI!
 
 // --- NOVAS BIBLIOTECAS PARA E-MAIL ---
 const nodemailer = require('nodemailer');
@@ -81,6 +82,55 @@ db.connect(err => {
         }
     });
 });
+
+// =======================================================
+// MOTOR DE ENTREGA RCON (PROTECH LAB)
+// =======================================================
+async function executarComandosRcon(serverIp, serverPort, rconPassword, comandos) {
+    try {
+        console.log(`[ProTech RCON] Conectando ao servidor ${serverIp}:${serverPort}...`);
+        
+        const rcon = await Rcon.connect({
+            host: serverIp,
+            port: parseInt(serverPort),
+            password: rconPassword,
+            timeout: 5000 // Desiste após 5 segundos se o servidor do cliente estiver offline
+        });
+
+        console.log(`[ProTech RCON] Sucesso! Autenticado no servidor do cliente.`);
+
+        // Dispara todos os comandos (Ex: se ele comprou 2 carros e 1 VIP)
+        for (let cmd of comandos) {
+            console.log(`[ProTech RCON] Disparando: /${cmd}`);
+            const resposta = await rcon.send(cmd);
+            console.log(`[ProTech RCON] Resposta in-game: ${resposta}`);
+        }
+
+        await rcon.end();
+        return true;
+    } catch (error) {
+        console.error(`[ProTech RCON ERRO] Falha na entrega:`, error.message);
+        return false;
+    }
+}
+
+// ROTA PARA O SITE DISPARAR A ENTREGA APÓS O PIX
+app.post('/delivery', async (req, res) => {
+    const { ip, port, password, commands } = req.body;
+    
+    if (!ip || !port || !password || !commands || commands.length === 0) {
+        return res.status(400).json({ success: false, message: "Dados de servidor ou comandos ausentes." });
+    }
+
+    const sucesso = await executarComandosRcon(ip, port, password, commands);
+    
+    if (sucesso) {
+        res.json({ success: true, message: "Itens entregues no jogo com sucesso!" });
+    } else {
+        res.status(500).json({ success: false, message: "Servidor offline ou dados RCON incorretos." });
+    }
+});
+// =======================================================
 
 // ROTA: VERIFICAR STATUS DO PAGAMENTO
 app.get('/check-payment/:id', async (req, res) => {

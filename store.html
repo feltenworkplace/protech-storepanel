@@ -204,7 +204,7 @@ function renderProductCard(prod) {
             const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
             const store = stores.find(s => s.slug === slug);
             if (!store) {
-                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Loja não encontrada.</div>";
+                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Loja não encontrada. Verifique o link.</div>";
                 return;
             }
     
@@ -214,18 +214,25 @@ function renderProductCard(prod) {
             // Categorias
             const categoryList = document.getElementById('category-list');
             const activeCategories = (store.categories || []).filter(cat => cat.status === 'Ativo');
+            
+            // Botão fixo para "Ver Todos"
+            let catHtml = `<a href="javascript:void(0)" onclick="filterByStoreCategory('ALL')" class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-black hover:bg-gray-50 transition-all group border border-gray-100 mb-2">
+                <span>Ver Todos</span></a>`;
+
             if (activeCategories.length > 0) {
-                categoryList.innerHTML = activeCategories.map(cat => {
-                    const count = (store.products || []).filter(p => p.categoryId === cat.id).length;
+                catHtml += activeCategories.map(cat => {
+                    const count = (store.products || []).filter(p => p.categoryId === cat.id && p.status === 'Ativo').length;
                     return `<a href="javascript:void(0)" onclick="filterByStoreCategory('${cat.id}')" class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-black transition-all group">
                             <span>${cat.nome}</span><span class="text-[10px] text-gray-400 font-medium group-hover:text-black">(${count})</span></a>`;
                 }).join('');
             }
+            categoryList.innerHTML = catHtml;
     
-            // Produtos
+            // Produtos (Filtra apenas os ATIVOS)
             const productGrid = document.getElementById('product-grid');
             const emptyMessage = document.getElementById('empty-message');
-            const products = store.products || [];
+            const products = (store.products || []).filter(p => p.status === 'Ativo');
+            
             if (products.length > 0) {
                 if (emptyMessage) emptyMessage.classList.add('hidden');
                 productGrid.innerHTML = products.map(prod => renderProductCard(prod)).join('');
@@ -249,26 +256,41 @@ function renderProductCard(prod) {
             }
         }
     
-        function filterByStoreCategory(categoryId) {
-    const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-    const store = stores.find(s => s.slug === slug);
-    if (!store) return;
+    function filterByStoreCategory(categoryId) {
+            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
+            const store = stores.find(s => s.slug === slug);
+            if (!store) return;
 
-    // Encontra o nome da categoria
-    const category = store.categories.find(c => c.id === categoryId);
-    const titleDisplay = document.getElementById('current-cat-display');
+            const titleDisplay = document.getElementById('current-cat-display');
+            let filtered = [];
+            
+            // Se clicar em "Ver Todos"
+            if (categoryId === 'ALL') {
+                if (titleDisplay) titleDisplay.classList.add('hidden');
+                filtered = (store.products || []).filter(p => p.status === 'Ativo');
+            } else {
+                // Filtra por categoria específica
+                const category = store.categories.find(c => c.id === categoryId);
+                if (category && titleDisplay) {
+                    titleDisplay.innerText = category.nome;
+                    titleDisplay.classList.remove('hidden');
+                }
+                filtered = (store.products || []).filter(p => p.categoryId === categoryId && p.status === 'Ativo');
+            }
 
-    if (category && titleDisplay) {
-        titleDisplay.innerText = category.nome;
-        titleDisplay.classList.remove('hidden'); // Mostra o título
-    }
-
-    const filtered = (store.products || []).filter(p => p.categoryId === categoryId);
-    const grid = document.getElementById('product-grid');
-    grid.innerHTML = filtered.length > 0 ? filtered.map(p => renderProductCard(p)).join('') : '';
-    
-    toggleCategoryMenu(false);
-}
+            const grid = document.getElementById('product-grid');
+            const emptyMessage = document.getElementById('empty-message');
+            
+            if (filtered.length > 0) {
+                if (emptyMessage) emptyMessage.classList.add('hidden');
+                grid.innerHTML = filtered.map(p => renderProductCard(p)).join('');
+            } else {
+                if (emptyMessage) emptyMessage.classList.remove('hidden');
+                grid.innerHTML = '';
+            }
+            
+            toggleCategoryMenu(false);
+        }
     
         window.addEventListener('scroll', () => {
             const header = document.getElementById('main-header');

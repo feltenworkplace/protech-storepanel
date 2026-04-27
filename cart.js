@@ -1,7 +1,16 @@
 // cart.js - Lógica centralizada de vendas para ProTech Lab
 let cart = JSON.parse(localStorage.getItem('protech_active_cart')) || [];
+let currentCartStore = localStorage.getItem('protech_cart_store_slug');
 
-// 1. Alternar visualização do carrinho (Screenshot 1)
+// Garante que o carrinho esvazia se o cliente entrar numa loja diferente
+const urlParams = new URLSearchParams(window.location.search);
+const currentSlug = urlParams.get('s');
+if (currentCartStore !== currentSlug) {
+    cart = [];
+    localStorage.setItem('protech_cart_store_slug', currentSlug);
+    saveCart();
+}
+
 function toggleCart(show) {
     const sidebar = document.getElementById('cart-sidebar');
     const overlay = document.getElementById('cart-overlay');
@@ -17,7 +26,6 @@ function toggleCart(show) {
     }
 }
 
-// Substitua a sua função renderCart() no cart.js por esta:
 function renderCart() {
     const container = document.getElementById('cart-items');
     const subtotalEl = document.getElementById('cart-subtotal');
@@ -25,7 +33,6 @@ function renderCart() {
 
     let subtotal = 0;
     container.innerHTML = cart.map(item => {
-        // Converte o preço com segurança para não dar erro
         const safePrice = Number(item.price); 
         const itemTotal = safePrice * item.quantity;
         subtotal += itemTotal;
@@ -52,7 +59,7 @@ function renderCart() {
         container.innerHTML = '<p class="text-center text-gray-600 text-[10px] py-10 uppercase font-black tracking-widest">Carrinho Vazio</p>';
     }
 
-    if (subtotalEl) subtotalEl.innerText = `R$ ${subtotal.toFixed(2)}`;
+    if (subtotalEl) subtotalEl.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
 }
 
 function updateQty(id, delta) {
@@ -62,7 +69,7 @@ function updateQty(id, delta) {
         if (item.quantity <= 0) return removeItem(id);
         saveCart();
         renderCart();
-        updateCartBadge(); // <--- Faltava esta linha para atualizar o número!
+        updateCartBadge(); 
     }
 }
 
@@ -73,18 +80,13 @@ function removeItem(id) {
     updateCartBadge();
 }
 
-function saveCart() { localStorage.setItem('protech_active_cart', JSON.stringify(cart)); }
-
-function goToCheckout() {
-    if (cart.length === 0) return alert("Adicione itens antes de prosseguir.");
-    window.location.href = 'checkout.html';
+function saveCart() { 
+    localStorage.setItem('protech_active_cart', JSON.stringify(cart)); 
 }
 
 function addToCart(productId) {
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('s');
     const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-    const store = stores.find(s => s.slug === slug);
+    const store = stores.find(s => s.slug === currentSlug);
     
     if (!store) return;
 
@@ -97,8 +99,9 @@ function addToCart(productId) {
     } else {
         cart.push({ ...product, quantity: 1 });
     }
+    
     if (typeof showToast === "function") {
-        showToast(product.name); // Chama o efeito visual que ficou no HTML
+        showToast(product.name); 
     }
     
     saveCart();
@@ -111,13 +114,10 @@ function updateCartBadge() {
     if (badge) badge.innerText = cart.reduce((total, item) => total + item.quantity, 0);
 }
 
+// Apenas UMA função de checkout, a apontar para o ficheiro correto
 function goToCheckout() {
     if (cart.length === 0) return alert("Adicione itens antes de prosseguir.");
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('s');
-    window.location.href = `loja-checkout.html?s=${slug}`; // <-- Aponta para o novo arquivo
+    window.location.href = `loja-checkout.html?s=${currentSlug}`; 
 }
-
-
 
 document.addEventListener('DOMContentLoaded', updateCartBadge);

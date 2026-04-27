@@ -1104,7 +1104,7 @@ select:focus option:checked {
                     <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon</label>
                 </div>
                 <div class="relative flex items-center">
-                    <input type="text" id="prod-command" oninput="validateCommandMatch(this, 'prod-command-container', 'prod-command-id-badge')" placeholder="Pesquise o nome do comando (Ex: Camaro)" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
+                    <input type="text" id="prod-command" oninput="validateCommandMatch(this, 'prod-command-container', 'prod-command-id-badge')" placeholder="Insira o nome do comando addon" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
                     
                     <div class="absolute right-4 flex items-center gap-2 opacity-0 transition-opacity duration-300 pointer-events-none" id="prod-command-id-badge">
                         <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 command-id-text">CMD0000</span>
@@ -1169,7 +1169,7 @@ select:focus option:checked {
                     <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon Vinculado</label>
                 </div>
                 <div class="relative flex items-center">
-                    <input type="text" id="edit-prod-command" oninput="validateCommandMatch(this, 'edit-prod-command-container', 'edit-prod-command-id-badge')" placeholder="Pesquise o nome do comando (Ex: Camaro)" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
+                    <input type="text" id="edit-prod-command" oninput="validateCommandMatch(this, 'edit-prod-command-container', 'edit-prod-command-id-badge')" placeholder="Pesquise o nome do comando addon" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
                     
                     <div class="absolute right-4 flex items-center gap-2 opacity-0 transition-opacity duration-300 pointer-events-none" id="edit-prod-command-id-badge">
                         <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 command-id-text">CMD0000</span>
@@ -1211,9 +1211,9 @@ select:focus option:checked {
         </div>
         <div class="p-8 space-y-6">
             <div>
-                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Comando (Sem a /)</label>
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do addon</label>
                 <input type="text" id="cmd-text" placeholder="protech_entrega_veiculo {id} t20" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                <p class="text-[9px] text-gray-600 mt-2">Use <span class="text-gold">{id}</span> para o ID do jogador.</p>
+                <p class="text-[9px] text-gray-600 mt-2">O <span class="text-gold">ID</span> do comando servirá como ponte entre o jogo</p>
             </div>
             
             <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl">

@@ -1157,10 +1157,10 @@ select:focus option:checked {
             <div class="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-2xl transition-colors duration-300" id="edit-prod-command-container">
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon Vinculado</label>
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Comando Addon</label>
                 </div>
                 <div class="relative flex items-center">
-                    <input type="text" id="edit-prod-command" oninput="validateCommandMatch(this, 'edit-prod-command-container', 'edit-prod-command-id-badge')" placeholder="Pesquise o nome do comando addon" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
+                    <input type="text" id="edit-prod-command" oninput="validateCommandMatch(this, 'edit-prod-command-container', 'edit-prod-command-id-badge')" placeholder="Insira o nome do comando addon" class="w-full bg-black/40 border border-white/5 rounded-xl p-4 focus:border-indigo-500/50 outline-none text-sm text-gray-300 font-mono transition-all pr-24">
                     
                     <div class="absolute right-4 flex items-center gap-2 opacity-0 transition-opacity duration-300 pointer-events-none" id="edit-prod-command-id-badge">
                         <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 command-id-text">CMD0000</span>
@@ -1203,8 +1203,8 @@ select:focus option:checked {
         <div class="p-8 space-y-6">
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do addon</label>
-                <input type="text" id="cmd-text" placeholder="protech_entrega_veiculo {id} t20" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                <p class="text-[9px] text-gray-600 mt-2">O <span class="text-gold">ID</span> do comando servirá como ponte entre o jogo</p>
+                <input type="text" id="cmd-text" placeholder="Chevrolet Corvette C8" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                <p class="text-[9px] text-gray-600 mt-2">O <span class="text-gold">ID</span> do comando servirá como ponte para o jogo</p>
             </div>
             
             <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl">

@@ -1828,7 +1828,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- DOWNLOAD DA NUVEM COM PROTEÇÃO ANTI-ERRO ---
+    // --- DOWNLOAD DA NUVEM COM FIX DE PERSISTÊNCIA ---
     fetch('https://storepanel-backend.onrender.com/get-stores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1837,19 +1837,18 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
         if (data.success && data.lojas && Array.isArray(data.lojas)) {
-            
-            // Persistência: Só substitui o local se a nuvem tiver algo real
+            // PROTEÇÃO: Só sobrescreve o local se a nuvem trouxer dados reais
             if (data.lojas.length > 0) {
                 localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
             }
-
+            
             enforceStoreLimits();
             renderStoresGrid();
             updateCategoryDropdowns();
             
             const params = new URLSearchParams(window.location.search);
             if (params.get('s')) {
-                // ESSENCIAL: Carrega banner, logo e favicon
+                // MÁGICA: Carrega banners e favicons logo no refresh!
                 loadTemplateSettings(); 
                 renderDashboardGeral();
                 renderProducts();
@@ -1857,8 +1856,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCoupons();
             }
         }
-    })
-    .catch(err => console.error("Erro na nuvem:", err));
+    }).catch(err => console.error("Erro na nuvem:", err));
 
     // 3. Renderiza os cartões de plano (Desktop e Mobile) do SEU design
     const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
@@ -2569,11 +2567,17 @@ function saveTemplateSettings() {
 function loadTemplateSettings() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
-    const stores = getStores(); // Usa a nossa função segura anti-crash
-    const store = stores.find(s => s.slug === currentSlug);
+    const store = getStores().find(s => s.slug === currentSlug);
 
     if (store && store.settings) {
-        // 1. Carrega o Banner, Logo e Favicon
+        // Carrega as cores nos inputs
+        if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
+        if (store.settings.secondaryColor) document.getElementById('store-secondary-color').value = store.settings.secondaryColor;
+        
+        document.getElementById('temp-css').value = store.settings.customCss || '';
+        document.getElementById('temp-html').value = store.settings.customHtml || '';
+
+        // CARREGA E APLICA AS IMAGENS
         const types = ['logo', 'banner', 'favicon'];
         types.forEach(type => {
             if (store.settings[type]) {
@@ -2583,7 +2587,8 @@ function loadTemplateSettings() {
                     img.src = store.settings[type];
                     container.classList.remove('hidden');
                 }
-                // Aplica o Favicon na aba do navegador em tempo real
+                
+                // APLICA O FAVICON NA ABA DO NAVEGADOR
                 if (type === 'favicon') {
                     let link = document.querySelector("link[rel~='icon']");
                     if (!link) { 
@@ -2596,7 +2601,7 @@ function loadTemplateSettings() {
             }
         });
 
-        // 2. Destaca o Template Selecionado visualmente
+        // REATIVA A BORDA DO TEMPLATE SELECIONADO
         if (store.template) {
             document.querySelectorAll('.template-card').forEach(card => {
                 card.classList.remove('template-selected', 'template-selected-pro', 'template-selected-legend');
@@ -2610,10 +2615,6 @@ function loadTemplateSettings() {
                 selectedCard.classList.add(borderClass);
             }
         }
-
-        // 3. Carrega Textareas
-        if (document.getElementById('temp-css')) document.getElementById('temp-css').value = store.settings.customCss || '';
-        if (document.getElementById('temp-html')) document.getElementById('temp-html').value = store.settings.customHtml || '';
     }
 }
 

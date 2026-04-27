@@ -2,14 +2,50 @@
 let cart = JSON.parse(localStorage.getItem('protech_active_cart')) || [];
 let currentCartStore = localStorage.getItem('protech_cart_store_slug');
 
-// Garante que o carrinho esvazia se o cliente entrar numa loja diferente
 const urlParams = new URLSearchParams(window.location.search);
 const currentSlug = urlParams.get('s');
-if (currentCartStore !== currentSlug) {
-    cart = [];
-    localStorage.setItem('protech_cart_store_slug', currentSlug);
+
+// --- FISCAL DE SEGURANÇA DO CARRINHO ---
+function validateAndCleanCart() {
+    // 1. Previne que produtos de uma loja apareçam em outra
+    if (currentCartStore !== currentSlug) {
+        cart = [];
+        localStorage.setItem('protech_cart_store_slug', currentSlug);
+        saveCart();
+        return;
+    }
+
+    if (cart.length === 0) return;
+
+    // 2. Vai ao banco de dados verificar se os itens ainda são válidos
+    const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+    const store = stores.find(s => s.slug === currentSlug);
+
+    if (!store || !store.products) {
+        cart = []; // Se a loja foi apagada, limpa tudo
+    } else {
+        // 3. Filtra a mochila: Só mantém o que existe E está "Ativo"
+        cart = cart.filter(cartItem => {
+            const realProduct = store.products.find(p => p.id === cartItem.id);
+            // Se o produto foi apagado (não existe) ou foi pausado, ele MORRE no carrinho
+            return realProduct && realProduct.status === 'Ativo';
+        });
+        
+        // 4. Bônus de Segurança: Atualiza o preço! 
+        // (Se o lojista aumentar o preço, o carrinho do cliente atualiza sozinho)
+        cart.forEach(cartItem => {
+            const realProduct = store.products.find(p => p.id === cartItem.id);
+            if (realProduct) cartItem.price = realProduct.price;
+        });
+    }
+    
     saveCart();
 }
+
+// Executa a limpeza silenciosa assim que o arquivo é lido pelo navegador
+validateAndCleanCart();
+
+// --- FUNÇÕES DA INTERFACE DO CARRINHO ---
 
 function toggleCart(show) {
     const sidebar = document.getElementById('cart-sidebar');
@@ -17,6 +53,7 @@ function toggleCart(show) {
     if (!sidebar || !overlay) return;
 
     if (show) {
+        validateAndCleanCart(); // Valida de novo ao abrir a gaveta
         sidebar.classList.remove('translate-x-full');
         overlay.classList.remove('hidden');
         renderCart();
@@ -91,7 +128,8 @@ function addToCart(productId) {
     if (!store) return;
 
     const product = store.products.find(p => p.id === productId);
-    if (!product) return;
+    // Se o produto não existe mais ou está inativo, ignora o clique
+    if (!product || product.status !== 'Ativo') return;
 
     const existing = cart.find(item => item.id === productId);
     if (existing) {
@@ -114,10 +152,18 @@ function updateCartBadge() {
     if (badge) badge.innerText = cart.reduce((total, item) => total + item.quantity, 0);
 }
 
-// Apenas UMA função de checkout, a apontar para o ficheiro correto
 function goToCheckout() {
-    if (cart.length === 0) return alert("Adicione itens antes de prosseguir.");
+    // Valida uma última vez antes de mandar para a página de pagamento
+    validateAndCleanCart();
+    
+    if (cart.length === 0) {
+        return alert("Seu carrinho está vazio ou os itens não estão mais disponíveis.");
+    }
+    
     window.location.href = `loja-checkout.html?s=${currentSlug}`; 
 }
 
-document.addEventListener('DOMContentLoaded', updateCartBadge);
+document.addEventListener('DOMContentLoaded', () => {
+    validateAndCleanCart();
+    updateCartBadge();
+});

@@ -2481,7 +2481,9 @@ function openEditProductModal(productId) {
 
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
-    document.getElementById('edit-prod-price').value = product.price;
+    const priceInput = document.getElementById('edit-prod-price');
+    priceInput.value = (product.price * 100).toString(); // Prepara o número
+    maskMoney(priceInput); // Aplica a máscara (ex: R$ 0,01)
     
     // Tenta encontrar qual é a palavra "Camaro" baseada no ID "CMD1930" guardado no produto
     const linkedCmd = store.commands?.find(c => c.id === product.commandId);
@@ -2515,7 +2517,6 @@ function openEditProductModal(productId) {
 function updateProduct() {
     const id = document.getElementById('edit-prod-id').value;
     const name = document.getElementById('edit-prod-name').value.trim();
-    // Pega o novo ID validado caso ele tenha editado
     const commandId = document.getElementById('edit-prod-command').dataset.matchedId || ''; 
     const categoryId = document.getElementById('edit-prod-category').value;
     const price = parseMoneyValue(document.getElementById('edit-prod-price').value);
@@ -3986,15 +3987,14 @@ function changeStoreStatus(newStatus) {
 }
 
 function maskMoney(input) {
-    let value = input.value.replace(/\D/g, ""); // Remove tudo que não é número
+    let value = input.value.replace(/\D/g, ""); // Remove tudo o que não for número
     value = (value / 100).toFixed(2) + ""; // Transforma em decimal
-    value = value.replace(".", ","); // Troca ponto por vírgula
-    value = value.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,"); // Pontos de milhar
-    value = value.replace(/(\d)(\d{3}),/g, "$1.$2,");
+    value = value.replace(".", ","); // Troca ponto por vírgula para o formato BR
+    value = value.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,"); // Milhões
+    value = value.replace(/(\d)(\d{3}),/g, "$1.$2,"); // Milhares
     input.value = "R$ " + value;
 }
 
-// Função auxiliar para converter o texto da máscara de volta para número real antes de salvar
 function parseMoneyValue(formattedValue) {
     if (!formattedValue) return "0.00";
     return formattedValue.replace("R$ ", "").replace(/\./g, "").replace(",", ".");

@@ -156,24 +156,26 @@
 <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] space-y-2 pointer-events-none"></div>
 <script src="cart.js"></script>
     <script>
-        const STORAGE_KEYS = { stores: 'protech_stores_v1' };
         const params = new URLSearchParams(window.location.search);
-        const slug = params.get('s');
-    
-        function toggleCategoryMenu(show) {
-            const drawer = document.getElementById('category-drawer');
-            const overlay = document.getElementById('category-overlay');
-            if (show) {
-                drawer.classList.remove('-translate-x-full');
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            } else {
-                drawer.classList.add('-translate-x-full');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        }
-    
+const slug = params.get('s');
+
+// Variável global para guardar a loja carregada da nuvem
+window.currentStore = null;
+
+function toggleCategoryMenu(show) {
+    const drawer = document.getElementById('category-drawer');
+    const overlay = document.getElementById('category-overlay');
+    if (show) {
+        drawer.classList.remove('-translate-x-full');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    } else {
+        drawer.classList.add('-translate-x-full');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
 function renderProductCard(prod) {
     const isNew = (Date.now() - Number(prod.id)) < (24 * 60 * 60 * 1000);
     const badgeHtml = isNew ? `
@@ -199,106 +201,119 @@ function renderProductCard(prod) {
             </div>
         </div>`;
 }
-    
-        function loadStoreData() {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
-            if (!store) {
-                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Loja não encontrada. Verifique o link.</div>";
-                return;
-            }
-    
-            document.title = `${store.name} | ProTech Lab`;
-            if (document.getElementById('store-logo')) document.getElementById('store-logo').innerText = store.name;
-    
-            // Categorias
-            const categoryList = document.getElementById('category-list');
-            const activeCategories = (store.categories || []).filter(cat => cat.status === 'Ativo');
-            
-            // Botão fixo para "Ver Todos"
-            let catHtml = `<a href="javascript:void(0)" onclick="filterByStoreCategory('ALL')" class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-black hover:bg-gray-50 transition-all group border border-gray-100 mb-2">
-                <span>Ver Todos</span></a>`;
 
-            if (activeCategories.length > 0) {
-                catHtml += activeCategories.map(cat => {
-                    const count = (store.products || []).filter(p => p.categoryId === cat.id && p.status === 'Ativo').length;
-                    return `<a href="javascript:void(0)" onclick="filterByStoreCategory('${cat.id}')" class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-black transition-all group">
-                            <span>${cat.nome}</span><span class="text-[10px] text-gray-400 font-medium group-hover:text-black">(${count})</span></a>`;
-                }).join('');
+// NOVA FUNÇÃO QUE LIGA A LOJA À NUVEM
+async function loadStoreData() {
+    if (!slug) {
+        document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Link inválido.</div>";
+        return;
+    }
+
+    try {
+        // TROQUE AQUI PELO LINK DO SEU RENDER!!!
+        const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Loja não encontrada. Verifique o link.</div>";
+            return;
+        }
+
+        // Salva a loja na memória da página para as outras funções usarem
+        const store = data.store;
+        window.currentStore = store; 
+
+        document.title = `${store.name} | ProTech Lab`;
+        if (document.getElementById('store-logo')) document.getElementById('store-logo').innerText = store.name;
+
+        // Categorias
+        const categoryList = document.getElementById('category-list');
+        const activeCategories = (store.categories || []).filter(cat => cat.status === 'Ativo');
+        
+        let catHtml = `<a href="javascript:void(0)" onclick="filterByStoreCategory('ALL')" class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-black hover:bg-gray-50 transition-all group border border-gray-100 mb-2">
+            <span>Ver Todos</span></a>`;
+
+        if (activeCategories.length > 0) {
+            catHtml += activeCategories.map(cat => {
+                const count = (store.products || []).filter(p => p.categoryId === cat.id && p.status === 'Ativo').length;
+                return `<a href="javascript:void(0)" onclick="filterByStoreCategory('${cat.id}')" class="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-black transition-all group">
+                        <span>${cat.nome}</span><span class="text-[10px] text-gray-400 font-medium group-hover:text-black">(${count})</span></a>`;
+            }).join('');
+        }
+        categoryList.innerHTML = catHtml;
+
+        // Produtos
+        const productGrid = document.getElementById('product-grid');
+        const emptyMessage = document.getElementById('empty-message');
+        const products = (store.products || []).filter(p => p.status === 'Ativo');
+        
+        if (products.length > 0) {
+            if (emptyMessage) emptyMessage.classList.add('hidden');
+            productGrid.innerHTML = products.map(prod => renderProductCard(prod)).join('');
+        } else {
+            if (emptyMessage) emptyMessage.classList.remove('hidden');
+            productGrid.innerHTML = '';
+        }
+
+        // Configurações visuais
+        if (store.settings) {
+            if (store.settings.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+            if (store.settings.banner) {
+                document.getElementById('store-banner-img').src = store.settings.banner;
+                document.getElementById('store-banner-container').classList.remove('hidden');
             }
-            categoryList.innerHTML = catHtml;
-    
-            // Produtos (Filtra apenas os ATIVOS)
-            const productGrid = document.getElementById('product-grid');
-            const emptyMessage = document.getElementById('empty-message');
-            const products = (store.products || []).filter(p => p.status === 'Ativo');
-            
-            if (products.length > 0) {
-                if (emptyMessage) emptyMessage.classList.add('hidden');
-                productGrid.innerHTML = products.map(prod => renderProductCard(prod)).join('');
-            } else {
-                if (emptyMessage) emptyMessage.classList.remove('hidden');
-                productGrid.innerHTML = '';
-            }
-    
-            // Settings (Banner, Logo, etc)
-            if (store.settings) {
-                if (store.settings.logo) document.getElementById('header-logo-img').src = store.settings.logo;
-                if (store.settings.banner) {
-                    document.getElementById('store-banner-img').src = store.settings.banner;
-                    document.getElementById('store-banner-container').classList.remove('hidden');
-                }
-                if (store.settings.customCss) {
-                    const style = document.createElement('style');
-                    style.textContent = store.settings.customCss;
-                    document.head.appendChild(style);
-                }
+            if (store.settings.customCss) {
+                const style = document.createElement('style');
+                style.textContent = store.settings.customCss;
+                document.head.appendChild(style);
             }
         }
+    } catch (error) {
+        console.error("Erro ao buscar loja:", error);
+        document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Erro de conexão com o servidor.</div>";
+    }
+}
+
+function filterByStoreCategory(categoryId) {
+    const store = window.currentStore;
+    if (!store) return;
+
+    const titleDisplay = document.getElementById('current-cat-display');
+    let filtered = [];
     
-    function filterByStoreCategory(categoryId) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
-            if (!store) return;
-
-            const titleDisplay = document.getElementById('current-cat-display');
-            let filtered = [];
-            
-            // Se clicar em "Ver Todos"
-            if (categoryId === 'ALL') {
-                if (titleDisplay) titleDisplay.classList.add('hidden');
-                filtered = (store.products || []).filter(p => p.status === 'Ativo');
-            } else {
-                // Filtra por categoria específica
-                const category = store.categories.find(c => c.id === categoryId);
-                if (category && titleDisplay) {
-                    titleDisplay.innerText = category.nome;
-                    titleDisplay.classList.remove('hidden');
-                }
-                filtered = (store.products || []).filter(p => p.categoryId === categoryId && p.status === 'Ativo');
-            }
-
-            const grid = document.getElementById('product-grid');
-            const emptyMessage = document.getElementById('empty-message');
-            
-            if (filtered.length > 0) {
-                if (emptyMessage) emptyMessage.classList.add('hidden');
-                grid.innerHTML = filtered.map(p => renderProductCard(p)).join('');
-            } else {
-                if (emptyMessage) emptyMessage.classList.remove('hidden');
-                grid.innerHTML = '';
-            }
-            
-            toggleCategoryMenu(false);
+    if (categoryId === 'ALL') {
+        if (titleDisplay) titleDisplay.classList.add('hidden');
+        filtered = (store.products || []).filter(p => p.status === 'Ativo');
+    } else {
+        const category = store.categories.find(c => c.id === categoryId);
+        if (category && titleDisplay) {
+            titleDisplay.innerText = category.nome;
+            titleDisplay.classList.remove('hidden');
         }
+        filtered = (store.products || []).filter(p => p.categoryId === categoryId && p.status === 'Ativo');
+    }
+
+    const grid = document.getElementById('product-grid');
+    const emptyMessage = document.getElementById('empty-message');
     
-        window.addEventListener('scroll', () => {
-            const header = document.getElementById('main-header');
-            if (window.scrollY > 80) { header.classList.add('bg-white', 'shadow-md'); header.classList.remove('bg-transparent'); }
-            else { header.classList.remove('bg-white', 'shadow-md'); header.classList.add('bg-transparent'); }
-        });
+    if (filtered.length > 0) {
+        if (emptyMessage) emptyMessage.classList.add('hidden');
+        grid.innerHTML = filtered.map(p => renderProductCard(p)).join('');
+    } else {
+        if (emptyMessage) emptyMessage.classList.remove('hidden');
+        grid.innerHTML = '';
+    }
     
-        document.addEventListener('DOMContentLoaded', loadStoreData);
+    toggleCategoryMenu(false);
+}
+
+window.addEventListener('scroll', () => {
+    const header = document.getElementById('main-header');
+    if (window.scrollY > 80) { header.classList.add('bg-white', 'shadow-md'); header.classList.remove('bg-transparent'); }
+    else { header.classList.remove('bg-white', 'shadow-md'); header.classList.add('bg-transparent'); }
+});
+
+document.addEventListener('DOMContentLoaded', loadStoreData);
 
 function showToast(productName) {
     const container = document.getElementById('toast-container');
@@ -318,18 +333,15 @@ function showToast(productName) {
 }
 
 function openProductDetails(productId) {
-    const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-    const store = stores.find(s => s.slug === slug);
+    const store = window.currentStore;
     if (!store) return;
 
     const product = (store.products || []).find(p => p.id === productId);
     if (!product) return;
 
-    // Preencher os dados no modal limpo (sem preço, categoria ou botão)
     document.getElementById('modal-prod-img').src = product.image;
     document.getElementById('modal-prod-name').textContent = product.name;
     
-    // Inserir a descrição 
     const descElement = document.getElementById('modal-prod-desc');
     if (product.description && product.description.trim() !== '') {
         descElement.textContent = product.description;
@@ -337,14 +349,13 @@ function openProductDetails(productId) {
         descElement.textContent = "Nenhuma descrição detalhada disponível para este item.";
     }
 
-    // Mostrar o modal
     document.getElementById('product-details-modal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden'); // Trava o scroll da página principal
+    document.body.classList.add('overflow-hidden');
 }
 
 function closeProductDetails() {
     document.getElementById('product-details-modal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden'); // Destrava o scroll
+    document.body.classList.remove('overflow-hidden');
 }
     </script>
 </body>

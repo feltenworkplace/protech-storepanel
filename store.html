@@ -209,8 +209,7 @@ async function loadStoreData() {
         return;
     }
 
-    try {
-        // TROQUE AQUI PELO LINK DO SEU RENDER!!!
+    try {   
         const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
         const data = await response.json();
 

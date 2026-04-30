@@ -202,14 +202,32 @@ function renderProductCard(prod) {
         </div>`;
 }
 
-// NOVA FUNÇÃO QUE LIGA A LOJA À NUVEM
+// NOVA FUNÇÃO QUE LIGA A LOJA À NUVEM (COM TELA DE CARREGAMENTO)
 async function loadStoreData() {
+    const productGrid = document.getElementById('product-grid');
+    const emptyMessage = document.getElementById('empty-message');
+
     if (!slug) {
         document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Link inválido.</div>";
         return;
     }
 
-    try {   
+    // --- MÁGICA DO CARREGAMENTO AQUI ---
+    // Esconde a mensagem de "vazio" imediatamente
+    if (emptyMessage) emptyMessage.classList.add('hidden');
+    
+    // Coloca um "spinner" de carregamento girando na tela
+    if (productGrid) {
+        productGrid.innerHTML = `
+            <div class="col-span-1 md:col-span-4 flex flex-col items-center justify-center py-20">
+                <div class="w-12 h-12 border-4 border-gray-100 border-t-[#D4AF37] rounded-full animate-spin mb-6"></div>
+                <h2 class="text-sm font-black tracking-[0.2em] uppercase text-gray-400">Conectando à Garagem...</h2>
+            </div>
+        `;
+    }
+
+    try {
+        // TROQUE AQUI PELO LINK DO SEU RENDER!!!
         const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
         const data = await response.json();
 
@@ -242,12 +260,9 @@ async function loadStoreData() {
         categoryList.innerHTML = catHtml;
 
         // Produtos
-        const productGrid = document.getElementById('product-grid');
-        const emptyMessage = document.getElementById('empty-message');
         const products = (store.products || []).filter(p => p.status === 'Ativo');
         
         if (products.length > 0) {
-            if (emptyMessage) emptyMessage.classList.add('hidden');
             productGrid.innerHTML = products.map(prod => renderProductCard(prod)).join('');
         } else {
             if (emptyMessage) emptyMessage.classList.remove('hidden');

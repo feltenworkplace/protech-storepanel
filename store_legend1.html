@@ -259,113 +259,121 @@
     <script src="cart.js"></script>
     <script>
         let allProductsStore = [];
-        // Lógica de Carregamento e Cores
-        // store_legend1.html
-        function loadStore() {
-    const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('s');
-    const store = stores.find(s => s.slug === slug);
-    if (!store) return;
+        window.currentStore = null;
 
-    // Configurações de cores e visual existentes...
-    if (store.settings?.primaryColor) document.documentElement.style.setProperty('--p-color', store.settings.primaryColor);
-    if (store.settings?.secondaryColor) document.documentElement.style.setProperty('--s-color', store.settings.secondaryColor);
-    if (store.settings?.banner) {
-        document.getElementById('store-banner-img').src = store.settings.banner;
-        document.getElementById('banner-layer').classList.remove('hidden');
-    }
+        async function loadStore() {
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+            
+            if(!slug) return;
 
-    document.getElementById('store-name-header').innerText = store.name;
-    if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+            try {
+                const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                const data = await response.json();
 
-    // Salva os produtos na variável global e renderiza
-    allProductsStore = store.products || [];
-    renderCategories(store.categories || []);
-    renderProducts(allProductsStore);
-}
-
-function filterByCat(id, name) {
-    document.getElementById('current-cat-display').innerText = name || 'Tudo';
-    
-    // Se o ID for vazio (''), mostra tudo. Senão, filtra pelo categoryId
-    const filtered = id === '' 
-        ? allProductsStore 
-        : allProductsStore.filter(p => p.categoryId === id);
-    
-    renderProducts(filtered);
-}
-
-function renderCategories(categories) {
-    const list = document.getElementById('category-list');
-    
-    list.innerHTML = `
-        <button onclick="filterByCat('', 'Tudo')" class="btn-category">
-            <span>Tudo</span>
-        </button>
-    ` + categories.map(cat => `
-        <button onclick="filterByCat('${cat.id}', '${cat.nome}')" class="btn-category">
-            <span>${cat.nome}</span>
-        </button>
-    `).join('');
-}
-
-function renderProducts(products) {
-    const grid = document.getElementById('product-grid');
-    if (products.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-20 uppercase tracking-widest font-black">Nenhum produto nesta categoria</div>`;
-        return;
-    }
-
-    grid.innerHTML = products.map(prod => `
-        <div class="card-legend rounded-[2rem] p-4 group animate-reveal flex flex-col h-full">
-            <div class="aspect-square rounded-[1.5rem] bg-[#0a0a0a] mb-6 overflow-hidden relative border border-white/5 shrink-0">
-                <img src="${prod.image}" class="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700">
-            </div>
-            <div class="px-4 pb-4 flex-grow flex flex-col">
-                <h3 class="font-bold text-sm tracking-tight mb-4 opacity-80 flex-grow">${prod.name}</h3>
+                if (!data.success) return;
                 
-                <div class="flex items-center justify-between mt-auto">
-                    <span class="text-xl font-black text-white/90">R$ ${prod.price}</span>
-                    
-                    <div class="flex items-center gap-2">
-                        <button onclick="openProductDetails('${prod.id}')" class="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-all font-black pb-2 text-xl" title="Ver Detalhes">...</button>
+                const store = data.store;
+                window.currentStore = store;
+
+                if (store.settings?.primaryColor) document.documentElement.style.setProperty('--p-color', store.settings.primaryColor);
+                if (store.settings?.secondaryColor) document.documentElement.style.setProperty('--s-color', store.settings.secondaryColor);
+                if (store.settings?.banner) {
+                    document.getElementById('store-banner-img').src = store.settings.banner;
+                    document.getElementById('banner-layer').classList.remove('hidden');
+                }
+
+                document.getElementById('store-name-header').innerText = store.name;
+                if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+
+                allProductsStore = (store.products || []).filter(p => p.status === 'Ativo');
+                renderCategories((store.categories || []).filter(c => c.status === 'Ativo'));
+                renderProducts(allProductsStore);
+
+            } catch (error) {
+                 console.error("Erro ao carregar loja Legend:", error);
+            }
+        }
+
+        function filterByCat(id, name) {
+            document.getElementById('current-cat-display').innerText = name || 'Tudo';
+            
+            const filtered = id === '' 
+                ? allProductsStore 
+                : allProductsStore.filter(p => p.categoryId === id);
+            
+            renderProducts(filtered);
+        }
+
+        function renderCategories(categories) {
+            const list = document.getElementById('category-list');
+            
+            list.innerHTML = `
+                <button onclick="filterByCat('', 'Tudo')" class="btn-category">
+                    <span>Tudo</span>
+                </button>
+            ` + categories.map(cat => `
+                <button onclick="filterByCat('${cat.id}', '${cat.nome}')" class="btn-category">
+                    <span>${cat.nome}</span>
+                </button>
+            `).join('');
+        }
+
+        function renderProducts(products) {
+            const grid = document.getElementById('product-grid');
+            if (products.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-20 uppercase tracking-widest font-black">Nenhum produto nesta categoria</div>`;
+                return;
+            }
+
+            grid.innerHTML = products.map(prod => `
+                <div class="card-legend rounded-[2rem] p-4 group animate-reveal flex flex-col h-full">
+                    <div class="aspect-square rounded-[1.5rem] bg-[#0a0a0a] mb-6 overflow-hidden relative border border-white/5 shrink-0">
+                        <img src="${prod.image}" class="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700">
+                    </div>
+                    <div class="px-4 pb-4 flex-grow flex flex-col">
+                        <h3 class="font-bold text-sm tracking-tight mb-4 opacity-80 flex-grow">${prod.name}</h3>
                         
-                        <button onclick="addToCart('${prod.id}')" class="w-11 h-11 btn-legend rounded-xl flex items-center justify-center shadow-lg">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
+                        <div class="flex items-center justify-between mt-auto">
+                            <span class="text-xl font-black text-white/90">R$ ${prod.price}</span>
+                            
+                            <div class="flex items-center gap-2">
+                                <button onclick="openProductDetails('${prod.id}')" class="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-all font-black pb-2 text-xl" title="Ver Detalhes">...</button>
+                                
+                                <button onclick="addToCart('${prod.id}')" class="w-11 h-11 btn-legend rounded-xl flex items-center justify-center shadow-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    `).join('');
-}
+            `).join('');
+        }
 
-function openProductDetails(productId) {
-    // Busca direto na array global que criamos no loadStore do Legend
-    const product = allProductsStore.find(p => p.id === productId);
-    if (!product) return;
+        function openProductDetails(productId) {
+            const product = allProductsStore.find(p => p.id === productId);
+            if (!product) return;
 
-    document.getElementById('modal-prod-img').src = product.image;
-    document.getElementById('modal-prod-name').textContent = product.name;
-    
-    const descElement = document.getElementById('modal-prod-desc');
-    if (product.description && product.description.trim() !== '') {
-        descElement.textContent = product.description;
-    } else {
-        descElement.textContent = "Artefato exclusivo de classe Legend. Nenhuma documentação adicional foi fornecida pelo criador.";
-    }
+            document.getElementById('modal-prod-img').src = product.image;
+            document.getElementById('modal-prod-name').textContent = product.name;
+            
+            const descElement = document.getElementById('modal-prod-desc');
+            if (product.description && product.description.trim() !== '') {
+                descElement.textContent = product.description;
+            } else {
+                descElement.textContent = "Artefato exclusivo de classe Legend. Nenhuma documentação adicional foi fornecida pelo criador.";
+            }
 
-    document.getElementById('product-details-modal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
+            document.getElementById('product-details-modal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
 
-function closeProductDetails() {
-    document.getElementById('product-details-modal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
+        function closeProductDetails() {
+            document.getElementById('product-details-modal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
 
-document.addEventListener('DOMContentLoaded', loadStore);
+        document.addEventListener('DOMContentLoaded', loadStore);
     </script>
 </body>
 </html>

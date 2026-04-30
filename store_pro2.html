@@ -139,59 +139,89 @@
 </div>
     <script src="cart.js"></script>
     <script>
-        const STORAGE_KEYS = { stores: 'protech_stores_v1' };
         const params = new URLSearchParams(window.location.search);
         const slug = params.get('s');
+        window.currentStore = null;
 
-        function loadStore() {
+        async function loadStore() {
+            const grid = document.getElementById('product-grid');
+
             if (!slug) {
-            document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-black uppercase tracking-widest text-gray-500'>URL Inválida</div>";
-            return;
+                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-black uppercase tracking-widest text-gray-500'>URL Inválida</div>";
+                return;
             }
 
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
-            if (!store) {
-            document.body.innerHTML = `
-            <div class='h-screen flex flex-col items-center justify-center bg-white text-black p-10 text-center'>
-                <h1 class='text-6xl font-black text-[#D4AF37] mb-4'>404</h1>
-                <p class='font-bold uppercase tracking-[0.3em] text-xs text-gray-500'>Instância Luxury não localizada</p>
-                <a href='dashboard.html' class='mt-8 px-8 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase hover:bg-[#D4AF37] transition-all'>Voltar ao Painel</a>
-            </div>`;
-            return;
+            // Tela de Carregamento Luxury
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-32">
+                        <div class="w-16 h-16 border-4 border-gray-100 border-t-[#D4AF37] rounded-full animate-spin mb-8 shadow-lg shadow-[#D4AF37]/20"></div>
+                        <h2 class="text-xs font-black tracking-[0.3em] uppercase text-gray-400">Preparando Coleção...</h2>
+                    </div>
+                `;
             }
 
-            document.title = `${store.name} | Luxury Pro`;
-            document.getElementById('store-name-header').innerText = store.name;
+            try {
+                // TROQUE AQUI PELO LINK DO SEU RENDER!!!
+                const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                const data = await response.json();
 
-            if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
-            if (store.settings?.banner) {
-                document.getElementById('store-banner-img').src = store.settings.banner;
-                document.getElementById('store-banner-container').classList.remove('hidden');
+                if (!data.success) {
+                    document.body.innerHTML = `
+                    <div class='h-screen flex flex-col items-center justify-center bg-white text-black p-10 text-center'>
+                        <h1 class='text-6xl font-black text-[#D4AF37] mb-4'>404</h1>
+                        <p class='font-bold uppercase tracking-[0.3em] text-xs text-gray-500'>Instância Luxury não localizada</p>
+                        <a href='dashboard.html' class='mt-8 px-8 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase hover:bg-[#D4AF37] transition-all'>Voltar ao Painel</a>
+                    </div>`;
+                    return;
+                }
+
+                const store = data.store;
+                window.currentStore = store;
+
+                document.title = `${store.name} | Luxury Pro`;
+                document.getElementById('store-name-header').innerText = store.name;
+
+                if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+                if (store.settings?.banner) {
+                    document.getElementById('store-banner-img').src = store.settings.banner;
+                    document.getElementById('store-banner-container').classList.remove('hidden');
+                }
+
+                // Categorias no Menu Flutuante
+                const catList = document.getElementById('category-list');
+                const activeCats = (store.categories || []).filter(c => c.status === 'Ativo');
+                
+                catList.innerHTML = `
+                    <button onclick="resetFilter()" class="flex-shrink-0 text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest bg-[#D4AF37]/10 text-[#D4AF37] transition-all">Tudo</button>
+                ` + activeCats.map(cat => `
+                    <button onclick="filterByCat('${cat.id}', '${cat.nome}')" class="flex-shrink-0 text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-400 hover:bg-gray-100 hover:text-black transition-all">
+                        ${cat.nome}
+                    </button>
+                `).join('');
+
+                renderProducts(store.products || []);
+
+            } catch (error) {
+                console.error("Erro ao carregar loja Luxury:", error);
+                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Erro de conexão com o servidor.</div>";
             }
-
-            // Categorias no Menu Flutuante
-            const catList = document.getElementById('category-list');
-            const activeCats = (store.categories || []).filter(c => c.status === 'Ativo');
-            
-            catList.innerHTML = `
-                <button onclick="resetFilter()" class="flex-shrink-0 text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest bg-[#D4AF37]/10 text-[#D4AF37] transition-all">Tudo</button>
-            ` + activeCats.map(cat => `
-                <button onclick="filterByCat('${cat.id}', '${cat.nome}')" class="flex-shrink-0 text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-400 hover:bg-gray-100 hover:text-black transition-all">
-                    ${cat.nome}
-                </button>
-            `).join('');
-
-            renderProducts(store.products || []);
         }
 
         function renderProducts(productsToRender) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
-            const products = productsToRender || store.products || [];
+            const store = window.currentStore;
+            if (!store) return;
             
+            const products = productsToRender || store.products || [];
+            const activeProducts = products.filter(p => p.status === 'Ativo');
             const grid = document.getElementById('product-grid');
-            grid.innerHTML = products.map(prod => `
+            
+            if (activeProducts.length === 0) {
+                 grid.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 uppercase tracking-widest font-black text-xs">Nenhuma peça disponível nesta seleção</div>`;
+                 return;
+            }
+            
+            grid.innerHTML = activeProducts.map(prod => `
                 <div class="luxury-card p-6 group flex flex-col h-full">
                     <div class="aspect-square rounded-3xl overflow-hidden mb-6 bg-gray-50 p-6 relative shrink-0">
                         <img src="${prod.image}" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700">
@@ -220,16 +250,16 @@
         }
 
         function filterByCat(id, name) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
+            const store = window.currentStore;
+            if(!store) return;
+            
             const filtered = store.products.filter(p => p.categoryId === id);
             document.getElementById('current-cat-display').innerText = name;
             renderProducts(filtered);
         }
 
         function openProductDetails(productId) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
+            const store = window.currentStore;
             if (!store) return;
 
             const product = (store.products || []).find(p => p.id === productId);

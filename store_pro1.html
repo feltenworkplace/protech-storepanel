@@ -135,74 +135,84 @@
 </div>
     <script src="cart.js"></script>
     <script>
-        const STORAGE_KEYS = { stores: 'protech_stores_v1' };
         const params = new URLSearchParams(window.location.search);
         const slug = params.get('s');
+        window.currentStore = null;
 
-        function loadStore() {
-    if (!slug) {
-        document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-black uppercase tracking-widest text-gray-500'>URL Inválida</div>";
-        return;
-    }
+        async function loadStore() {
+            if (!slug) {
+                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-black uppercase tracking-widest text-gray-500'>URL Inválida</div>";
+                return;
+            }
 
-    const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-    const store = stores.find(s => s.slug === slug);
-    if (!store) {
-        document.body.innerHTML = `
-            <div class='h-screen flex flex-col items-center justify-center bg-black text-white p-10 text-center'>
-                <h1 class='text-6xl font-black text-[#D4AF37] mb-4'>404</h1>
-                <p class='font-bold uppercase tracking-[0.3em] text-xs text-gray-500'>Instância não localizada no ProTech Lab</p>
-                <a href='dashboard.html' class='mt-8 px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase hover:bg-[#D4AF37] hover:text-black transition-all'>Voltar ao Painel</a>
-            </div>`;
-        return;
-    }
+            try {
+                const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                const data = await response.json();
 
-    document.title = `${store.name} | ProTech Lab`;
-    document.getElementById('banner-store-name').innerText = store.name;
-    document.getElementById('store-name-header').innerText = store.name;
+                if (!data.success) {
+                    document.body.innerHTML = `
+                        <div class='h-screen flex flex-col items-center justify-center bg-black text-white p-10 text-center'>
+                            <h1 class='text-6xl font-black text-[#D4AF37] mb-4'>404</h1>
+                            <p class='font-bold uppercase tracking-[0.3em] text-xs text-gray-500'>Instância não localizada no ProTech Lab</p>
+                            <a href='dashboard.html' class='mt-8 px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase hover:bg-[#D4AF37] hover:text-black transition-all'>Voltar ao Painel</a>
+                        </div>`;
+                    return;
+                }
 
-    if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
-    if (store.settings?.banner) {
-        document.getElementById('store-banner-img').src = store.settings.banner;
-        document.getElementById('store-banner-container').classList.remove('hidden');
-    }
+                const store = data.store;
+                window.currentStore = store;
 
-    // Render Categorias em Stories
-    const catContainer = document.getElementById('category-stories');
-    const activeCats = (store.categories || []).filter(c => c.status === 'Ativo');
-    
-    catContainer.innerHTML = `
-        <div onclick="resetFilter()" class="flex-shrink-0 cursor-pointer text-center group">
-            <div class="story-ring w-20 h-20 mb-2 group-hover:rotate-12">
-                <div class="w-full h-full bg-zinc-900 rounded-full border-2 border-black flex items-center justify-center font-black text-[10px] uppercase text-[#D4AF37]">Tudo</div>
-            </div>
-            <p class="text-[10px] font-black uppercase text-gray-500 group-hover:text-white transition">Início</p>
-        </div>
-    ` + activeCats.map(cat => `
-        <div onclick="filterByCat('${cat.id}', '${cat.nome}')" class="flex-shrink-0 cursor-pointer text-center group">
-            <div class="story-ring w-20 h-20 mb-2 group-hover:rotate-12 transition-all">
-                <div class="w-full h-full bg-zinc-800 rounded-full border-2 border-black flex items-center justify-center font-black text-xs uppercase text-[#D4AF37]">${cat.nome.substring(0,2)}</div>
-            </div>
-            <p class="text-[10px] font-black uppercase text-gray-500 group-hover:text-white transition">${cat.nome}</p>
-        </div>
-    `).join('');
+                document.title = `${store.name} | ProTech Lab`;
+                document.getElementById('banner-store-name').innerText = store.name;
+                document.getElementById('store-name-header').innerText = store.name;
 
-    renderProducts(store.products || []);
-}
+                if (store.settings?.logo) document.getElementById('header-logo-img').src = store.settings.logo;
+                if (store.settings?.banner) {
+                    document.getElementById('store-banner-img').src = store.settings.banner;
+                    document.getElementById('store-banner-container').classList.remove('hidden');
+                }
 
-// Nova função para garantir que o título mude para "Tudo" ao resetar
-function resetFilter() {
-    document.getElementById('current-cat-display').innerText = "Tudo";
-    renderProducts();
-}
+                // Render Categorias em Stories
+                const catContainer = document.getElementById('category-stories');
+                const activeCats = (store.categories || []).filter(c => c.status === 'Ativo');
+                
+                catContainer.innerHTML = `
+                    <div onclick="resetFilter()" class="flex-shrink-0 cursor-pointer text-center group">
+                        <div class="story-ring w-20 h-20 mb-2 group-hover:rotate-12">
+                            <div class="w-full h-full bg-zinc-900 rounded-full border-2 border-black flex items-center justify-center font-black text-[10px] uppercase text-[#D4AF37]">Tudo</div>
+                        </div>
+                        <p class="text-[10px] font-black uppercase text-gray-500 group-hover:text-white transition">Início</p>
+                    </div>
+                ` + activeCats.map(cat => `
+                    <div onclick="filterByCat('${cat.id}', '${cat.nome}')" class="flex-shrink-0 cursor-pointer text-center group">
+                        <div class="story-ring w-20 h-20 mb-2 group-hover:rotate-12 transition-all">
+                            <div class="w-full h-full bg-zinc-800 rounded-full border-2 border-black flex items-center justify-center font-black text-xs uppercase text-[#D4AF37]">${cat.nome.substring(0,2)}</div>
+                        </div>
+                        <p class="text-[10px] font-black uppercase text-gray-500 group-hover:text-white transition">${cat.nome}</p>
+                    </div>
+                `).join('');
+
+                renderProducts(store.products || []);
+
+            } catch (error) {
+                console.error("Erro ao carregar loja PRO:", error);
+                 document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>Erro de conexão com o servidor.</div>";
+            }
+        }
+
+        function resetFilter() {
+            document.getElementById('current-cat-display').innerText = "Tudo";
+            renderProducts();
+        }
 
         function renderProducts(productsToRender) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
+            const store = window.currentStore;
+            if (!store) return;
             const products = productsToRender || store.products || [];
+            const activeProducts = products.filter(p => p.status === 'Ativo');
             
             const grid = document.getElementById('product-grid');
-            grid.innerHTML = products.map(prod => `
+            grid.innerHTML = activeProducts.map(prod => `
                 <div class="pro-card p-6 flex flex-col h-full">
                     <div class="relative aspect-[4/5] rounded-[2rem] overflow-hidden mb-6 bg-zinc-900 border border-white/5 p-4">
                         <img src="${prod.image}" class="w-full h-full object-contain">
@@ -226,26 +236,23 @@ function resetFilter() {
         }
 
         function filterByCat(id, name) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
+            const store = window.currentStore;
+            if(!store) return;
             const filtered = store.products.filter(p => p.categoryId === id);
             document.getElementById('current-cat-display').innerText = name;
             renderProducts(filtered);
         }
 
         function openProductDetails(productId) {
-            const stores = JSON.parse(localStorage.getItem(STORAGE_KEYS.stores) || '[]');
-            const store = stores.find(s => s.slug === slug);
+            const store = window.currentStore;
             if (!store) return;
 
             const product = (store.products || []).find(p => p.id === productId);
             if (!product) return;
 
-            // Preenche imagem e nome
             document.getElementById('modal-prod-img').src = product.image;
             document.getElementById('modal-prod-name').textContent = product.name;
             
-            // Preenche a descrição com fallback elegante
             const descElement = document.getElementById('modal-prod-desc');
             if (product.description && product.description.trim() !== '') {
                 descElement.textContent = product.description;
@@ -253,7 +260,6 @@ function resetFilter() {
                 descElement.textContent = "Edição exclusiva sem descrição detalhada. Item de coleção premium.";
             }
 
-            // Exibe o modal travando o fundo
             document.getElementById('product-details-modal').classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
         }

@@ -1838,31 +1838,50 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
         if (data.success && data.lojas && Array.isArray(data.lojas)) {
             const localStores = getStores();
-            
-            // LÓGICA DE PERSISTÊNCIA REFORÇADA:
-            // Só sobrescreve se a nuvem tiver lojas E você não tiver criado nada novo localmente ainda
-            if (data.lojas.length > 0) {
-                // Se você tem produtos locais, mas a nuvem veio vazia, NÃO sobrescreve.
-                // Isso protege contra falhas temporárias de sincronização do banco.
-                const cloudHasProducts = data.lojas.some(s => s.products && s.products.length > 0);
-                const localHasProducts = localStores.some(s => s.products && s.products.length > 0);
+            let shouldUpdateLocal = false;
 
-                if (cloudHasProducts || !localHasProducts) {
-                    localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+            if (data.lojas.length > 0) {
+                // Compara a nuvem com o local
+                data.lojas.forEach(cloudStore => {
+                    const localStore = localStores.find(s => s.id === cloudStore.id);
+                    
+                    if (!localStore) {
+                        // Loja nova na nuvem que não existe aqui
+                        shouldUpdateLocal = true;
+                    } else {
+                        // Se a loja existe, checa se a nuvem tem MAIS pedidos ou MAIS produtos
+                        const cloudOrdersCount = cloudStore.orders ? cloudStore.orders.length : 0;
+                        const localOrdersCount = localStore.orders ? localStore.orders.length : 0;
+                        
+                        const cloudProdCount = cloudStore.products ? cloudStore.products.length : 0;
+                        const localProdCount = localStore.products ? localStore.products.length : 0;
+
+                        if (cloudOrdersCount > localOrdersCount || cloudProdCount > localProdCount) {
+                            shouldUpdateLocal = true;
+                        }
+                    }
+                });
+
+                // Se não tem lojas locais nenhuma, sempre aceita a nuvem
+                if (localStores.length === 0) {
+                    shouldUpdateLocal = true;
                 }
-            }
-            
-            enforceStoreLimits();
-            renderStoresGrid();
-            updateCategoryDropdowns();
-            
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('s')) {
-                loadTemplateSettings(); 
-                renderDashboardGeral();
-                renderProducts();
-                renderCategories();
-                renderCoupons();
+
+                if (shouldUpdateLocal) {
+                    localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+                    enforceStoreLimits();
+                    renderStoresGrid();
+                    updateCategoryDropdowns();
+                    
+                    const params = new URLSearchParams(window.location.search);
+                    if (params.get('s')) {
+                        loadTemplateSettings(); 
+                        renderDashboardGeral();
+                        renderProducts();
+                        renderCategories();
+                        renderCoupons();
+                    }
+                }
             }
         }
     }).catch(err => console.error("Erro na nuvem:", err));

@@ -1705,6 +1705,10 @@ function switchTab(tabName) {
     if (tabName === 'comandos') {
         renderCommands();
     }
+
+    if (tabName === 'script') {
+        loadServerSettings();
+    }
 }
 
         function toggleSubmenu(id, arrowId) {
@@ -4043,6 +4047,25 @@ function maskMoney(input) {
 function parseMoneyValue(formattedValue) {
     if (!formattedValue) return "0.00";
     return formattedValue.replace("R$ ", "").replace(/\./g, "").replace(",", ".");
+}
+
+function loadServerSettings() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    const stores = getStores();
+    const store = stores.find(s => s.slug === currentSlug);
+
+    // Se a loja existir e tiver dados de servidor salvos
+    if (store && store.server) {
+        document.getElementById('cfg-server-ip').value = store.server.ip || '';
+        document.getElementById('cfg-server-port').value = store.server.port || '';
+        document.getElementById('cfg-server-password').value = store.server.pass || '';
+    } else {
+        // Se for a primeira vez, garante que os campos fiquem vazios
+        document.getElementById('cfg-server-ip').value = '';
+        document.getElementById('cfg-server-port').value = '';
+        document.getElementById('cfg-server-password').value = '';
+    }
 }
     </script>
 </body>

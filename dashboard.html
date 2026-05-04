@@ -1195,44 +1195,69 @@ select:focus option:checked {
     <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('command-modal')"></div>
     <div class="relative w-full max-w-md glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
         <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
-            <h3 class="text-xl font-black tracking-tight text-white">Cadastrar Comando</h3>
+            <h3 class="text-xl font-black tracking-tight text-white">Cadastrar Automação</h3>
             <button onclick="closeModal('command-modal')" class="text-gray-500 hover:text-white transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-            <div class="p-8 space-y-6">
-            <div>
-                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome do mod</label>
-                <input type="text" id="cmd-alias" placeholder="Ex: Chevrolet Corvette C8" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                <p class="text-[9px] text-gray-600 mt-2">Nomeie o mod para mais facilidade em cadastrar produtos</p>
-            </div>
-            <div>
-                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Comando Executável</label>
-                <input type="text" id="cmd-text" placeholder="Ex: car {id} (nome_mod_pasta)" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
-                <p class="text-[9px] text-gray-600 mt-2">Use <span class="text-gold">{id}</span> onde o servidor deve colocar o passaporte do jogador e <span class="text-pink">(nome_mod_pasta)</span> substitua para o nome do mod salvo nos arquivos.</p>
-            </div>
-
-            <div class="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl mt-4">
-                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Comandos do Connector ProTech
-                </p>
-                <ul class="text-[9px] text-gray-400 space-y-2 font-mono">
-                    <li>👉 <span class="text-white">protech_api_veiculo {id} [nome_do_carro]</span></li>
-                    <li>👉 <span class="text-white">protech_api_dinheiro {id} [valor]</span></li>
-                    <li>👉 <span class="text-white">protech_api_item {id} [nome_item] [qtd]</span></li>
-                    <li>👉 <span class="text-white">protech_api_vip {id} [nome_do_grupo]</span></li>
-                </ul>
-                <p class="text-[9px] text-indigo-300 mt-2 italic">Dica: Substitua as palavras entre colchetes pelo valor real (ex: protech_api_veiculo {id} porsche).</p>
-            </div>
+        <div class="p-8 space-y-4">
             
-            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl">
+            <!-- NOME (Alias) -->
+            <div>
+                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Nome de Identificação</label>
+                <input type="text" id="cmd-alias" placeholder="Ex: Entrega de Nissan RBUWU" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
+                <p class="text-[9px] text-gray-600 mt-2">Nome interno para você achar na hora de vincular ao produto.</p>
+            </div>
+
+            <!-- SELETOR INTELIGENTE -->
+            <div class="pt-2">
+                <label class="text-[10px] font-black text-gold uppercase tracking-widest block mb-2">O que será entregue?</label>
+                <select id="selectTipoEntrega" onchange="mudarCamposEntrega()" class="select-field w-full bg-gold/10 border border-gold/20 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-gold transition-all appearance-none cursor-pointer font-bold">
+                    <option value="" disabled selected>Escolha uma categoria...</option>
+                    <option value="veiculo">🚗 Veículo (Garagem)</option>
+                    <option value="dinheiro">💰 Dinheiro (Banco)</option>
+                    <option value="item">📦 Item (Mochila)</option>
+                    <option value="vip">👑 VIP / Grupo</option>
+                </select>
+            </div>
+
+            <!-- CAIXAS DINÂMICAS (Escondidas por padrão) -->
+            <div id="boxVeiculo" class="hidden bg-black/40 border border-white/5 p-4 rounded-xl mt-2">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Nome de Spawn (Spawncode)</label>
+                <input type="text" id="inputVeiculo" placeholder="Ex: rbuwu" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
+                <p class="text-[9px] text-gray-600 mt-2">Apenas o nome exato da pasta do mod.</p>
+            </div>
+
+            <div id="boxDinheiro" class="hidden bg-black/40 border border-white/5 p-4 rounded-xl mt-2">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Quantia a depositar</label>
+                <input type="number" id="inputDinheiro" placeholder="Ex: 500000" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
+                <p class="text-[9px] text-gray-600 mt-2">Apenas números. O depósito cai direto no banco.</p>
+            </div>
+
+            <div id="boxVip" class="hidden bg-black/40 border border-white/5 p-4 rounded-xl mt-2">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Grupo na Base de Dados</label>
+                <input type="text" id="inputVip" placeholder="Ex: diamante" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
+                <p class="text-[9px] text-gray-600 mt-2">Nome do cargo como está cadastrado no servidor.</p>
+            </div>
+
+            <div id="boxItem" class="hidden bg-black/40 border border-white/5 p-4 rounded-xl mt-2 space-y-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Nome de Spawn do Item</label>
+                    <input type="text" id="inputNomeItem" placeholder="Ex: water" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Quantidade</label>
+                    <input type="number" id="inputQtdItem" placeholder="Ex: 10" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl focus:border-gold outline-none text-sm text-white transition-all font-mono">
+                </div>
+            </div>
+
+            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl mt-4">
                 <p class="text-[9px] text-gray-500 italic text-center leading-relaxed">
-                    Nota: O produto será entregue automaticamente no ID que o cliente preencher na página de checkout da loja. A entrega funciona independentemente do jogador estar online ou offline.
+                    A entrega funciona independentemente do jogador estar online ou offline. O sistema fará a montagem do código automaticamente.
                 </p>
             </div>
 
-            <div class="flex gap-3 pt-2">
+            <div class="flex gap-3 pt-4 border-t border-white/5">
                 <button onclick="closeModal('command-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
                 <button onclick="saveCommand()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition">Salvar Comando</button>
             </div>
@@ -2195,11 +2220,53 @@ function openCommandModal() {
     document.body.classList.add('no-scroll');
 }
 
+// Função nova para a inteligência da interface
+function mudarCamposEntrega() {
+    // Esconde todos usando as classes do Tailwind
+    document.getElementById('boxVeiculo').classList.add('hidden');
+    document.getElementById('boxDinheiro').classList.add('hidden');
+    document.getElementById('boxVip').classList.add('hidden');
+    document.getElementById('boxItem').classList.add('hidden');
+
+    // Mostra só o selecionado
+    const tipo = document.getElementById('selectTipoEntrega').value;
+    if(tipo === 'veiculo') document.getElementById('boxVeiculo').classList.remove('hidden');
+    if(tipo === 'dinheiro') document.getElementById('boxDinheiro').classList.remove('hidden');
+    if(tipo === 'vip') document.getElementById('boxVip').classList.remove('hidden');
+    if(tipo === 'item') document.getElementById('boxItem').classList.remove('hidden');
+}
+
+// A sua função antiga, mas agora super inteligente!
 function saveCommand() {
     const cmdAlias = document.getElementById('cmd-alias').value.trim();
-    const cmdText = document.getElementById('cmd-text').value.trim();
+    const tipo = document.getElementById('selectTipoEntrega').value;
 
-    if (!cmdAlias || !cmdText) return showAlert("Preencha o apelido e o comando executável.");
+    if (!cmdAlias || !tipo) return showAlert("Preencha o nome de identificação e escolha o tipo de entrega.");
+
+    let cmdText = "";
+
+    // O sistema monta o comando sujo nos bastidores!
+    if(tipo === 'veiculo') {
+        const carro = document.getElementById('inputVeiculo').value.trim();
+        if(!carro) return showAlert("Preencha o spawncode do veículo.");
+        cmdText = `protech_api_veiculo {id} ${carro}`;
+    } 
+    else if (tipo === 'dinheiro') {
+        const quantia = document.getElementById('inputDinheiro').value.trim();
+        if(!quantia) return showAlert("Preencha a quantia de dinheiro.");
+        cmdText = `protech_api_dinheiro {id} ${quantia}`;
+    }
+    else if (tipo === 'vip') {
+        const grupo = document.getElementById('inputVip').value.trim();
+        if(!grupo) return showAlert("Preencha o nome do grupo VIP.");
+        cmdText = `protech_api_vip {id} ${grupo}`;
+    }
+    else if (tipo === 'item') {
+        const nomeItem = document.getElementById('inputNomeItem').value.trim();
+        const qtd = document.getElementById('inputQtdItem').value.trim();
+        if(!nomeItem || !qtd) return showAlert("Preencha o nome e a quantidade do item.");
+        cmdText = `protech_api_item {id} ${nomeItem} ${qtd}`;
+    }
 
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -2211,19 +2278,27 @@ function saveCommand() {
 
         const newCommand = {
             id: 'CMD' + Math.floor(Math.random() * 9000 + 1000),
-            alias: cmdAlias, // Salvamos o nome bonitinho
-            command: cmdText, // Salvamos o código feio
+            alias: cmdAlias,
+            command: cmdText, // Salva o comando que ele montou sozinho
             date: new Date().toLocaleString('pt-BR')
         };
 
         stores[storeIndex].commands.push(newCommand);
         setStores(stores);
         
+        // Limpeza dos campos pro próximo uso
         document.getElementById('cmd-alias').value = '';
-        document.getElementById('cmd-text').value = '';
+        document.getElementById('selectTipoEntrega').value = '';
+        document.getElementById('inputVeiculo').value = '';
+        document.getElementById('inputDinheiro').value = '';
+        document.getElementById('inputVip').value = '';
+        document.getElementById('inputNomeItem').value = '';
+        document.getElementById('inputQtdItem').value = '';
+        mudarCamposEntrega(); // Recolhe as caixinhas
+        
         closeModal('command-modal');
         renderCommands();
-        showSuccess("Comando cadastrado!");
+        showSuccess("Automação cadastrada com sucesso!");
     }
 }
 

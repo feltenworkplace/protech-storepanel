@@ -474,7 +474,7 @@
                                     clearInterval(verificador);
                                     // --- 2.5 CHAMANDO O MOTOBOY DO RCON (A MÁGICA QUE FALTAVA) ---
                                     console.log("DADOS DA LOJA:", store); // <--- NOSSO OLHEIRO!
-                                    
+
                                 try {
                                     let comandosParaEnviar = [];
     
@@ -493,15 +493,15 @@
     });
 
     // Se a loja tiver configurado o RCON no painel, dispara para o Render!
-    if (comandosParaEnviar.length > 0 && store.settings.serverIp) {
+    if (comandosParaEnviar.length > 0 && store.server && store.server.ip) {
         console.log("Enviando ordem de entrega para o servidor...");
         fetch('https://storepanel-backend.onrender.com/delivery', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ip: store.settings.serverIp,         // IP do Pinggy
-                port: store.settings.serverPort,     // Porta do Pinggy
-                password: store.settings.serverPassword, // Senha RCON
+                ip: store.server.ip,               
+                port: store.server.port,           
+                password: store.server.pass,
                 commands: comandosParaEnviar
             })
         })

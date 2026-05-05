@@ -472,6 +472,47 @@
 
                                 if (checkData.approved) {
                                     clearInterval(verificador);
+                                    // --- 2.5 CHAMANDO O MOTOBOY DO RCON (A MÁGICA QUE FALTAVA) ---
+                                    console.log("DADOS DA LOJA:", store); // <--- NOSSO OLHEIRO!
+                                    
+                                try {
+                                    let comandosParaEnviar = [];
+    
+                                // Pega cada item do carrinho e prepara o comando
+                                            cartItems.forEach(item => {
+                                                 // Se você cadastrou um comando no painel para esse item (ex: givevehicle {id} rbuwu)
+                                                 if (item.command) {
+                   // Troca a tag {id} pelo Passaporte/ID que o cliente digitou no checkout
+            let comandoPronto = item.command.replace('{id}', gameId); 
+            
+            // Se o cara comprou 2 carros iguais, repete o comando 2 vezes
+            for (let i = 0; i < item.quantity; i++) {
+                comandosParaEnviar.push(comandoPronto);
+            }
+        }
+    });
+
+    // Se a loja tiver configurado o RCON no painel, dispara para o Render!
+    if (comandosParaEnviar.length > 0 && store.settings.serverIp) {
+        console.log("Enviando ordem de entrega para o servidor...");
+        fetch('https://storepanel-backend.onrender.com/delivery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ip: store.settings.serverIp,         // IP do Pinggy
+                port: store.settings.serverPort,     // Porta do Pinggy
+                password: store.settings.serverPassword, // Senha RCON
+                commands: comandosParaEnviar
+            })
+        })
+        .then(res => res.json())
+        .then(data => console.log("Resposta do RCON:", data))
+        .catch(err => console.error("Erro na comunicação com RCON:", err));
+    }
+                } catch (rconErro) {
+    console.error("Erro ao preparar comandos:", rconErro);
+}
+// -------------------------------------------------------------
 
                                     // --- 3. INJETA A VENDA COM O GAME ID NO DASHBOARD ---
                                     let storesAtualizadas = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');

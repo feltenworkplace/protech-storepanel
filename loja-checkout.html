@@ -515,7 +515,7 @@ try {
     // Se a loja tiver configurado o RCON no painel, dispara para o Render!
     if (comandosParaEnviar.length > 0 && store.server && store.server.ip) {
         console.log("✅ Comandos montados com sucesso:", comandosParaEnviar);
-        console.log("🏍️ Enviando ordem de entrega para o servidor...");
+        console.log("🏍️ Enviando ordem de entrega via HTTP API...");
         
         fetch('https://storepanel-backend.onrender.com/delivery', {
             method: 'POST',
@@ -523,7 +523,8 @@ try {
             body: JSON.stringify({
                 ip: store.server.ip,
                 port: store.server.port,
-                password: store.server.pass,
+                // Usamos a chave de integração que você definiu no server.cfg
+                token: "pt_live_942kS82ls92mS02l", 
                 commands: comandosParaEnviar
             })
         })

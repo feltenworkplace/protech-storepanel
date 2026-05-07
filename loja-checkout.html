@@ -473,35 +473,56 @@
                                 if (checkData.approved) {
                                     clearInterval(verificador);
                                     // --- 2.5 CHAMANDO O MOTOBOY DO RCON (A MÁGICA QUE FALTAVA) ---
-                                    console.log("DADOS DA LOJA:", store); // <--- NOSSO OLHEIRO!
-                                    console.log("ITENS DO CARRINHO:", cartItems);
+console.log("DADOS DA LOJA:", store);
+console.log("ITENS DO CARRINHO:", cartItems);
 
-                                try {
-                                    let comandosParaEnviar = [];
-    
-                                // Pega cada item do carrinho e prepara o comando
-                                            cartItems.forEach(item => {
-                                                 // Se você cadastrou um comando no painel para esse item (ex: givevehicle {id} rbuwu)
-                                                 if (item.command) {
-                   // Troca a tag {id} pelo Passaporte/ID que o cliente digitou no checkout
-            let comandoPronto = item.command.replace('{id}', gameId); 
-            
-            // Se o cara comprou 2 carros iguais, repete o comando 2 vezes
-            for (let i = 0; i < item.quantity; i++) {
+try {
+    let comandosParaEnviar = [];
+
+    // Pega cada item do carrinho e prepara o comando
+    cartItems.forEach(item => {
+        let textoDoComando = null;
+
+        // 1. Tenta ver se o comando está grudado direto no item
+        if (item.command) {
+            textoDoComando = item.command;
+        } 
+        // 2. Se o item tiver o "commandId", a gente busca a frase lá no cofre da loja
+        else if (item.commandId && store.commands) {
+            let comandoAchado = store.commands.find(c => c.id === item.commandId);
+            if (comandoAchado && comandoAchado.command) {
+                textoDoComando = comandoAchado.command;
+            } else if (comandoAchado && comandoAchado.action) { 
+                // Às vezes a variável se chama 'action' em vez de 'command' na loja
+                textoDoComando = comandoAchado.action; 
+            }
+        }
+
+        // Se a gente encontrou a frase do comando com sucesso...
+        if (textoDoComando) {
+            // Troca a tag {id} pelo Passaporte/ID do jogador
+            let comandoPronto = textoDoComando.replace('{id}', gameId);
+
+            // Repete o comando pela quantidade comprada (se comprou 2 carros, manda 2 vezes)
+            for (let i = 0; i < (item.quantity || 1); i++) {
                 comandosParaEnviar.push(comandoPronto);
             }
+        } else {
+            console.log("❌ Ops! Não achei a frase do comando para o item:", item.name);
         }
     });
 
     // Se a loja tiver configurado o RCON no painel, dispara para o Render!
     if (comandosParaEnviar.length > 0 && store.server && store.server.ip) {
-        console.log("Enviando ordem de entrega para o servidor...");
+        console.log("✅ Comandos montados com sucesso:", comandosParaEnviar);
+        console.log("🏍️ Enviando ordem de entrega para o servidor...");
+        
         fetch('https://storepanel-backend.onrender.com/delivery', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ip: store.server.ip,               
-                port: store.server.port,           
+                ip: store.server.ip,
+                port: store.server.port,
                 password: store.server.pass,
                 commands: comandosParaEnviar
             })
@@ -509,8 +530,10 @@
         .then(res => res.json())
         .then(data => console.log("Resposta do RCON:", data))
         .catch(err => console.error("Erro na comunicação com RCON:", err));
+    } else {
+        console.log("⚠️ O motoboy não saiu: Nenhum comando válido foi gerado ou falta configurar o IP da loja.");
     }
-                } catch (rconErro) {
+} catch (rconErro) {
     console.error("Erro ao preparar comandos:", rconErro);
 }
 // -------------------------------------------------------------

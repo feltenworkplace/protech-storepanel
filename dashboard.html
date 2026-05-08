@@ -2811,35 +2811,43 @@ function previewImage(input, previewId) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const base64 = e.target.result;
-        const img = document.getElementById(previewId);
-        img.src = base64;
-        img.classList.remove('hidden');
-        
-        // Armazena na variável correta
-        if (previewId === 'prod-preview') currentProdImageBase64 = base64;
-        else currentEditImageBase64 = base64;
-    };
-    reader.readAsDataURL(file);
-}
+        // Usa a sua mesma lógica de Canvas para comprimir a imagem do produto antes de salvar!
+        const imgObj = new Image();
+        imgObj.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Define um tamanho bom para produtos (ex: 600x600)
+            let maxWidth = 600;
+            let maxHeight = 600;
+            let width = imgObj.width;
+            let height = imgObj.height;
 
-function previewImage(input, previewId) {
-    const file = input.files[0];
-    if (!file) return;
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = width * ratio;
+                height = height * ratio;
+            }
 
-    // Bloqueia levemente para evitar salvar sem a imagem ter carregado
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64 = e.target.result;
-        const img = document.getElementById(previewId);
-        img.src = base64;
-        img.classList.remove('hidden');
-        
-        if (previewId === 'prod-preview') {
-            currentProdImageBase64 = base64;
-        } else {
-            currentEditImageBase64 = base64;
-        }
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(imgObj, 0, 0, width, height);
+
+            // Comprime para JPEG, reduzindo o peso em 90% sem perder muita qualidade visual
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+
+            const img = document.getElementById(previewId);
+            img.src = base64;
+            img.classList.remove('hidden');
+            
+            // Salva o Base64 levinho nas suas variáveis globais prontas para ir pro Banco de Dados
+            if (previewId === 'prod-preview') {
+                currentProdImageBase64 = base64;
+            } else {
+                currentEditImageBase64 = base64;
+            }
+        };
+        imgObj.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }

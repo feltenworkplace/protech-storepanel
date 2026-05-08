@@ -38,7 +38,7 @@
             
             <div class="flex items-center gap-5">
                 <img id="header-logo-img" src="" class="w-12 h-12 object-contain rounded-2xl border border-white/10 p-1.5 bg-black hidden shadow-lg shadow-black/50">
-                <button onclick="toggleCart(true)" class="p-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition">
+                <button onclick="toggleCatDrawer(true)" class="p-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition">
                     <svg class="w-6 h-6 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
@@ -230,10 +230,14 @@
         if (activeProducts.length === 0) { grid.innerHTML = ''; msg.classList.remove('hidden'); return; }
         msg.classList.add('hidden');
 
-        grid.innerHTML = activeProducts.map(prod => `
+        grid.innerHTML = activeProducts.map(prod => {
+            // MÁGICA DA IMAGEM: Se não tiver imagem, usa uma provisória cinza
+            const productImg = prod.image && prod.image.trim() !== "" ? prod.image : "https://via.placeholder.com/400x400/111111/D4AF37?text=Sem+Foto";
+
+            return `
             <div class="product-card glass-dark rounded-[2rem] p-5 transition-all duration-300 flex flex-col h-full">
                 <div class="aspect-square rounded-2xl overflow-hidden mb-4 bg-black border border-white/5 p-4 shrink-0">
-                    <img src="${prod.image}" class="w-full h-full object-contain">
+                    <img src="${productImg}" class="w-full h-full object-contain">
                 </div>
                 <div class="flex-grow">
                     <h3 class="font-black text-sm uppercase tracking-tight text-white">${prod.name}</h3>
@@ -245,7 +249,8 @@
                     <button onclick="openProductDetails('${prod.id}')" class="w-[42px] h-[42px] shrink-0 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white hover:text-black transition font-black text-lg pb-1" title="Ver Detalhes">...</button>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     function filterByCat(slug, categoryId, categoryName) {

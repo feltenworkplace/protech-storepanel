@@ -250,11 +250,17 @@
         let subtotalCart = 0;
         let totalDiscount = 0;
 
-        // Renderiza itens e corrige bolinha cortada
+        // Renderiza itens e puxa a imagem original da loja para evitar estourar a memória
         function renderCheckoutItems() {
             const list = document.getElementById('checkout-items-list');
             subtotalCart = 0; 
             
+            // 1. Puxamos a loja do LocalStorage para pegar as imagens (e GIFs) reais
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+            const store = stores.find(s => s.slug === slug);
+
             if (cartItems.length === 0) {
                 list.innerHTML = '<div class="text-center py-10"><p class="text-gray-600 text-[10px] font-black uppercase tracking-[0.3em]">Carrinho Vazio</p></div>';
                 return;
@@ -265,11 +271,15 @@
                 const safePrice = Number(item.price);
                 subtotalCart += safePrice * item.quantity;
                 
+                // 2. MÁGICA: Busca a imagem original da loja usando o ID do item
+                const realProduct = store?.products?.find(p => p.id === item.id);
+                const imageUrl = realProduct && realProduct.image ? realProduct.image : 'https://via.placeholder.com/150';
+                
                 html += `
                     <div class="flex items-center justify-between group">
                         <div class="flex items-center gap-4">
                             <div class="relative shrink-0">
-                                <img src="${item.image}" class="w-14 h-14 rounded-2xl object-cover border border-white/10 bg-black group-hover:border-[#D4AF37]/50 transition-colors">
+                                <img src="${imageUrl}" class="w-14 h-14 rounded-2xl object-cover border border-white/10 bg-black group-hover:border-[#D4AF37]/50 transition-colors" onerror="this.src='https://via.placeholder.com/150'">
                                 <span class="absolute -top-3 -right-3 bg-[#D4AF37] text-black text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(212,175,55,0.4)] border-2 border-black z-10">${item.quantity}</span>
                             </div>
                             <div>

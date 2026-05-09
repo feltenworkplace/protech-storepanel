@@ -2772,8 +2772,7 @@ function uploadTemplateImage(input, type) {
             canvas.height = height;
             ctx.drawImage(imgObj, 0, 0, width, height);
 
-            // MÁGICA: Converte para JPEG com 80% de qualidade (Reduz o peso em até 90%)
-            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+            const base64 = canvas.toDataURL('image/webp', 0.8);
             
             // Atualiza o quadradinho de preview
             const previewImg = document.getElementById(`preview-${type}`);
@@ -2833,8 +2832,7 @@ function previewImage(input, previewId) {
             canvas.height = height;
             ctx.drawImage(imgObj, 0, 0, width, height);
 
-            // Comprime para JPEG, reduzindo o peso em 90% sem perder muita qualidade visual
-            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+            const base64 = canvas.toDataURL('image/webp', 0.8);
 
             const img = document.getElementById(previewId);
             img.src = base64;

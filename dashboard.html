@@ -2610,12 +2610,11 @@ function openEditProductModal(productId) {
     priceInput.value = (product.price * 100).toString(); // Prepara o número
     maskMoney(priceInput); // Aplica a máscara (ex: R$ 0,01)
     
-    // Tenta encontrar qual é a palavra "Camaro" baseada no ID "CMD1930" guardado no produto
     const linkedCmd = store.commands?.find(c => c.id === product.commandId);
     const cmdInput = document.getElementById('edit-prod-command');
     
     if (linkedCmd) {
-        cmdInput.value = linkedCmd.command; // Escreve "Camaro"
+        cmdInput.value = linkedCmd.alias; // CORREÇÃO: Agora ele puxa o 'alias' (nome de identificação)!
     } else {
         cmdInput.value = '';
     }

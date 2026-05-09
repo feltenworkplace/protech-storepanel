@@ -117,6 +117,15 @@ select:focus option:checked {
     box-shadow: 0 0 25px rgba(34, 211, 238, 0.5) !important;
     opacity: 1 !important;
 }
+
+/* Remove o fundo branco de preenchimento automático do Chrome */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #0b0b0b inset !important;
+    -webkit-text-fill-color: white !important;
+}
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -2397,21 +2406,27 @@ function validateCommandMatch(inputEl, containerId, badgeId) {
     const match = commands.find(c => c.alias && c.alias.toLowerCase() === typedValue);
     
     if (match) {
-        // Encontrou! Fica tudo verde e mostra o Checkmark + ID
-        container.classList.replace('border-indigo-500/10', 'border-emerald-500/30');
-        container.classList.replace('bg-indigo-500/5', 'bg-emerald-500/5');
-        inputEl.classList.replace('focus:border-indigo-500/50', 'focus:border-emerald-500/50');
+        // Remove as cores roxas (Indigo)
+        container.classList.remove('border-indigo-500/10', 'bg-indigo-500/5');
+        inputEl.classList.remove('focus:border-indigo-500/50');
+        
+        // Adiciona as cores verdes (Emerald) já garantidas no Tailwind
+        container.classList.add('border-emerald-500/20', 'bg-emerald-500/10');
+        inputEl.classList.add('focus:border-emerald-500/50');
         
         idText.innerText = match.id; // Mostra o CMD1930
         badge.classList.remove('opacity-0');
         badge.classList.add('opacity-100');
         
-        inputEl.dataset.matchedId = match.id; // Guarda o ID invisivelmente para podermos salvar depois
+        inputEl.dataset.matchedId = match.id; 
     } else {
-        // Não encontrou ou apagou o texto: Volta para o visual normal roxo
-        container.classList.replace('border-emerald-500/30', 'border-indigo-500/10');
-        container.classList.replace('bg-emerald-500/5', 'bg-indigo-500/5');
-        inputEl.classList.replace('focus:border-emerald-500/50', 'focus:border-indigo-500/50');
+        // Remove as cores verdes
+        container.classList.remove('border-emerald-500/20', 'bg-emerald-500/10');
+        inputEl.classList.remove('focus:border-emerald-500/50');
+        
+        // Volta para o roxo normal
+        container.classList.add('border-indigo-500/10', 'bg-indigo-500/5');
+        inputEl.classList.add('focus:border-indigo-500/50');
         
         badge.classList.remove('opacity-100');
         badge.classList.add('opacity-0');

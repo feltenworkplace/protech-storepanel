@@ -47,7 +47,7 @@ function toggleCart(show) {
     if (!sidebar || !overlay) return;
 
     if (show) {
-        validateAndCleanCart(); // Valida de novo ao abrir a gaveta usando os dados da nuvem
+        validateAndCleanCart(); 
         sidebar.classList.remove('translate-x-full');
         overlay.classList.remove('hidden');
         renderCart();
@@ -62,15 +62,21 @@ function renderCart() {
     const subtotalEl = document.getElementById('cart-subtotal');
     if (!container) return;
 
+    const store = window.currentStore; // Usado para procurar as imagens na hora
+
     let subtotal = 0;
     container.innerHTML = cart.map(item => {
         const safePrice = Number(item.price); 
         const itemTotal = safePrice * item.quantity;
         subtotal += itemTotal;
         
+        // MÁGICA: Vai procurar a imagem original da vitrine através do ID, sem sobrecarregar a memória
+        const realProduct = store?.products?.find(p => p.id === item.id);
+        const imageUrl = realProduct ? realProduct.image : 'https://via.placeholder.com/150';
+        
         return `
             <div class="flex gap-4 items-center bg-white/5 p-4 rounded-xl border border-white/5">
-                <img src="${item.image}" class="w-16 h-16 rounded-lg object-cover border border-white/10" onerror="this.src='https://via.placeholder.com/150'">
+                <img src="${imageUrl}" class="w-16 h-16 rounded-lg object-cover border border-white/10" onerror="this.src='https://via.placeholder.com/150'">
                 <div class="flex-grow">
                     <h4 class="text-[11px] text-white font-black uppercase tracking-tight leading-tight">${item.name}</h4>
                     <div class="flex items-center gap-3 mt-2 text-gray-400">
@@ -116,7 +122,6 @@ function saveCart() {
 }
 
 function addToCart(productId) {
-    // Procura o produto na variável da Nuvem em vez do PC local
     const store = window.currentStore;
     
     if (!store || !store.products) return;
@@ -128,7 +133,13 @@ function addToCart(productId) {
     if (existing) {
         existing.quantity += 1;
     } else {
-        cart.push({ ...product, quantity: 1 });
+        // A SALVAÇÃO DO CÓDIGO: Agora só guardamos os dados de texto! Zero Base64 aqui.
+        cart.push({ 
+            id: product.id, 
+            name: product.name, 
+            price: product.price, 
+            quantity: 1 
+        });
     }
     
     if (typeof showToast === "function") {
@@ -149,7 +160,7 @@ function goToCheckout() {
     validateAndCleanCart();
     
     if (cart.length === 0) {
-        return alert("Seu carrinho está vazio ou os itens não estão mais disponíveis.");
+        return alert("O seu carrinho está vazio ou os itens não estão mais disponíveis.");
     }
     
     window.location.href = `loja-checkout.html?s=${currentSlug}`; 

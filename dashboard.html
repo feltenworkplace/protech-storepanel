@@ -2748,20 +2748,17 @@ function uploadTemplateImage(input, type) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        // Cria uma imagem na memória para podermos comprimir
         const imgObj = new Image();
         imgObj.onload = function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Limites inteligentes para deixar a imagem super leve (sem perder qualidade visual)
             let maxWidth = type === 'banner' ? 1200 : (type === 'logo' ? 400 : 64);
             let maxHeight = type === 'banner' ? 400 : (type === 'logo' ? 400 : 64);
             
             let width = imgObj.width;
             let height = imgObj.height;
 
-            // Redimensiona se for maior que o limite
             if (width > maxWidth || height > maxHeight) {
                 const ratio = Math.min(maxWidth / width, maxHeight / height);
                 width = width * ratio;
@@ -2770,11 +2767,15 @@ function uploadTemplateImage(input, type) {
 
             canvas.width = width;
             canvas.height = height;
+
+            // Limpa o fundo do Canvas para garantir a transparência
+            ctx.clearRect(0, 0, width, height);
             ctx.drawImage(imgObj, 0, 0, width, height);
 
-            const base64 = canvas.toDataURL('image/webp', 0.8);
+            // A MÁGICA AQUI: Se o arquivo for PNG, preserva o PNG para manter a transparência!
+            const formatoSaida = file.type === 'image/png' ? 'image/png' : 'image/webp';
+            const base64 = canvas.toDataURL(formatoSaida, 0.8);
             
-            // Atualiza o quadradinho de preview
             const previewImg = document.getElementById(`preview-${type}`);
             const container = document.getElementById(`preview-${type}-container`);
             if (previewImg && container) {
@@ -2782,7 +2783,6 @@ function uploadTemplateImage(input, type) {
                 container.classList.remove('hidden');
             }
 
-            // Salva no banco de dados
             const params = new URLSearchParams(window.location.search);
             const currentSlug = params.get('s');
             let stores = getStores();
@@ -2829,7 +2829,7 @@ function previewImage(input, previewId) {
         return; // Pára a função aqui para não ir pro Canvas
     }
 
-    // 🖼️ SE NÃO FOR GIF: Faz a compressão com Canvas usando WebP (mantém fundo transparente!)
+    // 🖼️ SE NÃO FOR GIF: Vai para o Canvas redimensionar
     reader.onload = function(e) {
         const imgObj = new Image();
         imgObj.onload = function() {
@@ -2849,10 +2849,14 @@ function previewImage(input, previewId) {
 
             canvas.width = width;
             canvas.height = height;
+
+            // Limpa o fundo do Canvas para garantir a transparência
+            ctx.clearRect(0, 0, width, height);
             ctx.drawImage(imgObj, 0, 0, width, height);
 
-            // Usando WebP para garantir o fundo transparente
-            const base64 = canvas.toDataURL('image/webp', 0.8);
+            // A MÁGICA AQUI: Mantém como PNG se tiver fundo transparente
+            const formatoSaida = file.type === 'image/png' ? 'image/png' : 'image/webp';
+            const base64 = canvas.toDataURL(formatoSaida, 0.8);
 
             const img = document.getElementById(previewId);
             img.src = base64;

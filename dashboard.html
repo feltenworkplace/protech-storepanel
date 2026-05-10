@@ -1767,37 +1767,40 @@ function switchTab(tabName) {
         }
 
         function addStore() {
-    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-    const stores = getStores() || [];
-    // Pega o limite real ou define 0 se algo falhar
-    const storeLimit = (user && user.limits) ? parseInt(user.limits.stores) : 0; 
+            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+            const stores = getStores() || [];
+            // Pega o limite real ou define 0 se algo falhar
+            const storeLimit = (user && user.limits) ? parseInt(user.limits.stores) : 0; 
 
-    if (stores.length >= storeLimit) {
-        // Usa o novo modal premium
-        return showAlert(`Limite atingido! Seu plano ${user.plan} permite apenas ${storeLimit} loja(s).`);
-    }
+            // CORREÇÃO: Conta apenas as lojas que pertencem ao usuário atual!
+            const userStoresCount = stores.filter(s => s.ownerEmail === user.email).length;
 
-    const name = document.getElementById('storeName').value.trim();
-    const slugInput = document.getElementById('storeSlug').value.trim();
-    const slug = normalizeSlug(slugInput || name);
+            if (userStoresCount >= storeLimit) {
+                // Usa o novo modal premium
+                return showAlert(`Limite atingido! Seu plano ${user.plan} permite apenas ${storeLimit} loja(s).`);
+            }
 
-    if(!name || !slug) return showAlert('Preencha o nome e o domínio da loja.');
+            const name = document.getElementById('storeName').value.trim();
+            const slugInput = document.getElementById('storeSlug').value.trim();
+            const slug = normalizeSlug(slugInput || name);
 
-    const store = {
-        ...createStore({ name, slug }),
-        ownerEmail: user.email,
-        template: document.getElementById('storeTemplate').value,
-        categories: [],
-        products: [],
-        settings: { logo: '', banner: '', primaryColor: '#D4AF37' }
-    };
+            if(!name || !slug) return showAlert('Preencha o nome e o domínio da loja.');
 
-    stores.unshift(store);
-    setStores(stores);
-    toggleStoreDrawer(false);
-    renderStoresGrid();
-    openStoreDashboard(store.id);
-}
+            const store = {
+                ...createStore({ name, slug }),
+                ownerEmail: user.email, // Salva o dono corretamente
+                template: document.getElementById('storeTemplate').value,
+                categories: [],
+                products: [],
+                settings: { logo: '', banner: '', primaryColor: '#D4AF37' }
+            };
+
+            stores.unshift(store);
+            setStores(stores);
+            toggleStoreDrawer(false);
+            renderStoresGrid();
+            openStoreDashboard(store.id);
+        }
 
 // --- LÓGICA DE EXCLUIR LOJA ---
 let storeIdToDelete = null;

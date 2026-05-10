@@ -250,20 +250,40 @@
         let subtotalCart = 0;
         let totalDiscount = 0;
 
-        // Renderiza itens e puxa a imagem original da loja para evitar estourar a memória
-        function renderCheckoutItems() {
+        // Renderiza itens buscando a estrutura oficial diretamente da Nuvem (API)
+        async function renderCheckoutItems() {
             const list = document.getElementById('checkout-items-list');
             subtotalCart = 0; 
             
-            // 1. Puxamos a loja do LocalStorage para pegar as imagens (e GIFs) reais
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('s');
-            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-            const store = stores.find(s => s.slug === slug);
-
             if (cartItems.length === 0) {
                 list.innerHTML = '<div class="text-center py-10"><p class="text-gray-600 text-[10px] font-black uppercase tracking-[0.3em]">Carrinho Vazio</p></div>';
                 return;
+            }
+
+            // 1. Captura o slug da URL
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+
+            let store = null;
+
+            try {
+                // 2. Busca os dados atualizados diretamente da API do seu Render!
+                const respostaApi = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                const dadosApi = await respostaApi.json();
+                
+                if (dadosApi.success) {
+                    store = dadosApi.store;
+                    // Guarda na memória global para o restante do script usar (inclusive o RCON)
+                    window.currentStore = store; 
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados da nuvem para o checkout:", err);
+            }
+
+            // 3. Se falhar na API por qualquer motivo, tenta usar o localStorage como plano B (para não quebrar a página)
+            if (!store) {
+                const storesLocais = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+                store = storesLocais.find(s => s.slug === slug);
             }
 
             let html = '';
@@ -271,7 +291,7 @@
                 const safePrice = Number(item.price);
                 subtotalCart += safePrice * item.quantity;
                 
-                // 2. MÁGICA: Busca a imagem original da loja usando o ID do item
+                // 4. Busca a imagem original na estrutura da loja obtida na nuvem
                 const realProduct = store?.products?.find(p => p.id === item.id);
                 const imageUrl = realProduct && realProduct.image ? realProduct.image : 'https://via.placeholder.com/150';
                 

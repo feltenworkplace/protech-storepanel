@@ -1,23 +1,24 @@
 // cart.js - Lógica centralizada de vendas para ProTech Lab (ATUALIZADO PARA A NUVEM)
 let cart = JSON.parse(localStorage.getItem('protech_active_cart')) || [];
-let currentCartStore = localStorage.getItem('protech_cart_store_slug');
 
 const urlParams = new URLSearchParams(window.location.search);
 const currentSlug = urlParams.get('s');
 
 // --- FISCAL DE SEGURANÇA DO CARRINHO ---
 function validateAndCleanCart() {
-    // 1. Previne que produtos de uma loja apareçam em outra
-    if (currentCartStore !== currentSlug) {
+    // Lemos direto do disco na hora H para nunca usar memória velha
+    const savedSlug = localStorage.getItem('protech_cart_store_slug');
+
+    // 1. Se mudou de loja (ou é a primeira vez), esvazia o carrinho antigo
+    if (savedSlug !== currentSlug) {
         cart = [];
         localStorage.setItem('protech_cart_store_slug', currentSlug);
         saveCart();
-        return;
     }
 
     if (cart.length === 0) return;
 
-    // 2. A MÁGICA AQUI: Puxa os dados da loja que vieram da Nuvem no store.html
+    // 2. A MÁGICA AQUI: Puxa os dados da loja que vieram da Nuvem
     const store = window.currentStore;
 
     // Se a loja ainda não carregou do servidor, seguramos o carrinho como está
@@ -62,7 +63,7 @@ function renderCart() {
     const subtotalEl = document.getElementById('cart-subtotal');
     if (!container) return;
 
-    const store = window.currentStore; // Usado para procurar as imagens na hora
+    const store = window.currentStore; // Usa a loja da nuvem para puxar as imagens ao vivo
 
     let subtotal = 0;
     container.innerHTML = cart.map(item => {
@@ -70,10 +71,10 @@ function renderCart() {
         const itemTotal = safePrice * item.quantity;
         subtotal += itemTotal;
         
-        // MÁGICA: Vai procurar a imagem original da vitrine através do ID, sem sobrecarregar a memória
+        // MÁGICA: Localiza a imagem original sem usar Base64 pesada no carrinho
         const realProduct = store?.products?.find(p => p.id === item.id);
-        const imageUrl = realProduct ? realProduct.image : 'https://via.placeholder.com/150';
-        
+        const imageUrl = realProduct && realProduct.image ? realProduct.image : 'https://via.placeholder.com/150';
+
         return `
             <div class="flex gap-4 items-center bg-white/5 p-4 rounded-xl border border-white/5">
                 <img src="${imageUrl}" class="w-16 h-16 rounded-lg object-cover border border-white/10" onerror="this.src='https://via.placeholder.com/150'">
@@ -122,8 +123,10 @@ function saveCart() {
 }
 
 function addToCart(productId) {
+    // 1. Chama o fiscal de segurança ANTES de colocar o item na mochila!
+    validateAndCleanCart();
+
     const store = window.currentStore;
-    
     if (!store || !store.products) return;
 
     const product = store.products.find(p => p.id === productId);
@@ -133,7 +136,7 @@ function addToCart(productId) {
     if (existing) {
         existing.quantity += 1;
     } else {
-        // A SALVAÇÃO DO CÓDIGO: Agora só guardamos os dados de texto! Zero Base64 aqui.
+        // 2. SALVAÇÃO DA MEMÓRIA: Guarda só o texto, sem a imagem Base64 pesada!
         cart.push({ 
             id: product.id, 
             name: product.name, 
@@ -141,6 +144,8 @@ function addToCart(productId) {
             quantity: 1 
         });
     }
+    
+    localStorage.setItem('protech_cart_store_slug', currentSlug);
     
     if (typeof showToast === "function") {
         showToast(product.name); 
@@ -160,7 +165,7 @@ function goToCheckout() {
     validateAndCleanCart();
     
     if (cart.length === 0) {
-        return alert("O seu carrinho está vazio ou os itens não estão mais disponíveis.");
+        return alert("Seu carrinho está vazio ou os itens não estão mais disponíveis.");
     }
     
     window.location.href = `loja-checkout.html?s=${currentSlug}`; 

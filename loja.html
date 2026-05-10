@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conectando à Loja...</title>
+    <script>
+        async function iniciarRoteador() {
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+            
+            if (!slug) return document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px; font-family:sans-serif;'>Link inválido.</h2>";
+
+            try {
+                // 1. Pergunta à Nuvem qual é o template oficial desta loja
+                const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                const dados = await resposta.json();
+                
+                if (dados.success) {
+                    const templateDaLoja = dados.store.template || 'standart';
+                    
+                    // 2. Mapeia os arquivos "feios" que vão ficar escondidos do cliente
+                    const arquivos = {
+                        'standart': 'store.html',
+                        'dark': 'store2.html',
+                        'pro1': 'store_pro1.html',
+                        'pro2': 'store_pro2.html',
+                        'legend1': 'store_legend1.html'
+                    };
+                    
+                    const arquivoAlvo = arquivos[templateDaLoja] || 'store.html';
+                    
+                    // 3. Baixa o código fonte do template silenciosamente nos bastidores
+                    const htmlResposta = await fetch(arquivoAlvo);
+                    const codigoHTML = await htmlResposta.text();
+                    
+                    // 4. MÁGICA DE SAAS: Reescreve a página inteira com o código novo sem mudar o link lá em cima!
+                    document.open();
+                    document.write(codigoHTML);
+                    document.close();
+                    
+                } else {
+                    document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px; font-family:sans-serif;'>Loja não encontrada.</h2>";
+                }
+            } catch (erro) {
+                document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px; font-family:sans-serif;'>Erro de conexão com o servidor.</h2>";
+            }
+        }
+        
+        iniciarRoteador();
+    </script>
+</head>
+<body style="background-color: #050505; color: #D4AF37; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Arial', sans-serif;">
+    
+    <svg style="width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.2;"></circle>
+        <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.8;"></path>
+    </svg>
+    <h2 style="font-size: 12px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">Sincronizando</h2>
+    
+    <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</body>
+</html>

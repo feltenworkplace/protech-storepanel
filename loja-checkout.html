@@ -425,21 +425,21 @@
             const nome = document.getElementById('cli-name').value;
             const cpf = document.getElementById('cli-cpf').value;
             const email = document.getElementById('cli-email').value;
-            const gameId = document.getElementById('cli-game-id').value; // Captura o ID para o pedido final
+            const gameId = document.getElementById('cli-game-id').value; 
 
             if(!nome || !cpf || !email || !gameId) return alert("Preencha seus dados e o ID do jogo!");
 
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('s');
-            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-            const store = stores.find(s => s.slug === slug);
+            // CORREÇÃO DE OURO: Usamos a loja oficial "window.currentStore" que o checkout buscou do Render!
+            const store = window.currentStore;
 
             if (!store || !store.settings || !store.settings.mpToken) {
-                alert("Esta loja ainda não configurou o Mercado Pago.");
+                alert("Esta loja ainda não possui credenciais ativas do Mercado Pago cadastrados no servidor.");
                 return;
             }
 
             const valorTotal = (subtotalCart - totalDiscount).toFixed(2);
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
 
             if (method === 'pix') {
                 btnFinalize.innerText = "Conectando ao Banco...";
@@ -451,7 +451,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             lojaToken: store.settings.mpToken, 
-                            cliente: { nome, cpf, email, gameId }, // Envia o gameId para o Backend
+                            cliente: { nome, cpf, email, gameId }, 
                             valor: valorTotal, 
                             itens: cartItems 
                         })

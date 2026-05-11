@@ -1544,18 +1544,8 @@ function visitStore() {
     const store = getStores().find(s => s.slug === currentSlug);
     if (!store) return;
 
+    // APENAS ESTA LINHA FICA! Adeus links feios e abas duplas!
     window.open(`loja.html?s=${store.slug}`, '_blank');
-
-    const files = {
-        'standart': 'store.html',
-        'dark': 'store2.html',
-        'pro1': 'store_pro1.html',
-        'pro2': 'store_pro2.html',
-        'legend1': 'store_legend1.html'
-    };
-
-    const target = files[store.template] || 'store.html';
-    window.open(`${target}?s=${store.slug}`, '_blank');
 }
 
         function openStoresView() {

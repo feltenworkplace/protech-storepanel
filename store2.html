@@ -166,7 +166,6 @@
         if (!slug) return document.body.innerHTML = "Loja não encontrada.";
 
         try {
-            // 1. Busca da Nuvem (A nossa fonte oficial)
             let storeCloud = null;
             try {
                 const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
@@ -174,21 +173,14 @@
                 if (data.success) storeCloud = data.store;
             } catch (error) { console.error("Erro na API da Nuvem:", error); }
 
-            // 2. Busca do PC Local (O Plano B super rápido do dono)
             const localStores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
             const storeLocal = localStores.find(s => s.slug === slug);
 
-            // 3. MÁGICA: Inteligência de Sincronização
-            // Compara quem tem a versão mais recente. Se o PC tiver mais produtos que a nuvem, usa o do PC!
             let store = storeCloud;
-            
             if (storeLocal) {
                 const cloudProdCount = storeCloud?.products ? storeCloud.products.length : 0;
                 const localProdCount = storeLocal.products ? storeLocal.products.length : 0;
-                
-                if (!storeCloud || localProdCount > cloudProdCount) {
-                    store = storeLocal; 
-                }
+                if (!storeCloud || localProdCount > cloudProdCount) store = storeLocal; 
             }
 
             if (!store) return document.body.innerHTML = "Loja não encontrada.";
@@ -196,7 +188,6 @@
             window.currentStore = store;
             document.title = `${store.name} | ProTech Lab`;
 
-            // Logo e Nome
             if (document.getElementById('store-name-header')) document.getElementById('store-name-header').innerText = store.name;
             if (store.settings?.logo) {
                 const logoImg = document.getElementById('header-logo-img');
@@ -204,20 +195,17 @@
                 logoImg.classList.remove('hidden');
             }
 
-            // Banner 
             if (store.settings?.banner) {
                 document.getElementById('store-banner-img').src = store.settings.banner;
                 document.getElementById('store-banner-container').classList.remove('hidden');
             }
 
-            // Favicon 
             if (store.settings?.favicon) {
                 let link = document.querySelector("link[rel~='icon']");
                 if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
                 link.href = store.settings.favicon;
             }
 
-            // Categorias
             const catList = document.getElementById('cat-list');
             if (catList) {
                 const activeCats = (store.categories || []).filter(c => c.status === 'Ativo');
@@ -232,12 +220,11 @@
                 catList.innerHTML = catHTML;
             }
 
-            // Renderiza os produtos!
             renderProducts(store.products || []);
 
         } catch (error) {
-            console.error("Erro geral ao carregar loja:", error);
-            document.body.innerHTML = "Erro ao processar a loja.";
+            console.error("Erro ao carregar loja Dark:", error);
+            document.body.innerHTML = "Erro de conexão.";
         }
     }
 

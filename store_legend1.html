@@ -268,12 +268,25 @@
             if(!slug) return;
 
             try {
-                const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
-                const data = await response.json();
+                let storeCloud = null;
+                try {
+                    const response = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                    const data = await response.json();
+                    if (data.success) storeCloud = data.store;
+                } catch (error) { console.error("Erro na API da Nuvem:", error); }
 
-                if (!data.success) return;
+                const localStores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+                const storeLocal = localStores.find(s => s.slug === slug);
+
+                let store = storeCloud;
+                if (storeLocal) {
+                    const cloudProdCount = storeCloud?.products ? storeCloud.products.length : 0;
+                    const localProdCount = storeLocal.products ? storeLocal.products.length : 0;
+                    if (!storeCloud || localProdCount > cloudProdCount) store = storeLocal; 
+                }
+
+                if (!store) return;
                 
-                const store = data.store;
                 window.currentStore = store;
 
                 if (store.settings?.primaryColor) document.documentElement.style.setProperty('--p-color', store.settings.primaryColor);

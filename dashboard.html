@@ -2468,7 +2468,7 @@ function saveProduct() {
     const categoryId = document.getElementById('prod-category').value;
     const price = parseMoneyValue(document.getElementById('prod-price').value);
     const description = document.getElementById('prod-desc').value.trim(); 
-    const image = currentProdImageBase64 || 'https://via.placeholder.com/300';
+    const image = currentProdImageBase64 || '';
 
     if (!name || !categoryId || !price) {
         const alertModal = document.getElementById('alert-modal');

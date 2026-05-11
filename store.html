@@ -153,8 +153,8 @@
                     <span class="text-[10px] font-black uppercase tracking-widest text-black">Novo</span>
                 </div>` : '';
 
-            // Mágica da Imagem Cinza caso não tenha foto
-            const productImg = prod.image && prod.image.trim() !== "" ? prod.image : "https://via.placeholder.com/400x400/eeeeee/aaaaaa?text=Sem+Foto";
+                const imgProvisoria = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='24' font-weight='bold' fill='%2394a3b8' text-anchor='middle' dy='.3em'%3ESEM FOTO%3C/text%3E%3C/svg%3E";
+                const productImg = prod.image && prod.image.trim() !== "" ? prod.image : imgProvisoria;
 
             return `
                 <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-left">

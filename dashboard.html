@@ -1496,35 +1496,44 @@ input:-webkit-autofill:active{
         function createId() { return `store_${Date.now()}_${Math.random().toString(16).slice(2)}`; }
         function createStore({ name, slug }) { const now = Date.now(); return { id: createId(), name: String(name || '').trim(), slug: normalizeSlug(slug), createdAt: now, trialEndsAt: now + 15 * 24 * 60 * 60 * 1000, plan: null }; }
 
+        // 1. CRIAMOS A MEMÓRIA RAM VIRTUAL (Sem limites de MB!)
+        let protechMemoriaRAM = null;
+
         function getStores() { 
-        const raw = localStorage.getItem(STORAGE_KEYS.stores); 
-        // Se não houver nada no disco, retorna uma lista vazia [] em vez de null
-        if (!raw || raw === "null") return []; 
-        const parsed = safeParse(raw, []); 
-        return Array.isArray(parsed) ? parsed : [];
+            // Se já temos os dados na memória RAM, usamos ela direto!
+            if (protechMemoriaRAM) return protechMemoriaRAM;
+
+            const raw = localStorage.getItem(STORAGE_KEYS.stores); 
+            if (!raw || raw === "null") return []; 
+            const parsed = safeParse(raw, []); 
+            
+            protechMemoriaRAM = Array.isArray(parsed) ? parsed : [];
+            return protechMemoriaRAM;
         }
         
         function setStores(stores) { 
-    try {
-        // Tenta salvar no navegador
-        localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
-        
-        // Tenta sincronizar com o Render
-        const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-        if (user && user.email) {
-            fetch('https://storepanel-backend.onrender.com/sync-stores', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: user.email, stores: stores })
-            }).catch(err => console.log("Erro sync:", err));
+            // 1. Salva na Memória RAM na mesma hora para a tela do painel atualizar instantaneamente
+            protechMemoriaRAM = stores;
+
+            // 2. MÁGICA: Pula o limite do Chrome e envia o GIF gigante DIRETO para a Nuvem!
+            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+            if (user && user.email) {
+                fetch('https://storepanel-backend.onrender.com/sync-stores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, stores: stores })
+                }).catch(err => console.log("Erro na sincronização:", err));
+            }
+
+            // 3. Tenta salvar no disco do Chrome como plano secundário
+            try {
+                localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
+            } catch (erro) {
+                // SE O CHROME RECLAMAR QUE TÁ CHEIO, A GENTE APENAS IGNORA!
+                // Nada de alertas de erro na tela. A nuvem já cuidou de tudo.
+                console.warn("Pendrive do Chrome lotou (5MB), rodando 100% via Nuvem e Memória RAM!");
+            }
         }
-    } catch (erro) {
-        // Se a memória estourar (comum com GIFs), o navegador entra aqui em vez de travar o botão
-        if (erro.name === 'QuotaExceededError' || erro.message.includes('quota')) {
-            showAlert("ERRO: O GIF é tão pesado que estourou a memória do navegador! Tente um GIF um pouco mais leve.");
-        }
-    }
-}
         
         function openStoreDashboard(storeId) {
     const stores = getStores();

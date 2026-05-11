@@ -53,9 +53,9 @@
                     
                     const arquivoAlvo = arquivos[templateDaLoja] || 'store.html';
                     
-                    // 2. MÁGICA: Aponta o espelho para o arquivo real 
+                    // 2. MÁGICA: Aponta o espelho para o arquivo real COM FURA-CACHE ATIVADO!
                     const iframe = document.getElementById('store-frame');
-                    iframe.src = arquivoAlvo + '?s=' + slug;
+                    iframe.src = arquivoAlvo + '?s=' + slug + '&nocache=' + Date.now();
                     
                     // 3. Quando o arquivo terminar de carregar, esconde o loader e mostra a loja!
                     iframe.onload = () => {
@@ -75,7 +75,6 @@
             }
         }
         
-        iframe.src = arquivoAlvo + '?s=' + slug + '&nocache=' + Date.now();
         iniciarRoteador();
     </script>
 </body>

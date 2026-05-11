@@ -1470,6 +1470,21 @@ input:-webkit-autofill:active{
         </div>
     </div>
 
+    <div id="large-file-modal" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+    <div class="relative glass p-8 rounded-[2rem] max-w-sm w-full text-center border-gold">
+        <div class="w-16 h-16 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 class="text-xl font-black uppercase mb-4">Arquivo Pesado!</h3>
+        <p class="text-sm text-gray-400 mb-8 leading-relaxed">Este arquivo é muito grande. Ele pode deixar o carregamento da sua loja lento ou falhar ao salvar. Deseja continuar?</p>
+        <div class="flex flex-col gap-3">
+            <button onclick="confirmLargeFile()" class="w-full py-4 bg-[#D4AF37] text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white transition">Carregar mesmo assim</button>
+            <button onclick="cancelLargeFile()" class="w-full py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition">Trocar imagem</button>
+        </div>
+    </div>
+</div>
+
     <script>
         let productIdToDelete = null; // Controle para exclusão de produtos
 
@@ -1490,28 +1505,26 @@ input:-webkit-autofill:active{
         }
         
         function setStores(stores) { 
-            try {
-                // 1. Salva no PC local para ser super rápido
-                localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
-                
-                // 2. MÁGICA: Sincroniza silenciosamente com o banco de dados na Nuvem!
-                const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-                if (user && user.email) {
-                    fetch('https://storepanel-backend.onrender.com/sync-stores', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: user.email, stores: stores })
-                    }).catch(err => console.log("Erro na sincronização:", err));
-                }
-            } catch (erro) {
-                // CAPTURA O ERRO DE MEMÓRIA EM VEZ DE TRAVAR O BOTÃO!
-                if (erro.name === 'QuotaExceededError' || erro.message.includes('quota')) {
-                    showAlert("Memória do navegador cheia! O GIF ou Imagem que você tentou salvar é muito pesado. Tente usar um arquivo menor para não travar sua loja.");
-                } else {
-                    console.error("Erro ao salvar:", erro);
-                }
-            }
+    try {
+        // Tenta salvar no navegador
+        localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
+        
+        // Tenta sincronizar com o Render
+        const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+        if (user && user.email) {
+            fetch('https://storepanel-backend.onrender.com/sync-stores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, stores: stores })
+            }).catch(err => console.log("Erro sync:", err));
         }
+    } catch (erro) {
+        // Se a memória estourar (comum com GIFs), o navegador entra aqui em vez de travar o botão
+        if (erro.name === 'QuotaExceededError' || erro.message.includes('quota')) {
+            showAlert("ERRO: O GIF é tão pesado que estourou a memória do navegador! Tente um GIF um pouco mais leve.");
+        }
+    }
+}
         
         function openStoreDashboard(storeId) {
     const stores = getStores();
@@ -2822,80 +2835,59 @@ function uploadTemplateImage(input, type) {
 let currentProdImageBase64 = "";
 let currentEditImageBase64 = "";
 
+let pendingFile = null;
+let pendingPreviewId = null;
+
 function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
 
-    // TRAVA DE SEGURANÇA: Limite de 1.5MB para evitar que a loja congele
-    const MAX_SIZE = 1.5 * 1024 * 1024; // 1.5 Megabytes
-    if (file.size > MAX_SIZE) {
-        showAlert("O arquivo é muito pesado! Por favor, use uma imagem ou GIF de até 1.5MB para manter sua loja super rápida.");
-        input.value = ""; // Limpa o arquivo rejeitado
+    // Se for maior que 1.5MB, abre o modal de decisão
+    if (file.size > 1.5 * 1024 * 1024) {
+        pendingFile = file;
+        pendingPreviewId = previewId;
+        document.getElementById('large-file-modal').classList.remove('hidden');
         return;
     }
 
+    // Se for pequeno, processa direto
+    processFile(file, previewId);
+}
+
+function confirmLargeFile() {
+    if (pendingFile && pendingPreviewId) {
+        processFile(pendingFile, pendingPreviewId);
+    }
+    closeLargeFileModal();
+}
+
+function cancelLargeFile() {
+    // Limpa os inputs para a pessoa poder escolher outro
+    document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
+    closeLargeFileModal();
+}
+
+function closeLargeFileModal() {
+    document.getElementById('large-file-modal').classList.add('hidden');
+    pendingFile = null;
+    pendingPreviewId = null;
+}
+
+// Função que realmente transforma a imagem em Base64
+function processFile(file, previewId) {
     const reader = new FileReader();
 
-    // 🚀 MÁGICA DO GIF: Se for GIF, pula a compressão para não congelar a animação!
-    if (file.type === 'image/gif') {
-        reader.onload = function(e) {
-            const base64 = e.target.result; // Pega o GIF bruto
-            
-            const img = document.getElementById(previewId);
-            img.src = base64;
-            img.classList.remove('hidden');
-            
-            if (previewId === 'prod-preview') {
-                currentProdImageBase64 = base64;
-            } else {
-                currentEditImageBase64 = base64;
-            }
-        };
-        reader.readAsDataURL(file);
-        return; // Pára a função aqui para não ir pro Canvas
-    }
-
-    // 🖼️ SE NÃO FOR GIF: Vai para o Canvas redimensionar
     reader.onload = function(e) {
-        const imgObj = new Image();
-        imgObj.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            let maxWidth = 600;
-            let maxHeight = 600;
-            let width = imgObj.width;
-            let height = imgObj.height;
-
-            if (width > maxWidth || height > maxHeight) {
-                const ratio = Math.min(maxWidth / width, maxHeight / height);
-                width = width * ratio;
-                height = height * ratio;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            // Limpa o fundo do Canvas para garantir a transparência
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(imgObj, 0, 0, width, height);
-
-            // A MÁGICA AQUI: Mantém como PNG se tiver fundo transparente
-            const formatoSaida = file.type === 'image/png' ? 'image/png' : 'image/webp';
-            const base64 = canvas.toDataURL(formatoSaida, 0.8);
-
-            const img = document.getElementById(previewId);
-            img.src = base64;
-            img.classList.remove('hidden');
-            
-            if (previewId === 'prod-preview') {
-                currentProdImageBase64 = base64;
-            } else {
-                currentEditImageBase64 = base64;
-            }
-        };
-        imgObj.src = e.target.result;
+        const base64 = e.target.result;
+        const img = document.getElementById(previewId);
+        img.src = base64;
+        img.classList.remove('hidden');
+        
+        // Salva na variável global correta dependendo de onde veio
+        if (previewId === 'prod-preview') currentProdImageBase64 = base64;
+        else currentEditImageBase64 = base64;
     };
+    
     reader.readAsDataURL(file);
 }
 

@@ -1490,17 +1490,26 @@ input:-webkit-autofill:active{
         }
         
         function setStores(stores) { 
-            // 1. Salva no PC local para ser super rápido
-            localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
-            
-            // 2. MÁGICA: Sincroniza silenciosamente com o banco de dados na Nuvem!
-            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-            if (user && user.email) {
-                fetch('https://storepanel-backend.onrender.com/sync-stores', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email, stores: stores })
-                }).catch(err => console.log("Erro na sincronização:", err));
+            try {
+                // 1. Salva no PC local para ser super rápido
+                localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
+                
+                // 2. MÁGICA: Sincroniza silenciosamente com o banco de dados na Nuvem!
+                const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+                if (user && user.email) {
+                    fetch('https://storepanel-backend.onrender.com/sync-stores', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: user.email, stores: stores })
+                    }).catch(err => console.log("Erro na sincronização:", err));
+                }
+            } catch (erro) {
+                // CAPTURA O ERRO DE MEMÓRIA EM VEZ DE TRAVAR O BOTÃO!
+                if (erro.name === 'QuotaExceededError' || erro.message.includes('quota')) {
+                    showAlert("Memória do navegador cheia! O GIF ou Imagem que você tentou salvar é muito pesado. Tente usar um arquivo menor para não travar sua loja.");
+                } else {
+                    console.error("Erro ao salvar:", erro);
+                }
             }
         }
         
@@ -2816,6 +2825,14 @@ let currentEditImageBase64 = "";
 function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
+
+    // TRAVA DE SEGURANÇA: Limite de 1.5MB para evitar que a loja congele
+    const MAX_SIZE = 1.5 * 1024 * 1024; // 1.5 Megabytes
+    if (file.size > MAX_SIZE) {
+        showAlert("O arquivo é muito pesado! Por favor, use uma imagem ou GIF de até 1.5MB para manter sua loja super rápida.");
+        input.value = ""; // Limpa o arquivo rejeitado
+        return;
+    }
 
     const reader = new FileReader();
 

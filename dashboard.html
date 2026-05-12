@@ -1924,31 +1924,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let shouldUpdateLocal = false;
 
             if (data.lojas.length > 0) {
-                // Compara a nuvem com o local
-                data.lojas.forEach(cloudStore => {
-                    const localStore = localStores.find(s => s.id === cloudStore.id);
-                    
-                    if (!localStore) {
-                        shouldUpdateLocal = true;
-                    } else {
-                        const cloudOrdersCount = cloudStore.orders ? cloudStore.orders.length : 0;
-                        const localOrdersCount = localStore.orders ? localStore.orders.length : 0;
-                        
-                        const cloudProdCount = cloudStore.products ? cloudStore.products.length : 0;
-                        const localProdCount = localStore.products ? localStore.products.length : 0;
-
-                        if (cloudOrdersCount > localOrdersCount || cloudProdCount > localProdCount) {
-                            shouldUpdateLocal = true;
-                        }
-                    }
-                });
-
-                if (localStores.length === 0) {
+                // A GRANDE MÁGICA: Agora ele compara de forma absoluta! 
+                // Se o GIF for diferente, ele deteta e puxa da Nuvem na hora.
+                if (JSON.stringify(data.lojas) !== JSON.stringify(localStores)) {
                     shouldUpdateLocal = true;
                 }
 
                 if (shouldUpdateLocal) {
-                    // MÁGICA AQUI: Salva na RAM primeiro e ignora o erro se o Chrome bloquear o GIF gigante!
+                    // Salva na RAM primeiro e ignora o erro se o Chrome bloquear o GIF gigante!
                     protechMemoriaRAM = data.lojas; 
                     try {
                         localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
@@ -1964,7 +1947,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (params.get('s')) {
                         loadTemplateSettings(); 
                         renderDashboardGeral();
-                        renderProducts(); // Agora a tela vai desenhar o GIF gigante que veio da Nuvem!
+                        renderProducts(); // Agora a tabela desenha o GIF atualizado da Nuvem!
                         renderCategories();
                         renderCoupons();
                     }
@@ -2562,7 +2545,13 @@ function renderProducts() {
 
         // MÁGICA: A mesma imagem falsa em SVG que usamos na loja, agora no Dashboard!
         const imgProvisoria = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23111111'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23D4AF37' text-anchor='middle' dy='.3em'%3ESEM FOTO%3C/text%3E%3C/svg%3E";
-        const productImg = prod.image && prod.image.trim() !== "" ? prod.image : imgProvisoria;
+        
+        let productImg = prod.image && prod.image.trim() !== "" ? prod.image : imgProvisoria;
+
+        // HIGIENIZADOR: Se a imagem salva for o link fantasma que o AdBlock bloqueia, aniquila e troca pelo SVG!
+        if (productImg.includes('via.placeholder.com')) {
+            productImg = imgProvisoria;
+        }
 
         return `
             <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">

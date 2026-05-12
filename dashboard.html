@@ -2548,17 +2548,20 @@ function renderProducts() {
     tbody.innerHTML = products.map(prod => {
         const category = store.categories?.find(c => c.id === prod.categoryId);
         
-        // Lógica de visual do status idêntica à de Categorias/Cupons
         const isActive = prod.status === 'Ativo';
         const statusClass = isActive 
             ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
             : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
         const dotClass = isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500';
 
+        // MÁGICA: A mesma imagem falsa em SVG que usamos na loja, agora no Dashboard!
+        const imgProvisoria = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23111111'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23D4AF37' text-anchor='middle' dy='.3em'%3ESEM FOTO%3C/text%3E%3C/svg%3E";
+        const productImg = prod.image && prod.image.trim() !== "" ? prod.image : imgProvisoria;
+
         return `
             <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">
                 <td class="px-8 py-5 flex items-center gap-4 cursor-pointer" onclick="openEditProductModal('${prod.id}')">
-                    <img src="${prod.image}" class="w-10 h-10 rounded-lg object-cover border border-white/10" onerror="this.src='https://via.placeholder.com/300'">
+                    <img src="${productImg}" class="w-10 h-10 rounded-lg object-cover border border-white/10">
                     <div class="flex flex-col">
                         <span class="text-white font-bold text-sm hover:text-gold transition-colors">${prod.name}</span>
                         <span class="text-[9px] text-gray-500 uppercase font-black">Editar</span>

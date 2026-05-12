@@ -5,19 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sincronizando...</title>
     <style>
-        /* Tira todas as margens e bloqueia o scroll do roteador, deixando só a loja de dentro rolar */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #050505; overflow: hidden; }
-        
         #loader { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: #D4AF37; font-family: sans-serif; }
-        
-        /* O iframe vai ocupar 100% da tela invisivelmente */
         iframe { width: 100%; height: 100%; border: none; display: none; }
-        
         @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    
     <div id="loader">
         <svg style="width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.2;"></circle>
@@ -25,56 +19,33 @@
         </svg>
         <h2 style="font-size: 12px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">Conectando à Nuvem</h2>
     </div>
-    
     <iframe id="store-frame"></iframe>
 
     <script>
         async function iniciarRoteador() {
             const params = new URLSearchParams(window.location.search);
             const slug = params.get('s');
-            
             if (!slug) return document.getElementById('loader').innerHTML = "<h2>Link inválido.</h2>";
 
             try {
-                // 1. Pergunta à Nuvem qual é o template oficial desta loja
                 const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
                 const dados = await resposta.json();
-                
                 if (dados.success) {
                     const templateDaLoja = dados.store.template || 'standart';
-                    
-                    const arquivos = {
-                        'standart': 'store.html',
-                        'dark': 'store2.html',
-                        'pro1': 'store_pro1.html',
-                        'pro2': 'store_pro2.html',
-                        'legend1': 'store_legend1.html'
-                    };
-                    
+                    const arquivos = { 'standart': 'store.html', 'dark': 'store2.html', 'pro1': 'store_pro1.html', 'pro2': 'store_pro2.html', 'legend1': 'store_legend1.html' };
                     const arquivoAlvo = arquivos[templateDaLoja] || 'store.html';
                     
-                    // 2. MÁGICA: Aponta o espelho para o arquivo real COM FURA-CACHE ATIVADO!
                     const iframe = document.getElementById('store-frame');
+                    // MÁGICA DO FURA-CACHE (Adicionado o nocache aqui!)
                     iframe.src = arquivoAlvo + '?s=' + slug + '&nocache=' + Date.now();
                     
-                    // 3. Quando o arquivo terminar de carregar, esconde o loader e mostra a loja!
                     iframe.onload = () => {
                         document.getElementById('loader').style.display = 'none';
                         iframe.style.display = 'block';
-                        
-                        // Puxa o título original da loja para a aba do navegador
-                        try {
-                            document.title = iframe.contentDocument.title || 'ProTech Lab';
-                        } catch(e) {}
                     };
-                } else {
-                    document.getElementById('loader').innerHTML = "<h2>Loja não encontrada.</h2>";
                 }
-            } catch (erro) {
-                document.getElementById('loader').innerHTML = "<h2>Erro de conexão com o servidor.</h2>";
-            }
+            } catch (erro) { console.error(erro); }
         }
-        
         iniciarRoteador();
     </script>
 </body>

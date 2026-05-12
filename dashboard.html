@@ -2674,9 +2674,16 @@ function openEditProductModal(productId) {
     editSelect.value = product.categoryId;
 
     const imgPreview = document.getElementById('edit-prod-preview');
-    imgPreview.src = product.image;
-    imgPreview.classList.remove('hidden');
-    currentEditImageBase64 = product.image; 
+    // Previne que ele tente carregar imagem se estiver vazia
+    if (product.image && product.image.trim() !== "") {
+        imgPreview.src = product.image;
+        imgPreview.classList.remove('hidden');
+    } else {
+        imgPreview.src = "";
+        imgPreview.classList.add('hidden');
+    }
+    
+    currentEditImageBase64 = product.image || ""; 
 
     document.getElementById('edit-product-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');

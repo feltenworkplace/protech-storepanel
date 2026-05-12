@@ -342,7 +342,10 @@
             const product = (store.products || []).find(p => p.id === productId);
             if (!product) return;
 
-            document.getElementById('modal-prod-img').src = product.image || "https://via.placeholder.com/400";
+            // Imagem falsa para não quebrar o modal
+            const imgProvisoria = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='24' font-weight='bold' fill='%2394a3b8' text-anchor='middle' dy='.3em'%3ESEM FOTO%3C/text%3E%3C/svg%3E";
+            
+            document.getElementById('modal-prod-img').src = product.image && product.image.trim() !== "" ? product.image : imgProvisoria;
             document.getElementById('modal-prod-name').textContent = product.name;
             
             const descElement = document.getElementById('modal-prod-desc');

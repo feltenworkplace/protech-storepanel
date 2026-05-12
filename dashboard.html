@@ -1929,10 +1929,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const localStore = localStores.find(s => s.id === cloudStore.id);
                     
                     if (!localStore) {
-                        // Loja nova na nuvem que não existe aqui
                         shouldUpdateLocal = true;
                     } else {
-                        // Se a loja existe, checa se a nuvem tem MAIS pedidos ou MAIS produtos
                         const cloudOrdersCount = cloudStore.orders ? cloudStore.orders.length : 0;
                         const localOrdersCount = localStore.orders ? localStore.orders.length : 0;
                         
@@ -1945,13 +1943,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // Se não tem lojas locais nenhuma, sempre aceita a nuvem
                 if (localStores.length === 0) {
                     shouldUpdateLocal = true;
                 }
 
                 if (shouldUpdateLocal) {
-                    localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+                    // MÁGICA AQUI: Salva na RAM primeiro e ignora o erro se o Chrome bloquear o GIF gigante!
+                    protechMemoriaRAM = data.lojas; 
+                    try {
+                        localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
+                    } catch (e) {
+                        console.warn("Storage do Chrome limitou. Rodando perfeitamente via RAM e Nuvem!");
+                    }
+                    
                     enforceStoreLimits();
                     renderStoresGrid();
                     updateCategoryDropdowns();
@@ -1960,7 +1964,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (params.get('s')) {
                         loadTemplateSettings(); 
                         renderDashboardGeral();
-                        renderProducts();
+                        renderProducts(); // Agora a tela vai desenhar o GIF gigante que veio da Nuvem!
                         renderCategories();
                         renderCoupons();
                     }
@@ -2115,24 +2119,6 @@ function deleteCategory(id) {
     };
 }
 
-function executeDelete() {
-    const params = new URLSearchParams(window.location.search);
-    const currentSlug = params.get('s');
-    let stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-    
-    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
-    if (storeIndex !== -1 && categoryIdToDelete) {
-        // Filtra e remove a categoria
-        stores[storeIndex].categories = stores[storeIndex].categories.filter(c => c.id !== categoryIdToDelete);
-        localStorage.setItem('protech_stores_v1', JSON.stringify(stores));
-        
-        closeModal('confirm-modal');
-        renderCategories(); // Atualiza a tabela
-        categoryIdToDelete = null;
-        updateCategoryDropdowns();
-    }
-}
-
 // Adicione isto dentro do seu <script>
     const sidebarNav = document.querySelector('#store-sidebar nav');
 
@@ -2155,6 +2141,25 @@ function getCategories() {
     return store?.categories || [];
 }
 
+function executeDelete() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores(); // AGORA USA A MEMÓRIA INTELIGENTE
+    
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+    if (storeIndex !== -1 && categoryIdToDelete) {
+        // Filtra e remove a categoria
+        stores[storeIndex].categories = stores[storeIndex].categories.filter(c => c.id !== categoryIdToDelete);
+        
+        setStores(stores); // SALVA COM O ESCUDO PROTETOR!
+        
+        closeModal('confirm-modal');
+        renderCategories(); // Atualiza a tabela
+        categoryIdToDelete = null;
+        updateCategoryDropdowns();
+    }
+}
+
 function saveCategory() {
     const nameInput = document.getElementById('cat-name');
     const statusSelect = document.getElementById('cat-status');
@@ -2167,18 +2172,19 @@ function saveCategory() {
         return; 
     }
 
-    // Restante da lógica de salvamento...
     const status = statusSelect.value;
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
-    let stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+    let stores = getStores(); // AGORA USA A MEMÓRIA INTELIGENTE
     const storeIndex = stores.findIndex(s => s.slug === currentSlug);
 
     if (storeIndex !== -1) {
         if (!stores[storeIndex].categories) stores[storeIndex].categories = [];
         const newCategory = { id: Date.now().toString(), nome: name, status: status, data: new Date().toLocaleDateString('pt-BR') };
         stores[storeIndex].categories.push(newCategory);
-        localStorage.setItem('protech_stores_v1', JSON.stringify(stores));
+        
+        setStores(stores); // SALVA COM O ESCUDO PROTETOR!
+        
         nameInput.value = '';
         closeModal('category-modal');
         renderCategories();

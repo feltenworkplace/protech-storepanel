@@ -97,25 +97,18 @@
             if (!slug) return document.body.innerHTML = "Link inválido.";
 
             try {
-                // 1. Busca Nuvem
-                let storeCloud = null;
-                try {
-                    const res = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
-                    const data = await res.json();
-                    if (data.success) storeCloud = data.store;
-                } catch (e) { console.error(e); }
+                // A ÚNICA FONTE DE VERDADE É A NUVEM! 
+                // Os clientes vão puxar os dados sempre em tempo real do seu Render.
+                const res = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+                const data = await res.json();
+                
+                if (!data.success || !data.store) {
+                    return document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold text-gray-500'>Loja não encontrada ou offline.</div>";
+                }
 
-                // 2. Busca PC Local
-                const localRaw = localStorage.getItem('protech_stores_v1');
-                const storeLocal = JSON.parse(localRaw || '[]').find(s => s.slug === slug);
-
-                // LÓGICA DE RAIO-X: Se o local existir, damos preferência para ele (pois o Dashboard acabou de salvar lá)
-                let store = storeCloud;
-                if (storeLocal) store = storeLocal; 
-
-                if (!store) return document.body.innerHTML = "Loja não encontrada.";
-
+                const store = data.store;
                 window.currentStore = store;
+                
                 document.title = `${store.name} | ProTech Lab`;
                 document.getElementById('store-logo').innerText = store.name;
 
@@ -125,9 +118,12 @@
                 }
 
                 const products = (store.products || []).filter(p => p.status === 'Ativo');
-                grid.innerHTML = products.length > 0 ? products.map(p => renderProductCard(p)).join('') : "Nenhum produto.";
+                grid.innerHTML = products.length > 0 ? products.map(p => renderProductCard(p)).join('') : "<div class='col-span-full text-center text-gray-400'>Nenhum produto em estoque.</div>";
 
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                console.error("Erro na vitrine:", error); 
+                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold text-red-500'>Erro ao conectar com o servidor da loja.</div>";
+            }
         }
 
         function openProductDetails(productId) {

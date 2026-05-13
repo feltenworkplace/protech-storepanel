@@ -2750,6 +2750,11 @@ function loadTemplateSettings() {
     const stores = getStores();
     const store = stores.find(s => s.slug === currentSlug);
 
+    if (store) {
+        document.getElementById('cfg-store-name').value = store.name;
+        // ADICIONE ESTA LINHA AQUI:
+        document.getElementById('cfg-store-slug').value = store.slug;
+
     if (store && store.settings) {
         // Carrega as cores e textos
         if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
@@ -2784,6 +2789,7 @@ function loadTemplateSettings() {
                 selectedCard.classList.add(borderClass);
             }
         }
+    }
     }
 }
 

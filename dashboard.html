@@ -4040,6 +4040,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return window.location.href = 'login.html';
 
+    // --- VACINA ANTI-CRASH DO USUÁRIO ---
     if (user.user && user.user.nome) {
         user = {
             nome: user.user.nome,
@@ -4082,7 +4083,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // CARREGAMENTO INICIAL DA NUVEM (A VERDADE ABSOLUTA)
+    // TELA DE CARREGAMENTO INTELIGENTE
+    // (Ocupa apenas a grade, preservando o Discord!)
+    // ==========================================
+    const gridLojas = document.getElementById('stores-grid');
+    if (gridLojas) {
+        gridLojas.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center py-20 text-gold">
+                <svg class="w-12 h-12 animate-spin mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <p class="text-xs font-black uppercase tracking-[0.2em] text-gray-400 animate-pulse">Sincronizando Nuvem...</p>
+            </div>
+        `;
+    }
+
+    // ==========================================
+    // CARREGAMENTO INICIAL DA NUVEM E REDIRECIONAMENTO (O F5 CORRIGIDO!)
     // ==========================================
     fetch('https://storepanel-backend.onrender.com/get-stores', {
         method: 'POST',
@@ -4092,26 +4107,32 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
         if (data.success && data.lojas && Array.isArray(data.lojas)) {
-            // Ignora o PC e usa apenas a Nuvem!
             storesData = data.lojas; 
-            
             enforceStoreLimits();
-            renderStoresGrid();
-            updateCategoryDropdowns();
             
             const params = new URLSearchParams(window.location.search);
-            if (params.get('s')) {
-                loadTemplateSettings(); 
-                renderDashboardGeral();
-                renderProducts(); 
-                renderCategories();
-                renderCoupons();
-                renderCommands(); // Garante que a aba de integrações carrega os dados
+            const currentSlug = params.get('s');
+            
+            if (currentSlug) {
+                // Se der F5 numa loja, o sistema ABRIRÁ a loja visualmente!
+                const storeAtiva = storesData.find(s => s.slug === currentSlug);
+                if (storeAtiva) {
+                    openStoreDashboard(storeAtiva.id);
+                } else {
+                    // Prevenção: Se o link não existir, joga para a Home
+                    window.history.pushState({}, '', window.location.pathname);
+                    renderStoresGrid();
+                }
+            } else {
+                // Se não tem link de loja, carrega os cartões das lojas normais
+                renderStoresGrid();
             }
+            
+            updateCategoryDropdowns();
         }
     }).catch(err => {
         console.error("Erro Crítico na Nuvem:", err);
-        showAlert("Atenção: Não foi possível baixar os dados do servidor. Você pode estar offline ou o servidor está em manutenção.");
+        showAlert("Não foi possível baixar os dados. Você pode estar offline.");
     });
     // ==========================================
 
@@ -4144,7 +4165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
     }
 
-    renderStoresGrid();
+    // MÁGICA: O renderStoresGrid NÃO existe mais aqui fora para não atropelar a nuvem!
     updateDateRangeLabel();
     updatePlanButtons();
 

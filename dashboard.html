@@ -1875,7 +1875,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // O NOVO CARREGAMENTO INICIAL DA NUVEM (A VERDADE ABSOLUTA)
+    // TELA DE CARREGAMENTO (Aniquila a tela fantasma)
+    // ==========================================
+    const viewStores = document.getElementById('view-stores');
+    if (viewStores) {
+        viewStores.innerHTML = `
+            <div class="flex justify-between items-end mb-12">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-white uppercase">Minhas Lojas</h2>
+                    <p class="text-sm text-gray-500 mt-2 uppercase tracking-[0.2em]">Gerencie seus negócios</p>
+                </div>
+            </div>
+            <div id="stores-grid" class="grid grid-cols-1 gap-6 items-stretch">
+                <div class="col-span-full flex flex-col items-center justify-center py-32 text-gold">
+                    <svg class="w-12 h-12 animate-spin mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <p class="text-xs font-black uppercase tracking-[0.2em] text-gray-400 animate-pulse">Sincronizando com a Nuvem...</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==========================================
+    // CARREGAMENTO INICIAL DA NUVEM
     // ==========================================
     fetch('https://storepanel-backend.onrender.com/get-stores', {
         method: 'POST',
@@ -1889,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', () => {
             storesData = data.lojas; 
             
             enforceStoreLimits();
-            renderStoresGrid();
+            renderStoresGrid(); // A Nuvem chegou, agora sim desenhamos as lojas (o loading apaga-se aqui)!
             updateCategoryDropdowns();
             
             const params = new URLSearchParams(window.location.search);
@@ -1899,6 +1920,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderProducts(); 
                 renderCategories();
                 renderCoupons();
+                renderCommands(); // Adicionado para carregar as integrações se deres F5
             }
         }
     }).catch(err => {
@@ -1936,7 +1958,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
     }
 
-    renderStoresGrid();
+    // Removi o renderStoresGrid() daqui de baixo para proteger a animação de loading
     updateDateRangeLabel();
     updatePlanButtons();
 

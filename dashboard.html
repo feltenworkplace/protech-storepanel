@@ -614,6 +614,15 @@ input:-webkit-autofill:active{
                             <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Nome da Instância</label>
                             <input type="text" id="cfg-store-name" placeholder="Ex: ProCity Market" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
                         </div>
+                        
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Link da Loja (Domínio)</label>
+                            <div class="flex">
+                                <span class="bg-white/10 border border-white/10 border-r-0 rounded-l-2xl px-4 py-4 text-xs text-gray-500 select-none">protech.gg/</span>
+                                <input type="text" id="cfg-store-slug" placeholder="minha-loja" class="w-full bg-white/5 border border-white/10 rounded-r-2xl p-4 text-sm outline-none focus:border-gold transition-all text-white">
+                            </div>
+                        </div>
+
                         <div>
                             <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Status da Loja</label>
                             <select id="cfg-store-status" onchange="changeStoreStatus(this.value)" class="select-field w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all appearance-none cursor-pointer">
@@ -623,7 +632,7 @@ input:-webkit-autofill:active{
                         </div>
                     </div>
                 
-                    <button onclick="saveStoreGeneralSettings()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/20">
+                    <button onclick="saveSettings()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-gold/20">
                         Salvar Configurações
                     </button>
                 </div>
@@ -2887,27 +2896,6 @@ function handleDrop(event, inputId, previewId) {
         } else {
             previewImage(input, previewId);
         }
-    }
-}
-
-function saveStoreGeneralSettings() {
-    const params = new URLSearchParams(window.location.search);
-    const currentSlug = params.get('s');
-    const newName = document.getElementById('cfg-store-name').value.trim();
-
-    if (!newName) return alert("Por favor, digite um nome para a loja.");
-
-    let stores = getStores();
-    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
-
-    if (storeIndex !== -1) {
-        stores[storeIndex].name = newName;
-        setStores(stores);
-
-        document.getElementById('active-store-name').textContent = newName;
-        document.getElementById('store-sidebar-store-name').textContent = newName;
-        
-        showSuccess("Nome da loja atualizado com sucesso!");
     }
 }
 

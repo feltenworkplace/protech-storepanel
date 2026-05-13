@@ -2793,6 +2793,64 @@ function loadTemplateSettings() {
     }
 }
 
+function saveSettings() {
+    const params = new URLSearchParams(window.location.search);
+    const currentSlug = params.get('s');
+    let stores = getStores();
+    const storeIndex = stores.findIndex(s => s.slug === currentSlug);
+
+    if (storeIndex !== -1) {
+        const newName = document.getElementById('cfg-store-name').value.trim();
+        const newSlugRaw = document.getElementById('cfg-store-slug').value.trim();
+        
+        if (!newName || !newSlugRaw) {
+            showAlert("Nome e Link são obrigatórios!");
+            return;
+        }
+
+        // Higieniza o link (tira espaços, acentos e põe minúsculo)
+        const newSlug = newSlugRaw.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .trim();
+
+        // Verifica se o novo link já não existe em outra loja sua
+        const slugRepetido = stores.find((s, idx) => s.slug === newSlug && idx !== storeIndex);
+        if (slugRepetido) {
+            showAlert("Este link já está em uso por outra loja!");
+            return;
+        }
+
+        // Garante que o objeto settings existe
+        if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
+
+        // Atualiza Nome e Slug
+        stores[storeIndex].name = newName;
+        stores[storeIndex].slug = newSlug;
+
+        // Salva as imagens (logo, banner, favicon) que estão no preview
+        const types = ['logo', 'banner', 'favicon'];
+        types.forEach(type => {
+            const previewImg = document.getElementById(`preview-${type}`);
+            if (previewImg && !previewImg.classList.contains('hidden') && previewImg.src.startsWith('data:image')) {
+                stores[storeIndex].settings[type] = previewImg.src;
+            }
+        });
+
+        // Salva na Nuvem e na RAM (usando a tua função protegida)
+        setStores(stores);
+        
+        closeModal('settings-modal');
+        showAlert("Configurações salvas! Atualizando link...");
+
+        // Redireciona para o novo slug no Dashboard após 1.5s
+        setTimeout(() => {
+            window.location.href = `dashboard.html?s=${newSlug}`;
+        }, 1500);
+    }
+}
+
 function uploadTemplateImage(input, type) {
     const file = input.files[0];
     if (!file) return;

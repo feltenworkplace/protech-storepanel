@@ -2752,44 +2752,44 @@ function loadTemplateSettings() {
 
     if (store) {
         document.getElementById('cfg-store-name').value = store.name;
-        // ADICIONE ESTA LINHA AQUI:
+        // O slug agora carrega direitinho!
         document.getElementById('cfg-store-slug').value = store.slug;
 
-    if (store && store.settings) {
-        // Carrega as cores e textos
-        if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
-        if (store.settings.secondaryColor) document.getElementById('store-secondary-color').value = store.settings.secondaryColor;
-        document.getElementById('temp-css').value = store.settings.customCss || '';
-        document.getElementById('temp-html').value = store.settings.customHtml || '';
+        if (store.settings) {
+            // Carrega as cores e textos
+            if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
+            if (store.settings.secondaryColor) document.getElementById('store-secondary-color').value = store.settings.secondaryColor;
+            document.getElementById('temp-css').value = store.settings.customCss || '';
+            document.getElementById('temp-html').value = store.settings.customHtml || '';
 
-        // CARREGA AS IMAGENS APENAS PARA O PREVIEW (Não muda a aba do Dashboard)
-        const types = ['logo', 'banner', 'favicon'];
-        types.forEach(type => {
-            if (store.settings[type]) {
-                const img = document.getElementById(`preview-${type}`);
-                const container = document.getElementById(`preview-${type}-container`);
-                if (img && container) {
-                    img.src = store.settings[type];
-                    container.classList.remove('hidden');
+            // CARREGA AS IMAGENS APENAS PARA O PREVIEW
+            const types = ['logo', 'banner', 'favicon'];
+            types.forEach(type => {
+                if (store.settings[type]) {
+                    const img = document.getElementById(`preview-${type}`);
+                    const container = document.getElementById(`preview-${type}-container`);
+                    if (img && container) {
+                        img.src = store.settings[type];
+                        container.classList.remove('hidden');
+                    }
+                }
+            });
+
+            // REATIVA A BORDA DO TEMPLATE SELECIONADO
+            if (store.template) {
+                document.querySelectorAll('.template-card').forEach(card => {
+                    card.classList.remove('template-selected', 'template-selected-pro', 'template-selected-legend');
+                    card.classList.add('opacity-50');
+                });
+                const selectedCard = document.getElementById(`tpl-${store.template}`);
+                if (selectedCard) {
+                    selectedCard.classList.remove('opacity-50');
+                    const borderClass = store.template.includes('legend') ? 'template-selected-legend' : 
+                                       (store.template.includes('pro') ? 'template-selected-pro' : 'template-selected');
+                    selectedCard.classList.add(borderClass);
                 }
             }
-        });
-
-        // REATIVA A BORDA DO TEMPLATE SELECIONADO
-        if (store.template) {
-            document.querySelectorAll('.template-card').forEach(card => {
-                card.classList.remove('template-selected', 'template-selected-pro', 'template-selected-legend');
-                card.classList.add('opacity-50');
-            });
-            const selectedCard = document.getElementById(`tpl-${store.template}`);
-            if (selectedCard) {
-                selectedCard.classList.remove('opacity-50');
-                const borderClass = store.template.includes('legend') ? 'template-selected-legend' : 
-                                   (store.template.includes('pro') ? 'template-selected-pro' : 'template-selected');
-                selectedCard.classList.add(borderClass);
-            }
         }
-    }
     }
 }
 

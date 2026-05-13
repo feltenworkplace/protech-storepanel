@@ -1485,57 +1485,48 @@ input:-webkit-autofill:active{
     </div>
 </div>
 
-    <script>
+    <script>   
         let productIdToDelete = null; // Controle para exclusão de produtos
 
-        const STORAGE_KEYS = { stores: 'protech_stores_v1', activeStoreId: 'protech_active_store_id_v1' };
-        function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
-        function getActiveStoreId() { return localStorage.getItem(STORAGE_KEYS.activeStoreId) || ''; }
-        function setActiveStoreId(id) { if (!id) localStorage.removeItem(STORAGE_KEYS.activeStoreId); else localStorage.setItem(STORAGE_KEYS.activeStoreId, id); }
-        function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
-        function createId() { return `store_${Date.now()}_${Math.random().toString(16).slice(2)}`; }
-        function createStore({ name, slug }) { const now = Date.now(); return { id: createId(), name: String(name || '').trim(), slug: normalizeSlug(slug), createdAt: now, trialEndsAt: now + 15 * 24 * 60 * 60 * 1000, plan: null }; }
+// Removemos a chave 'stores' daqui, ela não vai mais sujar o PC do cliente.
+const STORAGE_KEYS = { activeStoreId: 'protech_active_store_id_v1' };
 
-        // 1. CRIAMOS A MEMÓRIA RAM VIRTUAL (Sem limites de MB!)
-        let protechMemoriaRAM = null;
+function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
+function getActiveStoreId() { return localStorage.getItem(STORAGE_KEYS.activeStoreId) || ''; }
+function setActiveStoreId(id) { if (!id) localStorage.removeItem(STORAGE_KEYS.activeStoreId); else localStorage.setItem(STORAGE_KEYS.activeStoreId, id); }
+function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
+function createId() { return `store_${Date.now()}_${Math.random().toString(16).slice(2)}`; }
+function createStore({ name, slug }) { const now = Date.now(); return { id: createId(), name: String(name || '').trim(), slug: normalizeSlug(slug), createdAt: now, trialEndsAt: now + 15 * 24 * 60 * 60 * 1000, plan: null }; }
 
-        function getStores() { 
-            // Se já temos os dados na memória RAM, usamos ela direto!
-            if (protechMemoriaRAM) return protechMemoriaRAM;
+// ==========================================
+// 1. O NOVO MOTOR CLOUD NATIVE (ZERO LOCALSTORAGE PARA LOJAS)
+// ==========================================
+let storesData = []; 
 
-            const raw = localStorage.getItem(STORAGE_KEYS.stores); 
-            if (!raw || raw === "null") return []; 
-            const parsed = safeParse(raw, []); 
-            
-            protechMemoriaRAM = Array.isArray(parsed) ? parsed : [];
-            return protechMemoriaRAM;
-        }
-        
-        function setStores(stores) { 
-            // 1. Salva na Memória RAM na mesma hora para a tela do painel atualizar instantaneamente
-            protechMemoriaRAM = stores;
+function getStores() { 
+    return storesData; 
+}
 
-            // 2. MÁGICA: Pula o limite do Chrome e envia o GIF gigante DIRETO para a Nuvem!
-            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-            if (user && user.email) {
-                fetch('https://storepanel-backend.onrender.com/sync-stores', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email, stores: stores })
-                }).catch(err => console.log("Erro na sincronização:", err));
-            }
+function setStores(newStores) { 
+    storesData = newStores; // Atualiza a RAM instantaneamente para a tela não piscar
 
-            // 3. Tenta salvar no disco do Chrome como plano secundário
-            try {
-                localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(stores)); 
-            } catch (erro) {
-                // SE O CHROME RECLAMAR QUE TÁ CHEIO, A GENTE APENAS IGNORA!
-                // Nada de alertas de erro na tela. A nuvem já cuidou de tudo.
-                console.warn("Pendrive do Chrome lotou (5MB), rodando 100% via Nuvem e Memória RAM!");
-            }
-        }
-        
-        function openStoreDashboard(storeId) {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (user && user.email) {
+        fetch('https://storepanel-backend.onrender.com/sync-stores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, stores: newStores })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) console.log("Nuvem sincronizada com sucesso!");
+        })
+        .catch(err => console.error("Erro de sincronização com a nuvem:", err));
+    }
+}
+// ==========================================
+
+function openStoreDashboard(storeId) {
     const stores = getStores();
     const store = stores.find(s => s.id === storeId);
     if (!store) return;
@@ -1575,21 +1566,20 @@ function visitStore() {
     const store = getStores().find(s => s.slug === currentSlug);
     if (!store) return;
 
-    // APENAS ESTA LINHA FICA! Adeus links feios e abas duplas!
     window.open(`loja.html?s=${store.slug}`, '_blank');
 }
 
-        function openStoresView() {
-            setActiveStoreId('');
-            document.getElementById('view-store-dashboard')?.classList.add('hidden');
-            document.getElementById('view-stores')?.classList.remove('hidden');
-            const mainSidebar = document.getElementById('sidebar');
-            const storeSidebar = document.getElementById('store-sidebar');
-            if (mainSidebar) { mainSidebar.classList.remove('hidden'); mainSidebar.classList.add('md:block'); }
-            if (storeSidebar) { storeSidebar.classList.add('hidden'); storeSidebar.classList.remove('md:block'); }
-        }
+function openStoresView() {
+    setActiveStoreId('');
+    document.getElementById('view-store-dashboard')?.classList.add('hidden');
+    document.getElementById('view-stores')?.classList.remove('hidden');
+    const mainSidebar = document.getElementById('sidebar');
+    const storeSidebar = document.getElementById('store-sidebar');
+    if (mainSidebar) { mainSidebar.classList.remove('hidden'); mainSidebar.classList.add('md:block'); }
+    if (storeSidebar) { storeSidebar.classList.add('hidden'); storeSidebar.classList.remove('md:block'); }
+}
 
-        function renderStoresGrid() {
+function renderStoresGrid() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     const grid = document.getElementById('stores-grid');
     
@@ -1725,105 +1715,86 @@ function switchTab(tabName) {
 
     // 5. ATUALIZAÇÃO DO TÍTULO NO HEADER
     if (mainTitle) {
-    if (tabName === 'template') mainTitle.textContent = 'Customização';
-    else if (tabName === 'planos') mainTitle.textContent = 'Planos';
-    else if (tabName === 'configuracoes') mainTitle.textContent = 'Configurações';
-    else if (tabName === 'geral') mainTitle.textContent = 'Dashboard';
-    else if (catalogTabs.includes(tabName)) mainTitle.textContent = 'Catálogo';
-    else if (integraTabs.includes(tabName)) mainTitle.textContent = 'Integrações';
-    else if (financeTabs.includes(tabName)) mainTitle.textContent = (tabName === 'metodos') ? 'Pagamentos' : 'Financeiro';
-}
+        if (tabName === 'template') mainTitle.textContent = 'Customização';
+        else if (tabName === 'planos') mainTitle.textContent = 'Planos';
+        else if (tabName === 'configuracoes') mainTitle.textContent = 'Configurações';
+        else if (tabName === 'geral') mainTitle.textContent = 'Dashboard';
+        else if (catalogTabs.includes(tabName)) mainTitle.textContent = 'Catálogo';
+        else if (integraTabs.includes(tabName)) mainTitle.textContent = 'Integrações';
+        else if (financeTabs.includes(tabName)) mainTitle.textContent = (tabName === 'metodos') ? 'Pagamentos' : 'Financeiro';
+    }
 
     // 6. CARREGAMENTO DE DADOS ESPECÍFICOS
-    if (tabName === 'geral') {
-        renderDashboardGeral();
-    }
-
-    if (tabName === 'pedidos') {
-        renderOrders();
-    }
-
-    if (tabName === 'despesas') {
-        populateMonthSelect();
-        renderMonthlyReport();
-    }
-
+    if (tabName === 'geral') { renderDashboardGeral(); }
+    if (tabName === 'pedidos') { renderOrders(); }
+    if (tabName === 'despesas') { populateMonthSelect(); renderMonthlyReport(); }
     if (tabName === 'configuracoes') {
         const params = new URLSearchParams(window.location.search);
         const currentSlug = params.get('s');
         const store = getStores().find(s => s.slug === currentSlug);
-        if (store) document.getElementById('cfg-store-name').value = store.name;
+        if (store) {
+            document.getElementById('cfg-store-name').value = store.name;
+            document.getElementById('cfg-store-slug').value = store.slug;
+        }
     }
-
-    if (tabName === 'template') {
-        loadTemplateSettings();
-    }
-
-    if (tabName === 'comandos') {
-        renderCommands();
-    }
-
-    if (tabName === 'script') {
-        loadServerSettings();
-    }
+    if (tabName === 'template') { loadTemplateSettings(); }
+    if (tabName === 'comandos') { renderCommands(); }
+    if (tabName === 'script') { loadServerSettings(); }
 }
 
-        function toggleSubmenu(id, arrowId) {
-            const submenu = document.getElementById(id);
-            const arrow = document.getElementById(arrowId);
-            if (submenu.classList.contains('hidden')) { submenu.classList.remove('hidden'); if(arrow) arrow.classList.add('rotate-180'); }
-            else { submenu.classList.add('hidden'); if(arrow) arrow.classList.remove('rotate-180'); }
-        }
+function toggleSubmenu(id, arrowId) {
+    const submenu = document.getElementById(id);
+    const arrow = document.getElementById(arrowId);
+    if (submenu.classList.contains('hidden')) { submenu.classList.remove('hidden'); if(arrow) arrow.classList.add('rotate-180'); }
+    else { submenu.classList.add('hidden'); if(arrow) arrow.classList.remove('rotate-180'); }
+}
 
-        function toggleSidebar() {
-            const isStoreView = !document.getElementById('view-store-dashboard')?.classList.contains('hidden');
-            const sidebar = document.getElementById(isStoreView ? 'store-sidebar' : 'sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('translate-x-0'); sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('active'); document.body.classList.toggle('no-scroll');
-        }
+function toggleSidebar() {
+    const isStoreView = !document.getElementById('view-store-dashboard')?.classList.contains('hidden');
+    const sidebar = document.getElementById(isStoreView ? 'store-sidebar' : 'sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.toggle('translate-x-0'); sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('active'); document.body.classList.toggle('no-scroll');
+}
 
-        function toggleStoreDrawer(show) {
-            const drawer = document.getElementById('store-drawer');
-            const overlay = document.getElementById('store-drawer-overlay');
-            if (show) { drawer.classList.replace('translate-x-full', 'translate-x-0'); overlay.classList.add('active'); }
-            else { drawer.classList.replace('translate-x-0', 'translate-x-full'); overlay.classList.remove('active'); }
-        }
+function toggleStoreDrawer(show) {
+    const drawer = document.getElementById('store-drawer');
+    const overlay = document.getElementById('store-drawer-overlay');
+    if (show) { drawer.classList.replace('translate-x-full', 'translate-x-0'); overlay.classList.add('active'); }
+    else { drawer.classList.replace('translate-x-0', 'translate-x-full'); overlay.classList.remove('active'); }
+}
 
-        function addStore() {
-            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-            const stores = getStores() || [];
-            // Pega o limite real ou define 0 se algo falhar
-            const storeLimit = (user && user.limits) ? parseInt(user.limits.stores) : 0; 
+function addStore() {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    const stores = getStores() || [];
+    const storeLimit = (user && user.limits) ? parseInt(user.limits.stores) : 0; 
 
-            // CORREÇÃO: Conta apenas as lojas que pertencem ao usuário atual!
-            const userStoresCount = stores.filter(s => s.ownerEmail === user.email).length;
+    const userStoresCount = stores.filter(s => s.ownerEmail === user.email).length;
 
-            if (userStoresCount >= storeLimit) {
-                // Usa o novo modal premium
-                return showAlert(`Limite atingido! Seu plano ${user.plan} permite apenas ${storeLimit} loja(s).`);
-            }
+    if (userStoresCount >= storeLimit) {
+        return showAlert(`Limite atingido! Seu plano ${user.plan} permite apenas ${storeLimit} loja(s).`);
+    }
 
-            const name = document.getElementById('storeName').value.trim();
-            const slugInput = document.getElementById('storeSlug').value.trim();
-            const slug = normalizeSlug(slugInput || name);
+    const name = document.getElementById('storeName').value.trim();
+    const slugInput = document.getElementById('storeSlug').value.trim();
+    const slug = normalizeSlug(slugInput || name);
 
-            if(!name || !slug) return showAlert('Preencha o nome e o domínio da loja.');
+    if(!name || !slug) return showAlert('Preencha o nome e o domínio da loja.');
 
-            const store = {
-                ...createStore({ name, slug }),
-                ownerEmail: user.email, // Salva o dono corretamente
-                template: document.getElementById('storeTemplate').value,
-                categories: [],
-                products: [],
-                settings: { logo: '', banner: '', primaryColor: '#D4AF37' }
-            };
+    const store = {
+        ...createStore({ name, slug }),
+        ownerEmail: user.email, 
+        template: document.getElementById('storeTemplate').value,
+        categories: [],
+        products: [],
+        settings: { logo: '', banner: '', primaryColor: '#D4AF37' }
+    };
 
-            stores.unshift(store);
-            setStores(stores);
-            toggleStoreDrawer(false);
-            renderStoresGrid();
-            openStoreDashboard(store.id);
-        }
+    stores.unshift(store);
+    setStores(stores);
+    toggleStoreDrawer(false);
+    renderStoresGrid();
+    openStoreDashboard(store.id);
+}
 
 // --- LÓGICA DE EXCLUIR LOJA ---
 let storeIdToDelete = null;
@@ -1833,14 +1804,12 @@ function deleteStore(id) {
     const modal = document.getElementById('confirm-modal');
     
     if (modal) {
-        // Aproveitamos o modal existente e trocamos os textos dinamicamente
         modal.querySelector('h3').textContent = "Excluir Loja?";
         modal.querySelector('p').textContent = "Esta ação apagará a loja, produtos, cupons e categorias permanentemente.";
         
         modal.classList.remove('hidden');
         document.body.classList.add('no-scroll');
 
-        // Aponta o botão vermelho de confirmação para a função certa
         document.getElementById('confirm-delete-btn').onclick = executeStoreDelete;
     }
 }
@@ -1849,13 +1818,12 @@ function executeStoreDelete() {
     if (!storeIdToDelete) return;
     
     let stores = getStores();
-    // Filtra o array removendo a loja que tem o ID selecionado
     stores = stores.filter(s => s.id !== storeIdToDelete);
     
-    setStores(stores); // Salva no LocalStorage
+    setStores(stores); 
     closeModal('confirm-modal');
     
-    renderStoresGrid(); // Recarrega a grade de lojas na tela
+    renderStoresGrid(); 
     showSuccess("Loja excluída com sucesso!");
     storeIdToDelete = null;
 }
@@ -1878,7 +1846,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!user.nome) user.nome = "Administrador";
     if (!user.plan) user.plan = "VIP";
 
-    // Conserta os limites caso o banco de dados envie como texto (importante!)
     let limitStores = 1;
     try {
         if (typeof user.limits === 'string') user.limits = JSON.parse(user.limits);
@@ -1889,29 +1856,27 @@ document.addEventListener('DOMContentLoaded', () => {
     checkPlanExpiration();
     enforceStoreLimits();
 
-    // 1. Atualiza o SEU cabeçalho original
     if (document.getElementById('nome-usuario-header')) {
         document.getElementById('nome-usuario-header').innerText = user.nome;
     }
 
-    // Atualiza o nome na tabela de Auditoria
     document.querySelectorAll('.dynamic-user-name').forEach(elemento => {
         elemento.innerText = user.nome;
     });
 
-    // 2. Atualiza o SEU Avatar original (com proteção pura em JS contra AdBlock, sem mexer no HTML)
     const avatarImg = document.getElementById('user-avatar');
     if (avatarImg) {
         avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
         
-        // Se o AdBlock do seu amigo bloquear a imagem, o JS desenha uma letra dourada na hora!
         avatarImg.onerror = function() {
             const inicial = user.nome.charAt(0).toUpperCase();
             this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#D4AF37"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif" font-weight="bold" fill="#000">${inicial}</text></svg>`);
         };
     }
 
-    // --- DOWNLOAD DA NUVEM COM FIX DE PERSISTÊNCIA ---
+    // ==========================================
+    // O NOVO CARREGAMENTO INICIAL DA NUVEM (A VERDADE ABSOLUTA)
+    // ==========================================
     fetch('https://storepanel-backend.onrender.com/get-stores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1920,43 +1885,28 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
         if (data.success && data.lojas && Array.isArray(data.lojas)) {
-            const localStores = getStores();
-            let shouldUpdateLocal = false;
-
-            if (data.lojas.length > 0) {
-                // A GRANDE MÁGICA: Agora ele compara de forma absoluta! 
-                // Se o GIF for diferente, ele deteta e puxa da Nuvem na hora.
-                if (JSON.stringify(data.lojas) !== JSON.stringify(localStores)) {
-                    shouldUpdateLocal = true;
-                }
-
-                if (shouldUpdateLocal) {
-                    // Salva na RAM primeiro e ignora o erro se o Chrome bloquear o GIF gigante!
-                    protechMemoriaRAM = data.lojas; 
-                    try {
-                        localStorage.setItem(STORAGE_KEYS.stores, JSON.stringify(data.lojas));
-                    } catch (e) {
-                        console.warn("Storage do Chrome limitou. Rodando perfeitamente via RAM e Nuvem!");
-                    }
-                    
-                    enforceStoreLimits();
-                    renderStoresGrid();
-                    updateCategoryDropdowns();
-                    
-                    const params = new URLSearchParams(window.location.search);
-                    if (params.get('s')) {
-                        loadTemplateSettings(); 
-                        renderDashboardGeral();
-                        renderProducts(); // Agora a tabela desenha o GIF atualizado da Nuvem!
-                        renderCategories();
-                        renderCoupons();
-                    }
-                }
+            // Ignora qualquer coisa do PC e usa apenas a Nuvem!
+            storesData = data.lojas; 
+            
+            enforceStoreLimits();
+            renderStoresGrid();
+            updateCategoryDropdowns();
+            
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('s')) {
+                loadTemplateSettings(); 
+                renderDashboardGeral();
+                renderProducts(); 
+                renderCategories();
+                renderCoupons();
             }
         }
-    }).catch(err => console.error("Erro na nuvem:", err));
+    }).catch(err => {
+        console.error("Erro Crítico na Nuvem:", err);
+        showAlert("Atenção: Não foi possível baixar os dados do servidor. Você pode estar offline ou o servidor está em manutenção.");
+    });
+    // ==========================================
 
-    // 3. Renderiza os cartões de plano (Desktop e Mobile) do SEU design
     const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
     const mobilePlanContent = document.getElementById('mobile-plan-content');
     
@@ -2063,7 +2013,7 @@ function renderCategories() {
 }
 
 function renameCategory(categoryId, newName) {
-    if (!newName.trim()) return renderCategories(); // Evita nomes vazios
+    if (!newName.trim()) return renderCategories();
 
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -2073,11 +2023,9 @@ function renameCategory(categoryId, newName) {
     if (storeIndex !== -1) {
         const catIndex = stores[storeIndex].categories.findIndex(c => c.id === categoryId);
         if (catIndex !== -1) {
-            // Atualiza o nome da categoria
             stores[storeIndex].categories[catIndex].nome = newName.trim();
             setStores(stores);
             
-            // Atualiza os dropdowns de produtos e tabelas sem recarregar a página
             updateCategoryDropdowns();
             renderProducts(); 
             showSuccess("Categoria renomeada!");
@@ -2085,10 +2033,9 @@ function renameCategory(categoryId, newName) {
     }
 }
 
-// Chamar ao carregar a página
 document.addEventListener('DOMContentLoaded', renderCategories);
 
-let categoryIdToDelete = null; // Armazena temporariamente o ID
+let categoryIdToDelete = null;
 
 function deleteCategory(id) {
     categoryIdToDelete = id;
@@ -2096,48 +2043,42 @@ function deleteCategory(id) {
     modal.classList.remove('hidden');
     document.body.classList.add('no-scroll');
 
-    // Configura o botão de confirmação para executar a exclusão real
     document.getElementById('confirm-delete-btn').onclick = function() {
         executeDelete();
     };
 }
 
-// Adicione isto dentro do seu <script>
-    const sidebarNav = document.querySelector('#store-sidebar nav');
+const sidebarNav = document.querySelector('#store-sidebar nav');
 
 if (sidebarNav) {
     sidebarNav.addEventListener('wheel', (e) => {
-        // Se o scroll for vertical, nós diminuímos a força dele pela metade
         if (e.deltaY !== 0) {
             e.preventDefault();
-            sidebarNav.scrollTop += e.deltaY * 0.4; // 0.4 é a sensibilidade (menor = mais lento)
+            sidebarNav.scrollTop += e.deltaY * 0.4;
         }
     }, { passive: false });
 }
 
-// Função para buscar as categorias do localStorage
 function getCategories() {
     const stores = getStores();
     const activeId = getActiveStoreId();
     const store = stores.find(s => s.id === activeId);
-    // Se a loja tiver categorias, retorna elas, senão retorna array vazio
     return store?.categories || [];
 }
 
 function executeDelete() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
-    let stores = getStores(); // AGORA USA A MEMÓRIA INTELIGENTE
+    let stores = getStores(); 
     
     const storeIndex = stores.findIndex(s => s.slug === currentSlug);
     if (storeIndex !== -1 && categoryIdToDelete) {
-        // Filtra e remove a categoria
         stores[storeIndex].categories = stores[storeIndex].categories.filter(c => c.id !== categoryIdToDelete);
         
-        setStores(stores); // SALVA COM O ESCUDO PROTETOR!
+        setStores(stores); 
         
         closeModal('confirm-modal');
-        renderCategories(); // Atualiza a tabela
+        renderCategories(); 
         categoryIdToDelete = null;
         updateCategoryDropdowns();
     }
@@ -2148,7 +2089,6 @@ function saveCategory() {
     const statusSelect = document.getElementById('cat-status');
     const name = nameInput.value.trim();
     
-    // Substituindo o alert nativo pelo Modal ProTech
     if (!name) {
         const alertModal = document.getElementById('alert-modal');
         alertModal.classList.remove('hidden');
@@ -2158,7 +2098,7 @@ function saveCategory() {
     const status = statusSelect.value;
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
-    let stores = getStores(); // AGORA USA A MEMÓRIA INTELIGENTE
+    let stores = getStores(); 
     const storeIndex = stores.findIndex(s => s.slug === currentSlug);
 
     if (storeIndex !== -1) {
@@ -2166,7 +2106,7 @@ function saveCategory() {
         const newCategory = { id: Date.now().toString(), nome: name, status: status, data: new Date().toLocaleDateString('pt-BR') };
         stores[storeIndex].categories.push(newCategory);
         
-        setStores(stores); // SALVA COM O ESCUDO PROTETOR!
+        setStores(stores); 
         
         nameInput.value = '';
         closeModal('category-modal');
@@ -2175,7 +2115,6 @@ function saveCategory() {
     }
 }
 
-// Função para abrir o modal de categoria
 function openCategoryModal() {
     const modal = document.getElementById('category-modal');
     if (modal) {
@@ -2184,13 +2123,11 @@ function openCategoryModal() {
     }
 }
 
-// Função para fechar qualquer modal
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
         modal.classList.add('hidden');
         document.body.classList.remove('no-scroll');
-        // Limpa o campo de texto ao fechar
         const input = modal.querySelector('input');
         if(input) input.value = '';
     }
@@ -2205,26 +2142,23 @@ function toggleCategoryStatus(categoryId) {
     if (storeIndex !== -1) {
         const catIndex = stores[storeIndex].categories.findIndex(c => c.id === categoryId);
         if (catIndex !== -1) {
-            // Inverte o status
             const currentStatus = stores[storeIndex].categories[catIndex].status;
             stores[storeIndex].categories[catIndex].status = (currentStatus === 'Ativo') ? 'Inativo' : 'Ativo';
             
-            // SALVA e ATUALIZA a tabela na hora
             setStores(stores);
             renderCategories(); 
-            updateCategoryDropdowns(); // Isso atualiza os filtros de produtos
+            updateCategoryDropdowns(); 
         }
     }
 }
 
 function updateCategoryDropdowns() {
     const categories = getCategories();
-    // Pega o select de filtro da tabela e o (futuro) select do modal de produto
     const dropdowns = [document.getElementById('filter-product-category'), document.getElementById('prod-category')];
     
     dropdowns.forEach(select => {
         if (!select) return;
-        const defaultValue = select.firstElementChild; // Mantém o "Todas as Categorias"
+        const defaultValue = select.firstElementChild; 
         select.innerHTML = '';
         select.appendChild(defaultValue);
         
@@ -2238,21 +2172,17 @@ function updateCategoryDropdowns() {
 }
 
 // --- LÓGICA DE COMANDOS ---
-
 function openCommandModal() {
     document.getElementById('command-modal')?.classList.remove('hidden');
     document.body.classList.add('no-scroll');
 }
 
-// Função nova para a inteligência da interface
 function mudarCamposEntrega() {
-    // Esconde todos usando as classes do Tailwind
     document.getElementById('boxVeiculo').classList.add('hidden');
     document.getElementById('boxDinheiro').classList.add('hidden');
     document.getElementById('boxVip').classList.add('hidden');
     document.getElementById('boxItem').classList.add('hidden');
 
-    // Mostra só o selecionado
     const tipo = document.getElementById('selectTipoEntrega').value;
     if(tipo === 'veiculo') document.getElementById('boxVeiculo').classList.remove('hidden');
     if(tipo === 'dinheiro') document.getElementById('boxDinheiro').classList.remove('hidden');
@@ -2260,7 +2190,6 @@ function mudarCamposEntrega() {
     if(tipo === 'item') document.getElementById('boxItem').classList.remove('hidden');
 }
 
-// A sua função antiga, mas agora super inteligente!
 function saveCommand() {
     const cmdAlias = document.getElementById('cmd-alias').value.trim();
     const tipo = document.getElementById('selectTipoEntrega').value;
@@ -2269,7 +2198,6 @@ function saveCommand() {
 
     let cmdText = "";
 
-    // O sistema monta o comando sujo nos bastidores!
     if(tipo === 'veiculo') {
         const carro = document.getElementById('inputVeiculo').value.trim();
         if(!carro) return showAlert("Preencha o spawncode do veículo.");
@@ -2303,14 +2231,13 @@ function saveCommand() {
         const newCommand = {
             id: 'CMD' + Math.floor(Math.random() * 9000 + 1000),
             alias: cmdAlias,
-            command: cmdText, // Salva o comando que ele montou sozinho
+            command: cmdText, 
             date: new Date().toLocaleString('pt-BR')
         };
 
         stores[storeIndex].commands.push(newCommand);
         setStores(stores);
         
-        // Limpeza dos campos pro próximo uso
         document.getElementById('cmd-alias').value = '';
         document.getElementById('selectTipoEntrega').value = '';
         document.getElementById('inputVeiculo').value = '';
@@ -2318,7 +2245,7 @@ function saveCommand() {
         document.getElementById('inputVip').value = '';
         document.getElementById('inputNomeItem').value = '';
         document.getElementById('inputQtdItem').value = '';
-        mudarCamposEntrega(); // Recolhe as caixinhas
+        mudarCamposEntrega(); 
         
         closeModal('command-modal');
         renderCommands();
@@ -2345,7 +2272,6 @@ function renderCommands() {
     if (emptyMsg) emptyMsg.classList.add('hidden');
 
     tbody.innerHTML = commands.map(cmd => {
-        // Colocamos um fallback caso existam comandos velhos salvos sem apelido ainda
         const apelido = cmd.alias || 'Sem Apelido'; 
         
         return '<tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">' +
@@ -2374,7 +2300,6 @@ function deleteCommand(id) {
         stores[storeIndex].commands = stores[storeIndex].commands.filter(c => c.id !== id);
         setStores(stores);
         renderCommands();
-        updateCommandDropdowns();
     }
 }
 
@@ -2396,9 +2321,8 @@ function saveServerSettings() {
 }
 
 function openProductModal() {
-    // Limpa o seletor de arquivo para permitir subir a mesma foto se quiser
     document.getElementById('prod-file').value = ""; 
-    currentProdImageBase64 = ""; // Garante que comece vazio
+    currentProdImageBase64 = ""; 
     document.getElementById('prod-preview').classList.add('hidden');
     
     updateCategoryDropdowns();
@@ -2406,7 +2330,6 @@ function openProductModal() {
     document.body.classList.add('no-scroll');
 }
 
-// --- VALIDAÇÃO VISUAL DO COMANDO EM TEMPO REAL ---
 function validateCommandMatch(inputEl, containerId, badgeId) {
     const typedValue = inputEl.value.trim().toLowerCase();
     const container = document.getElementById(containerId);
@@ -2417,29 +2340,24 @@ function validateCommandMatch(inputEl, containerId, badgeId) {
     const store = getStores().find(s => s.slug === params.get('s'));
     const commands = store?.commands || [];
     
-    // Procura se alguma palavra salva em Integrações bate exatamente com o que ele digitou
     const match = commands.find(c => c.alias && c.alias.toLowerCase() === typedValue);
     
     if (match) {
-        // Remove as cores roxas (Indigo)
         container.classList.remove('border-indigo-500/10', 'bg-indigo-500/5');
         inputEl.classList.remove('focus:border-indigo-500/50');
         
-        // Adiciona as cores verdes (Emerald) já garantidas no Tailwind
         container.classList.add('border-emerald-500/20', 'bg-emerald-500/10');
         inputEl.classList.add('focus:border-emerald-500/50');
         
-        idText.innerText = match.id; // Mostra o CMD1930
+        idText.innerText = match.id; 
         badge.classList.remove('opacity-0');
         badge.classList.add('opacity-100');
         
         inputEl.dataset.matchedId = match.id; 
     } else {
-        // Remove as cores verdes
         container.classList.remove('border-emerald-500/20', 'bg-emerald-500/10');
         inputEl.classList.remove('focus:border-emerald-500/50');
         
-        // Volta para o roxo normal
         container.classList.add('border-indigo-500/10', 'bg-indigo-500/5');
         inputEl.classList.add('focus:border-indigo-500/50');
         
@@ -2452,7 +2370,6 @@ function validateCommandMatch(inputEl, containerId, badgeId) {
 
 function saveProduct() {
     const name = document.getElementById('prod-name').value.trim();
-    // Pega o ID (CMDxxx) que a validação escondeu ali. Se não tiver ID válido, fica vazio.
     const commandId = document.getElementById('prod-command').dataset.matchedId || ''; 
     const categoryId = document.getElementById('prod-category').value;
     const price = parseMoneyValue(document.getElementById('prod-price').value);
@@ -2476,7 +2393,7 @@ function saveProduct() {
         const newProduct = {
             id: Date.now().toString(),
             name: name,
-            commandId: commandId, // Salva o CMD1930
+            commandId: commandId, 
             categoryId: categoryId,
             price: parseFloat(price).toFixed(2),
             description: description, 
@@ -2491,7 +2408,7 @@ function saveProduct() {
         document.getElementById('prod-name').value = '';
         document.getElementById('prod-command').value = ''; 
         document.getElementById('prod-command').dataset.matchedId = '';
-        validateCommandMatch(document.getElementById('prod-command'), 'prod-command-container', 'prod-command-id-badge'); // Reseta a cor verde
+        validateCommandMatch(document.getElementById('prod-command'), 'prod-command-container', 'prod-command-id-badge'); 
         document.getElementById('prod-price').value = '';
         document.getElementById('prod-desc').value = '';
         document.getElementById('prod-preview').classList.add('hidden');
@@ -2512,14 +2429,12 @@ function renderProducts() {
     
     if (!tbody) return;
 
-    // CAPTURA DOS FILTROS
     const searchTerm = document.getElementById('search-product').value.toLowerCase();
     const filterCat = document.getElementById('filter-product-category').value;
 
     tbody.innerHTML = '';
     let products = store?.products || [];
 
-    // APLICAÇÃO DOS FILTROS
     products = products.filter(prod => {
         const matchesSearch = prod.name.toLowerCase().includes(searchTerm);
         const matchesCategory = filterCat === "" || prod.categoryId === filterCat;
@@ -2533,7 +2448,6 @@ function renderProducts() {
 
     if (emptyMsg) emptyMsg.classList.add('hidden');
 
-    // Desenha os produtos com o novo status clicável e visual padronizado
     tbody.innerHTML = products.map(prod => {
         const category = store.categories?.find(c => c.id === prod.categoryId);
         
@@ -2543,12 +2457,10 @@ function renderProducts() {
             : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
         const dotClass = isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500';
 
-        // MÁGICA: A mesma imagem falsa em SVG que usamos na loja, agora no Dashboard!
         const imgProvisoria = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23111111'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23D4AF37' text-anchor='middle' dy='.3em'%3ESEM FOTO%3C/text%3E%3C/svg%3E";
         
         let productImg = prod.image && prod.image.trim() !== "" ? prod.image : imgProvisoria;
 
-        // HIGIENIZADOR: Se a imagem salva for o link fantasma que o AdBlock bloqueia, aniquila e troca pelo SVG!
         if (productImg.includes('via.placeholder.com')) {
             productImg = imgProvisoria;
         }
@@ -2590,11 +2502,9 @@ function toggleProductStatus(productId) {
     if (storeIndex !== -1) {
         const prodIndex = stores[storeIndex].products.findIndex(p => p.id === productId);
         if (prodIndex !== -1) {
-            // Inverte o status do produto
             const currentStatus = stores[storeIndex].products[prodIndex].status;
             stores[storeIndex].products[prodIndex].status = (currentStatus === 'Ativo') ? 'Inativo' : 'Ativo';
             
-            // Salva as alterações no LocalStorage e atualiza a tabela
             setStores(stores);
             renderProducts(); 
         }
@@ -2605,14 +2515,12 @@ function deleteProduct(productId) {
     productIdToDelete = productId;
     const modal = document.getElementById('confirm-modal');
     if (modal) {
-        // Altera o texto do modal para "produto" em vez de "categoria"
         modal.querySelector('h3').textContent = "Excluir Produto?";
         modal.querySelector('p').textContent = "Esta ação removerá o item permanentemente do seu estoque.";
         
         modal.classList.remove('hidden');
         document.body.classList.add('no-scroll');
 
-        // Configura o botão vermelho do modal para chamar a função real de deletar
         document.getElementById('confirm-delete-btn').onclick = executeProductDelete;
     }
 }
@@ -2629,11 +2537,10 @@ function executeProductDelete() {
         
         closeModal('confirm-modal');
         renderProducts();
-        productIdToDelete = null; // Reseta a variável
+        productIdToDelete = null; 
     }
 }
 
-// ABRE O MODAL E CARREGA OS DADOS ANTIGOS DO PRODUTO
 function openEditProductModal(productId) {
     document.getElementById('edit-prod-file').value = "";
     const params = new URLSearchParams(window.location.search);
@@ -2646,19 +2553,18 @@ function openEditProductModal(productId) {
     document.getElementById('edit-prod-id').value = product.id;
     document.getElementById('edit-prod-name').value = product.name;
     const priceInput = document.getElementById('edit-prod-price');
-    priceInput.value = (product.price * 100).toString(); // Prepara o número
-    maskMoney(priceInput); // Aplica a máscara (ex: R$ 0,01)
+    priceInput.value = (product.price * 100).toString(); 
+    maskMoney(priceInput); 
     
     const linkedCmd = store.commands?.find(c => c.id === product.commandId);
     const cmdInput = document.getElementById('edit-prod-command');
     
     if (linkedCmd) {
-        cmdInput.value = linkedCmd.alias; // CORREÇÃO: Agora ele puxa o 'alias' (nome de identificação)!
+        cmdInput.value = linkedCmd.alias; 
     } else {
         cmdInput.value = '';
     }
     
-    // Dispara a validação para a caixa já abrir verdinha caso exista o comando!
     validateCommandMatch(cmdInput, 'edit-prod-command-container', 'edit-prod-command-id-badge');
     
     const descField = document.getElementById('edit-prod-desc');
@@ -2669,7 +2575,6 @@ function openEditProductModal(productId) {
     editSelect.value = product.categoryId;
 
     const imgPreview = document.getElementById('edit-prod-preview');
-    // Previne que ele tente carregar imagem se estiver vazia
     if (product.image && product.image.trim() !== "") {
         imgPreview.src = product.image;
         imgPreview.classList.remove('hidden');
@@ -2709,7 +2614,7 @@ function updateProduct() {
             stores[storeIndex].products[prodIndex] = {
                 ...stores[storeIndex].products[prodIndex],
                 name: name,
-                commandId: commandId, // Salva o novo ID do comando
+                commandId: commandId, 
                 categoryId: categoryId,
                 price: parseFloat(price).toFixed(2),
                 description: description,
@@ -2725,7 +2630,6 @@ function updateProduct() {
     }
 }
 
-// dashboard.html
 function saveTemplateSettings() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -2735,7 +2639,6 @@ function saveTemplateSettings() {
     if (storeIndex !== -1) {
         if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
 
-        // Captura as cores dos inputs do mini-picker
         stores[storeIndex].settings.primaryColor = document.getElementById('store-primary-color').value;
         stores[storeIndex].settings.secondaryColor = document.getElementById('store-secondary-color').value;
 
@@ -2752,17 +2655,14 @@ function loadTemplateSettings() {
 
     if (store) {
         document.getElementById('cfg-store-name').value = store.name;
-        // O slug agora carrega direitinho!
         document.getElementById('cfg-store-slug').value = store.slug;
 
         if (store.settings) {
-            // Carrega as cores e textos
             if (store.settings.primaryColor) document.getElementById('store-primary-color').value = store.settings.primaryColor;
             if (store.settings.secondaryColor) document.getElementById('store-secondary-color').value = store.settings.secondaryColor;
             document.getElementById('temp-css').value = store.settings.customCss || '';
             document.getElementById('temp-html').value = store.settings.customHtml || '';
 
-            // CARREGA AS IMAGENS APENAS PARA O PREVIEW
             const types = ['logo', 'banner', 'favicon'];
             types.forEach(type => {
                 if (store.settings[type]) {
@@ -2775,7 +2675,6 @@ function loadTemplateSettings() {
                 }
             });
 
-            // REATIVA A BORDA DO TEMPLATE SELECIONADO
             if (store.template) {
                 document.querySelectorAll('.template-card').forEach(card => {
                     card.classList.remove('template-selected', 'template-selected-pro', 'template-selected-legend');
@@ -2793,6 +2692,7 @@ function loadTemplateSettings() {
     }
 }
 
+// SALVA AS CONFIGURAÇÕES E O SLUG
 function saveSettings() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -2803,48 +2703,33 @@ function saveSettings() {
         const newName = document.getElementById('cfg-store-name').value.trim();
         const newSlugRaw = document.getElementById('cfg-store-slug').value.trim();
         
-        if (!newName || !newSlugRaw) {
-            showAlert("Nome e Link são obrigatórios!");
-            return;
-        }
+        if (!newName || !newSlugRaw) return showAlert("Nome e Link são obrigatórios!");
 
-        // Higieniza o link (tira espaços, acentos e põe minúsculo)
         const newSlug = newSlugRaw.toLowerCase()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
             .replace(/\s+/g, '-')
             .replace(/[^\w\-]+/g, '')
             .trim();
 
-        // Verifica se o novo link já não existe em outra loja sua
         const slugRepetido = stores.find((s, idx) => s.slug === newSlug && idx !== storeIndex);
-        if (slugRepetido) {
-            showAlert("Este link já está em uso por outra loja!");
-            return;
-        }
+        if (slugRepetido) return showAlert("Este link já está em uso!");
 
-        // Garante que o objeto settings existe
-        if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
-
-        // Atualiza Nome e Slug
         stores[storeIndex].name = newName;
         stores[storeIndex].slug = newSlug;
 
-        // Salva as imagens (logo, banner, favicon) que estão no preview
-        const types = ['logo', 'banner', 'favicon'];
-        types.forEach(type => {
+        ['logo', 'banner', 'favicon'].forEach(type => {
             const previewImg = document.getElementById(`preview-${type}`);
             if (previewImg && !previewImg.classList.contains('hidden') && previewImg.src.startsWith('data:image')) {
+                if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
                 stores[storeIndex].settings[type] = previewImg.src;
             }
         });
 
-        // Salva na Nuvem e na RAM (usando a tua função protegida)
         setStores(stores);
         
         closeModal('settings-modal');
-        showAlert("Configurações salvas! Atualizando link...");
+        showAlert("Link atualizado! Redirecionando...");
 
-        // Redireciona para o novo slug no Dashboard após 1.5s
         setTimeout(() => {
             window.location.href = `dashboard.html?s=${newSlug}`;
         }, 1500);
@@ -2877,11 +2762,9 @@ function uploadTemplateImage(input, type) {
             canvas.width = width;
             canvas.height = height;
 
-            // Limpa o fundo do Canvas para garantir a transparência
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(imgObj, 0, 0, width, height);
 
-            // A MÁGICA AQUI: Se o arquivo for PNG, preserva o PNG para manter a transparência!
             const formatoSaida = file.type === 'image/png' ? 'image/png' : 'image/webp';
             const base64 = canvas.toDataURL(formatoSaida, 0.8);
             
@@ -2909,7 +2792,6 @@ function uploadTemplateImage(input, type) {
     reader.readAsDataURL(file);
 }
 
-// Variáveis temporárias para armazenar o Base64 das imagens
 let currentProdImageBase64 = "";
 let currentEditImageBase64 = "";
 
@@ -2920,7 +2802,6 @@ function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
 
-    // Se for maior que 1.5MB, abre o modal de decisão
     if (file.size > 1.5 * 1024 * 1024) {
         pendingFile = file;
         pendingPreviewId = previewId;
@@ -2928,7 +2809,6 @@ function previewImage(input, previewId) {
         return;
     }
 
-    // Se for pequeno, processa direto
     processFile(file, previewId);
 }
 
@@ -2940,7 +2820,6 @@ function confirmLargeFile() {
 }
 
 function cancelLargeFile() {
-    // Limpa os inputs para a pessoa poder escolher outro
     document.querySelectorAll('input[type="file"]').forEach(i => i.value = "");
     closeLargeFileModal();
 }
@@ -2951,7 +2830,6 @@ function closeLargeFileModal() {
     pendingPreviewId = null;
 }
 
-// Função que realmente transforma a imagem em Base64
 function processFile(file, previewId) {
     const reader = new FileReader();
 
@@ -2961,7 +2839,6 @@ function processFile(file, previewId) {
         img.src = base64;
         img.classList.remove('hidden');
         
-        // Salva na variável global correta dependendo de onde veio
         if (previewId === 'prod-preview') currentProdImageBase64 = base64;
         else currentEditImageBase64 = base64;
     };
@@ -2974,21 +2851,18 @@ function handleDragOver(event) {
     event.stopPropagation();
 }
 
-// Captura o arquivo solto e manda para a nossa função de preview
 function handleDrop(event, inputId, previewId) {
     event.preventDefault();
     event.stopPropagation();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
         const input = document.getElementById(inputId);
-        input.files = files; // Vincula o arquivo ao input
+        input.files = files; 
         
-        // Se for das configurações da loja (Logo, Banner, Favicon)
         if (inputId.includes('file-logo') || inputId.includes('file-banner') || inputId.includes('file-favicon')) {
             const type = inputId.replace('file-', '');
             uploadTemplateImage(input, type);
         } else {
-            // Se for dos produtos
             previewImage(input, previewId);
         }
     }
@@ -3019,11 +2893,10 @@ function showSuccess(message) {
     const modal = document.getElementById('success-modal');
     const msgLabel = document.getElementById('success-message');
     if (modal && msgLabel) {
-        msgLabel.textContent = message; // Define a mensagem personalizada
+        msgLabel.textContent = message; 
         modal.classList.remove('hidden');
         document.body.classList.add('no-scroll');
         
-        // Opcional: Fecha sozinho após 3 segundos
         setTimeout(() => closeModal('success-modal'), 3000);
     }
 }
@@ -3032,13 +2905,12 @@ function showAlert(message) {
     const modal = document.getElementById('alert-modal');
     const msgLabel = document.getElementById('alert-message');
     if (modal && msgLabel) {
-        msgLabel.textContent = message; // Coloca o seu texto no balão
+        msgLabel.textContent = message; 
         modal.classList.remove('hidden');
         document.body.classList.add('no-scroll');
     }
 }
 
-// Redireciona o botão de Planos para o Checkout correto
 function upgradeAccount(planName) {
     const prices = { 'VIP': 14.90, 'PRO': 29.90, 'LEGEND': 59.90 };
     goToPlanCheckout(planName, prices[planName]);
@@ -3105,7 +2977,6 @@ function renewPlan() {
 function goToPlanCheckout(planName, price) {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     
-    // Se ele tem um plano e está TENTANDO MUDAR DE PLANO com dias sobrando...
     if (user && user.plan && user.plan !== planName && user.planExpiresAt > Date.now()) {
         const modal = document.getElementById('confirm-modal');
         
@@ -3133,12 +3004,10 @@ function goToPlanCheckout(planName, price) {
     }
 }
 
-// Verifica o vencimento sempre que a página carrega
 function checkPlanExpiration() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user || !user.plan) return; 
 
-    // Regra de retrocompatibilidade: se o user for antigo e não tiver data, dá 30 dias grátis para não quebrar
     if (!user.planExpiresAt) {
         user.planExpiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000);
         localStorage.setItem('usuarioLogado', JSON.stringify(user));
@@ -3146,32 +3015,29 @@ function checkPlanExpiration() {
 
     const now = Date.now();
     const timeLeft = user.planExpiresAt - now;
-    const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24)); // Converte milissegundos em dias
+    const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24)); 
 
     const alertBar = document.getElementById('plan-alert-bar');
     const alertText = document.getElementById('plan-alert-text');
     if (!alertBar || !alertText) return;
 
     if (daysLeft <= 0) {
-        // EXPIRADO: Barra vermelha e tela bloqueada
         alertBar.classList.remove('hidden', 'bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
         alertBar.classList.add('bg-rose-500/10', 'border-rose-500/20', 'text-rose-500');
         alertText.innerHTML = `Seu plano <b>${user.plan}</b> expirou! Renove agora para restaurar o acesso.`;
         lockDashboard();
     } else if (daysLeft <= 10) {
-        // AVISO: Faltam 10 dias ou menos (Barra amarela)
         alertBar.classList.remove('hidden', 'bg-rose-500/10', 'border-rose-500/20', 'text-rose-500');
         alertBar.classList.add('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
         alertText.innerHTML = `Atenção: Seu plano <b>${user.plan}</b> expira em <b>${daysLeft} dia(s)</b>.`;
     }
 }
 
-// Bloqueia a interface se estiver vencido
 function lockDashboard() {
     const viewStores = document.getElementById('view-stores');
     const storeDash = document.getElementById('view-store-dashboard');
     
-    if (storeDash) storeDash.classList.add('hidden'); // Fecha a loja se ele tentar burlar
+    if (storeDash) storeDash.classList.add('hidden'); 
     
     if (viewStores) {
         viewStores.innerHTML = `
@@ -3194,7 +3060,6 @@ function selectTemplate(templateName) {
     const alertModal = document.getElementById('alert-modal');
     const alertText = alertModal?.querySelector('p');
 
-    // 1. Bloqueio específico para o Template LEGEND (Mensagem Única)
     if (legendTemplates.includes(templateName) && user.plan !== 'LEGEND') {
         if (alertModal && alertText) {
             alertText.innerText = "O template Legend é exclusivo para assinantes do plano LEGEND.";
@@ -3203,7 +3068,6 @@ function selectTemplate(templateName) {
         return;
     }
 
-    // 2. Bloqueio para VIP tentando acessar templates PRO
     if (user.plan === 'VIP' && proTemplates.includes(templateName)) {
         if (alertModal && alertText) {
             alertText.innerText = "Este template é exclusivo para assinantes do plano PRO ou LEGEND.";
@@ -3212,7 +3076,6 @@ function selectTemplate(templateName) {
         return;
     }
 
-    // Lógica de aplicação do template (seu código original abaixo)
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
     let stores = getStores();
@@ -3242,7 +3105,6 @@ function selectTemplate(templateName) {
         showSuccess(`Template ${nomesTemplates[templateName] || templateName.toUpperCase()} aplicado!`);
     }
 
-    // Só mostra o botão de cores se for LEGEND real
     if (templateName === 'legend1' && user.plan === 'LEGEND') {
         document.getElementById('legend-save-area')?.classList.remove('hidden');
     } else {
@@ -3254,11 +3116,10 @@ function checkTemplateAccess() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return;
 
-    // Bloqueios específicos
     const locks = {
         'pro1': ['VIP'],
         'pro2': ['VIP'],
-        'legend1': ['VIP', 'PRO'] // Só libera se não for VIP nem PRO
+        'legend1': ['VIP', 'PRO'] 
     };
 
     Object.keys(locks).forEach(id => {
@@ -3272,7 +3133,6 @@ function checkTemplateAccess() {
         }
     });
 
-    // Mostra o seletor de cores se for LEGEND
     const colorPicker = document.getElementById('legend-color-picker');
     if (colorPicker) {
         user.plan === 'LEGEND' ? colorPicker.classList.remove('hidden') : colorPicker.classList.add('hidden');
@@ -3282,7 +3142,7 @@ function checkTemplateAccess() {
     
     if (user.plan === 'LEGEND') {
         miniPicker?.classList.remove('hidden');
-        saveBtn?.classList.remove('hidden'); // O botão fica disponível, mas só aparece no hover do card
+        saveBtn?.classList.remove('hidden'); 
     } else {
         miniPicker?.classList.add('hidden');
         saveBtn?.classList.add('hidden');
@@ -3292,16 +3152,14 @@ function checkTemplateAccess() {
 function scrollCarousel(direction) {
     const carousel = document.getElementById('template-carousel');
     if (carousel) {
-        // Largura do card (350) + o gap (24) = 374px por clique
         const scrollAmount = 374; 
         carousel.scrollBy({
             left: direction * scrollAmount,
-            behavior: 'smooth' // ESSA É A CHAVE PARA O DESLIZAR SUAVE
+            behavior: 'smooth' 
         });
     }
 }
 
-// Chame essa função quando a aba de templates for aberta ou o DOM carregar
 document.addEventListener('DOMContentLoaded', checkTemplateAccess);
 
 let couponIdToDelete = null;
@@ -3391,7 +3249,6 @@ function renderCoupons() {
     tbody.innerHTML = coupons.map(cp => {
         const isActive = cp.status === 'Ativo';
         
-        // Definição das classes seguindo o padrão da screenshot
         const statusClass = isActive 
             ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
             : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
@@ -3459,13 +3316,11 @@ function executeCouponDelete() {
     }
 }
 
-// --- FUNÇÕES DO BALÃO MOBILE ---
 function toggleMobilePlanPopup() {
     const popup = document.getElementById('mobile-plan-popup');
     if (popup) popup.classList.toggle('hidden');
 }
 
-// Fecha o balão se o usuário clicar em qualquer outro lugar da tela
 document.addEventListener('click', (e) => {
     const popup = document.getElementById('mobile-plan-popup');
     const avatarBox = document.querySelector('[onclick="toggleMobilePlanPopup()"]');
@@ -3477,13 +3332,11 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// --- INTEGRAÇÃO DE PAGAMENTOS (MERCADO PAGO) ---
 function openPaymentConfig() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
     const store = getStores().find(s => s.slug === currentSlug);
     
-    // Se já tiver um token salvo, preenche o campo
     if (store && store.settings && store.settings.mpToken) {
         document.getElementById('mp-access-token').value = store.settings.mpToken;
     } else {
@@ -3506,7 +3359,6 @@ function savePaymentConfig() {
     if (storeIndex !== -1) {
         if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
         
-        // Salva o token de pagamento dentro das configurações desta loja
         stores[storeIndex].settings.mpToken = token;
         setStores(stores);
         
@@ -3515,11 +3367,9 @@ function savePaymentConfig() {
     }
 }
 
-// --- VARIÁVEIS GLOBAIS DOS GRÁFICOS ---
 let chartMetodos = null;
 let chartVendas = null;
 
-// --- LÓGICA DO DASHBOARD GERAL (TEMPO REAL + GRÁFICOS) ---
 function renderDashboardGeral() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -3529,13 +3379,11 @@ function renderDashboardGeral() {
     const orders = store.orders || [];
     const expenses = store.expenses || []; 
     
-    // Datas atuais para os filtros
     const dataAtual = new Date();
     const hojeStr = dataAtual.toDateString();
     const mesAtual = dataAtual.getMonth();
     const anoAtual = dataAtual.getFullYear();
     
-    // Filtra os pedidos aprovados gerais, de hoje e do mês
     const aprovados = orders.filter(o => o.status === 'Aprovado');
     
     const aprovadosHoje = aprovados.filter(o => new Date(o.data).toDateString() === hojeStr);
@@ -3545,7 +3393,6 @@ function renderDashboardGeral() {
         return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
     });
     
-    // Cálculos Financeiros
     const brutoDiario = aprovadosHoje.reduce((acc, o) => acc + Number(o.total), 0);
     const liquidoDiario = brutoDiario * 0.99; 
 
@@ -3558,7 +3405,6 @@ function renderDashboardGeral() {
 
     const formatBRL = (valor) => 'R$ ' + valor.toFixed(2).replace('.', ',');
 
-    // Atualiza Textos na Tela
     document.getElementById('dash-bruto-diario').innerText = formatBRL(brutoDiario);
     document.getElementById('dash-liquido-diario').innerText = formatBRL(liquidoDiario);
     
@@ -3569,7 +3415,6 @@ function renderDashboardGeral() {
     document.getElementById('dash-resumo-lucro').innerText = formatBRL(lucroTotal);
     document.getElementById('dash-resumo-despesas').innerText = formatBRL(despesasTotal);
 
-    // Lista de Vendas Recentes
     const listaRecentes = document.getElementById('dash-vendas-recentes');
     listaRecentes.innerHTML = '';
     const recentes = [...orders].reverse().slice(0, 5); 
@@ -3599,25 +3444,19 @@ function renderDashboardGeral() {
         });
     }
 
-    // ==========================================
-    // MÁGICA DOS GRÁFICOS (CHART.JS)
-    // ==========================================
-    
     let countPix = aprovados.filter(o => o.metodo === 'PIX').length;
     let countCartao = aprovados.filter(o => o.metodo !== 'PIX').length;
 
-    // 1. GRÁFICO DE ROSCA (MÉTODOS)
     const ctxMetodos = document.getElementById('chart-metodos');
-    if (chartMetodos) chartMetodos.destroy(); // Apaga o velho antes de desenhar o novo
+    if (chartMetodos) chartMetodos.destroy(); 
     
     chartMetodos = new Chart(ctxMetodos, {
         type: 'doughnut',
         data: {
             labels: ['PIX', 'Cartão'],
             datasets: [{
-                // Passa os valores reais (mesmo que sejam 0)
                 data: [countPix, countCartao],
-                backgroundColor: ['#10B981', '#D4AF37'], // Esmeralda (Pix) e Dourado (Cartão)
+                backgroundColor: ['#10B981', '#D4AF37'], 
                 borderWidth: 0,
                 hoverOffset: 4
             }]
@@ -3625,7 +3464,7 @@ function renderDashboardGeral() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '75%', // Deixa o buraco no meio bem grande e premium
+            cutout: '75%', 
             plugins: {
                 legend: { position: 'bottom', labels: { color: '#9CA3AF', font: { family: 'Inter', size: 10, weight: 'bold' }, usePointStyle: true, padding: 20 } },
                 tooltip: { backgroundColor: '#000', titleColor: '#D4AF37', bodyColor: '#fff', borderColor: 'rgba(212,175,55,0.2)', borderWidth: 1 }
@@ -3633,25 +3472,20 @@ function renderDashboardGeral() {
         }
     });
 
-    // 2. GRÁFICO DE LINHA (RECEITA)
     const ctxVendas = document.getElementById('chart-vendas').getContext('2d');
     if (chartVendas) chartVendas.destroy();
 
-    // Criando o Gradiente Dourado perfeito que some para baixo
     let gradientVendas = ctxVendas.createLinearGradient(0, 0, 0, 300);
     gradientVendas.addColorStop(0, 'rgba(212, 175, 55, 0.4)'); 
     gradientVendas.addColorStop(1, 'rgba(212, 175, 55, 0.0)'); 
 
-    // --- CÁLCULO DINÂMICO DOS ÚLTIMOS 7 DIAS ---
     const labelsEixoX = [];
     const dadosLinhaReal = [];
 
-    // O loop volta 6 dias no passado e vem até Hoje (i = 0)
     for (let i = 6; i >= 0; i--) {
         const dataDia = new Date();
         dataDia.setDate(dataDia.getDate() - i);
         
-        // Cria a etiqueta do dia (Ex: "10/04")
         if (i === 0) {
             labelsEixoX.push('Hoje');
         } else {
@@ -3659,7 +3493,6 @@ function renderDashboardGeral() {
             labelsEixoX.push(diaFormatado);
         }
 
-        // Procura se teve vendas neste dia exato
         const vendasNesseDia = aprovados.filter(o => new Date(o.data).toDateString() === dataDia.toDateString());
         const totalNesseDia = vendasNesseDia.reduce((acc, o) => acc + Number(o.total), 0);
         dadosLinhaReal.push(totalNesseDia);
@@ -3668,10 +3501,9 @@ function renderDashboardGeral() {
     chartVendas = new Chart(ctxVendas, {
         type: 'line',
         data: {
-            labels: labelsEixoX, // Aqui entram as datas dinâmicas!
+            labels: labelsEixoX, 
             datasets: [{
                 label: 'Receita Diária (R$)',
-                // Usa sempre os dados reais (zerados se não houver vendas na semana)
                 data: dadosLinhaReal, 
                 borderColor: '#D4AF37', 
                 backgroundColor: gradientVendas,
@@ -3698,7 +3530,7 @@ function renderDashboardGeral() {
                     ticks: { color: '#6B7280', font: { family: 'Inter', size: 10 } } 
                 },
                 y: { 
-                    min: 0, // TRAVA O GRÁFICO NO ZERO (Acaba com os negativos!)
+                    min: 0, 
                     grid: { color: 'rgba(255,255,255,0.05)' }, 
                     border: { display: false }, 
                     ticks: { 
@@ -3714,37 +3546,29 @@ function renderDashboardGeral() {
     });
 }
 
-// --- LÓGICA DA ABA DE PEDIDOS E BUSCA AVANÇADA ---
 function openAdvancedSearchModal() {
     document.getElementById('advanced-search-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
 }
 
 function applyAdvancedSearch() {
-    // Esconde o modal manualmente sem apagar os campos que você digitou
     document.getElementById('advanced-search-modal').classList.add('hidden');
     document.body.classList.remove('no-scroll');
-    
-    // Filtra a tabela com os dados intactos
     renderOrders(); 
 }
 
 function clearAdvancedSearch() {
-    // Apaga tudo manualmente
     document.getElementById('adv-search-name').value = '';
     document.getElementById('adv-search-cpf').value = '';
     document.getElementById('adv-search-email').value = '';
     document.getElementById('adv-search-status').value = '';
     
-    // Esconde o modal
     document.getElementById('advanced-search-modal').classList.add('hidden');
     document.body.classList.remove('no-scroll');
     
-    // Atualiza a tabela (agora sem filtros)
     renderOrders();
 }
 
-// Máscara para o CPF no modal
 document.getElementById('adv-search-cpf').addEventListener('input', e => {
     let v = e.target.value.replace(/\D/g, '');
     if (v.length > 11) v = v.slice(0, 11);
@@ -3766,21 +3590,17 @@ function renderOrders() {
 
     let orders = store.orders || [];
     
-    // Captura o que foi digitado na pesquisa rápida
     const searchInput = document.getElementById('search-order');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
-    // Captura o que foi preenchido no modal de Busca Avançada
     const advName = document.getElementById('adv-search-name')?.value.toLowerCase();
-    const advCpf = document.getElementById('adv-search-cpf')?.value.replace(/\D/g, ''); // Pega só os números
+    const advCpf = document.getElementById('adv-search-cpf')?.value.replace(/\D/g, ''); 
     const advEmail = document.getElementById('adv-search-email')?.value.toLowerCase();
     const advStatus = document.getElementById('adv-search-status')?.value;
 
-    // Filtra os pedidos usando todas as regras juntas
     orders = orders.filter(o => {
         let match = true;
 
-        // 1. Filtro Rápido (Barra principal)
         if (searchTerm) {
             const matchesSearch = 
                 (o.id && o.id.toLowerCase().includes(searchTerm)) ||
@@ -3790,7 +3610,6 @@ function renderOrders() {
             if (!matchesSearch) match = false;
         }
 
-        // 2. Filtros Avançados (Se preenchidos no Modal)
         if (advName && !o.cliente?.toLowerCase().includes(advName)) match = false;
         if (advCpf && !o.cpf?.replace(/\D/g, '').includes(advCpf)) match = false;
         if (advEmail && !o.email?.toLowerCase().includes(advEmail)) match = false;
@@ -3799,10 +3618,8 @@ function renderOrders() {
         return match;
     });
 
-    // Ordena do mais recente para o mais antigo
     orders.sort((a, b) => new Date(b.data) - new Date(a.data));
 
-    // Exibe ou esconde a mensagem de "Nenhuma venda"
     if (orders.length === 0) {
         tbody.innerHTML = '';
         if (emptyMsg) emptyMsg.classList.remove('hidden');
@@ -3817,7 +3634,6 @@ function renderOrders() {
         return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     };
 
-    // Monta a Tabela
     tbody.innerHTML = orders.map(pedido => {
         const isApproved = pedido.status === 'Aprovado';
         const statusClass = isApproved 
@@ -3863,7 +3679,6 @@ function renderOrders() {
     }).join('');
 }
 
-// --- FUNÇÃO PARA ABRIR OS DETALHES DO PEDIDO ---
 function openOrderDetailsModal(orderId) {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -3873,14 +3688,13 @@ function openOrderDetailsModal(orderId) {
     const order = store.orders.find(o => o.id === orderId);
     if (!order) return;
 
-    // Preenche os dados
     document.getElementById('modal-order-id').innerText = order.id;
     
     const d = new Date(order.data);
     document.getElementById('modal-order-date').innerText = d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     
     document.getElementById('modal-order-name').innerText = order.cliente;
-    // Opcional: Adiciona máscara ao CPF para ficar bonito no modal
+    
     let cpfLimpo = order.cpf || '';
     if(cpfLimpo.length === 11) cpfLimpo = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
     
@@ -3890,7 +3704,6 @@ function openOrderDetailsModal(orderId) {
     document.getElementById('modal-order-status').innerText = order.status;
     document.getElementById('modal-order-total').innerText = 'R$ ' + Number(order.total).toFixed(2).replace('.', ',');
 
-    // Preenche os itens que a pessoa comprou
     const itemsContainer = document.getElementById('modal-order-items');
     if (order.itens && order.itens.length > 0) {
         itemsContainer.innerHTML = order.itens.map(item => `
@@ -3909,12 +3722,10 @@ function openOrderDetailsModal(orderId) {
         itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Nenhum item detalhado.</p>';
     }
 
-    // Abre o Modal
     document.getElementById('order-details-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
 }
 
-// --- ATUALIZA O CALENDÁRIO DO CABEÇALHO ---
 function updateDateRangeLabel() {
     const label = document.getElementById('date-range-label');
     if (!label) return;
@@ -3923,28 +3734,22 @@ function updateDateRangeLabel() {
     const ano = agora.getFullYear();
     const mes = agora.getMonth();
 
-    // Calcula o primeiro e o último dia do mês atual
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
 
-    // Formata no padrão "01 de abr de 2026"
     const opcoes = { day: '2-digit', month: 'short', year: 'numeric' };
     
-    // O .replace('.', '') serve para tirar o ponto que alguns navegadores colocam na abreviação do mês
     const strPrimeiro = primeiroDia.toLocaleDateString('pt-BR', opcoes).replace('.', '');
     const strUltimo = ultimoDia.toLocaleDateString('pt-BR', opcoes).replace('.', '');
 
     label.innerText = `${strPrimeiro} - ${strUltimo}`;
 }
 
-// --- LÓGICA DO RELATÓRIO MENSAL (ANTIGA ABA DESPESAS) ---
-
 function populateMonthSelect() {
     const select = document.getElementById('report-month-select');
     if (!select || select.options.length > 0) return;
 
     const agora = new Date();
-    // Gera os últimos 12 meses
     for (let i = 0; i < 12; i++) {
         const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
         const mesNome = d.toLocaleDateString('pt-BR', { month: 'long' });
@@ -3966,7 +3771,6 @@ function renderMonthlyReport() {
     if (!select.value) return;
     const [selectedMonth, selectedYear] = select.value.split('-').map(Number);
     
-    // Pega apenas pedidos aprovados
     const orders = (store.orders || []).filter(o => o.status === 'Aprovado');
     const ordersInMonth = orders.filter(o => {
         const d = new Date(o.data);
@@ -3976,12 +3780,10 @@ function renderMonthlyReport() {
     const dailyStats = {};
     const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
-    // Inicializa todos os dias do mês com zero
     for (let d = 1; d <= lastDayOfMonth; d++) {
         dailyStats[d] = { count: 0, total: 0 };
     }
 
-    // Soma as vendas reais por dia
     ordersInMonth.forEach(o => {
         const day = new Date(o.data).getDate();
         dailyStats[day].count++;
@@ -3992,15 +3794,12 @@ function renderMonthlyReport() {
     let maxVal = -1;
     let minVal = Infinity;
     
-    // VARIÁVEIS NOVAS: Vão guardar exatamente QUAL dia foi o melhor/pior
     let bestDayNum = -1;
     let worstDayNum = -1;
     
     let bestDayStr = '-';
     let worstDayStr = '-';
 
-    // 1. PRIMEIRO: Descobrir o Max/Min e QUAL DIA ganhou
-    // Rodamos do último dia para o primeiro, assim em caso de empate, o dia mais recente ganha
     for (let d = lastDayOfMonth; d >= 1; d--) {
         const t = dailyStats[d].total;
         if (t > 0) {
@@ -4019,7 +3818,6 @@ function renderMonthlyReport() {
     tbody.innerHTML = '';
     const formatBRL = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
 
-    // Preenche as strings dos cartões de cima se encontrou vencedores
     if (bestDayNum !== -1) {
         bestDayStr = `${String(bestDayNum).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(maxVal)})`;
     }
@@ -4027,13 +3825,11 @@ function renderMonthlyReport() {
         worstDayStr = `${String(worstDayNum).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')} (${formatBRL(minVal)})`;
     }
 
-    // 2. SEGUNDO: Renderizar a tabela aplicando o contorno SÓ no dia exato
     Object.keys(dailyStats).reverse().forEach(dayStr => {
         const day = Number(dayStr);
         const data = dailyStats[day];
         totalMonthlyBruto += data.total;
 
-        // Define as classes de destaque da linha comparando o dia exato
         let rowClasses = "hover:bg-white/[0.02] transition-colors border-b border-white/5";
         let tagBadge = "";
 
@@ -4058,21 +3854,10 @@ function renderMonthlyReport() {
         tbody.innerHTML += row;
     });
 
-    // Atualiza os cartões superiores
     document.getElementById('report-total-profit').innerText = formatBRL(totalMonthlyBruto * 0.99); 
     document.getElementById('report-best-day').innerText = bestDayStr;
     document.getElementById('report-worst-day').innerText = worstDayStr;
 }
-
-// O Truque de Mágica do Tempo Real: 
-// Se outra aba modificar as vendas (ex: Cliente comprou), atualiza essa tela sozinho!
-window.addEventListener('storage', function(e) {
-    if (e.key === STORAGE_KEYS.stores) {
-        if (!document.getElementById('tab-geral').classList.contains('hidden')) {
-            renderDashboardGeral();
-        }
-    }
-});
 
 function processCheckout(planName, price) {
     const checkoutIntent = { 
@@ -4098,7 +3883,7 @@ function extendCurrentPlan(planName, price) {
     const iconDiv = modal.querySelector('.rounded-full.flex');
     if(iconDiv) {
         iconDiv.className = "w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20";
-        iconDiv.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>';
+        iconDiv.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>';
     }
     
     modal.classList.remove('hidden');
@@ -4122,7 +3907,6 @@ function resetConfirmModalStyles() {
     }
 }
 
-// Adiciona o reset ao fechar modais
 const originalCloseModal = closeModal;
 closeModal = function(id) {
     originalCloseModal(id);
@@ -4173,7 +3957,6 @@ function updatePlanButtons() {
     });
 }
 
-// --- SISTEMA ANTI-ESPERTINHO (VERIFICADOR DE LIMITES) ---
 function enforceStoreLimits() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return;
@@ -4185,13 +3968,11 @@ function enforceStoreLimits() {
 
     stores.forEach(store => {
         if (store.ownerEmail === user.email) {
-            // Se for uma loja antiga que não tem status, define como Ativa
             if (!store.status) {
                 store.status = 'Ativo';
                 changed = true;
             }
             
-            // Conta as ativas. Se passar do limite do plano, desativa a força!
             if (store.status === 'Ativo') {
                 activeCount++;
                 if (activeCount > limit) {
@@ -4205,7 +3986,6 @@ function enforceStoreLimits() {
     if (changed) setStores(stores);
 }
 
-// --- FUNÇÃO PARA O UTILIZADOR ATIVAR/DESATIVAR LOJA MANUALMENTE ---
 function changeStoreStatus(newStatus) {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -4217,30 +3997,27 @@ function changeStoreStatus(newStatus) {
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     const limit = user && user.limits ? parseInt(user.limits.stores) : 1;
 
-    // Se ele está tentando ativar uma loja...
     if (newStatus === 'Ativo') {
         const activeCount = stores.filter(s => s.status === 'Ativo' && s.ownerEmail === user.email).length;
         
-        // Verifica se já atingiu o limite do plano atual
         if (activeCount >= limit) {
-            document.getElementById('cfg-store-status').value = 'Inativo'; // Devolve o botão para Inativo
+            document.getElementById('cfg-store-status').value = 'Inativo'; 
             return showAlert(`Limite atingido! O seu plano ${user.plan} permite apenas ${limit} loja(s) ativa(s). Desative outra loja primeiro.`);
         }
     }
 
-    // Se passou na verificação, aplica o novo status
     stores[storeIndex].status = newStatus;
     setStores(stores);
     showSuccess(newStatus === 'Ativo' ? "Loja ativada com sucesso!" : "Loja desativada!");
-    renderStoresGrid(); // Atualiza a grade visual no fundo
+    renderStoresGrid(); 
 }
 
 function maskMoney(input) {
-    let value = input.value.replace(/\D/g, ""); // Remove tudo o que não for número
-    value = (value / 100).toFixed(2) + ""; // Transforma em decimal
-    value = value.replace(".", ","); // Troca ponto por vírgula para o formato BR
-    value = value.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,"); // Milhões
-    value = value.replace(/(\d)(\d{3}),/g, "$1.$2,"); // Milhares
+    let value = input.value.replace(/\D/g, ""); 
+    value = (value / 100).toFixed(2) + ""; 
+    value = value.replace(".", ","); 
+    value = value.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,"); 
+    value = value.replace(/(\d)(\d{3}),/g, "$1.$2,"); 
     input.value = "R$ " + value;
 }
 
@@ -4249,24 +4026,126 @@ function parseMoneyValue(formattedValue) {
     return formattedValue.replace("R$ ", "").replace(/\./g, "").replace(",", ".");
 }
 
-function loadServerSettings() {
-    const params = new URLSearchParams(window.location.search);
-    const currentSlug = params.get('s');
-    const stores = getStores();
-    const store = stores.find(s => s.slug === currentSlug);
+document.addEventListener('DOMContentLoaded', () => {
+    let user = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!user) return window.location.href = 'login.html';
 
-    // Se a loja existir e tiver dados de servidor salvos
-    if (store && store.server) {
-        document.getElementById('cfg-server-ip').value = store.server.ip || '';
-        document.getElementById('cfg-server-port').value = store.server.port || '';
-        document.getElementById('cfg-server-password').value = store.server.pass || '';
-    } else {
-        // Se for a primeira vez, garante que os campos fiquem vazios
-        document.getElementById('cfg-server-ip').value = '';
-        document.getElementById('cfg-server-port').value = '';
-        document.getElementById('cfg-server-password').value = '';
+    if (user.user && user.user.nome) {
+        user = {
+            nome: user.user.nome,
+            email: user.user.email,
+            plan: user.user.plano || 'VIP',
+            planExpiresAt: user.user.planExpiresAt || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
+            limits: typeof user.user.limites === 'string' ? JSON.parse(user.user.limites) : (user.user.limites || { stores: 1, items: 10 })
+        };
+        localStorage.setItem('usuarioLogado', JSON.stringify(user));
     }
-}
+    if (!user.nome) user.nome = "Administrador";
+    if (!user.plan) user.plan = "VIP";
+
+    let limitStores = 1;
+    try {
+        if (typeof user.limits === 'string') user.limits = JSON.parse(user.limits);
+        if (user.limits && user.limits.stores) limitStores = parseInt(user.limits.stores);
+    } catch(e) {}
+    user.limits = { stores: limitStores, items: 10 };
+
+    checkPlanExpiration();
+    enforceStoreLimits();
+
+    if (document.getElementById('nome-usuario-header')) {
+        document.getElementById('nome-usuario-header').innerText = user.nome;
+    }
+
+    document.querySelectorAll('.dynamic-user-name').forEach(elemento => {
+        elemento.innerText = user.nome;
+    });
+
+    const avatarImg = document.getElementById('user-avatar');
+    if (avatarImg) {
+        avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
+        
+        avatarImg.onerror = function() {
+            const inicial = user.nome.charAt(0).toUpperCase();
+            this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#D4AF37"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif" font-weight="bold" fill="#000">${inicial}</text></svg>`);
+        };
+    }
+
+    // ==========================================
+    // CARREGAMENTO INICIAL DA NUVEM (A VERDADE ABSOLUTA)
+    // ==========================================
+    fetch('https://storepanel-backend.onrender.com/get-stores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.lojas && Array.isArray(data.lojas)) {
+            // Ignora o PC e usa apenas a Nuvem!
+            storesData = data.lojas; 
+            
+            enforceStoreLimits();
+            renderStoresGrid();
+            updateCategoryDropdowns();
+            
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('s')) {
+                loadTemplateSettings(); 
+                renderDashboardGeral();
+                renderProducts(); 
+                renderCategories();
+                renderCoupons();
+                renderCommands(); // Garante que a aba de integrações carrega os dados
+            }
+        }
+    }).catch(err => {
+        console.error("Erro Crítico na Nuvem:", err);
+        showAlert("Atenção: Não foi possível baixar os dados do servidor. Você pode estar offline ou o servidor está em manutenção.");
+    });
+    // ==========================================
+
+    const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
+    const mobilePlanContent = document.getElementById('mobile-plan-content');
+    
+    if (user.plan) {
+        const plano = user.plan.toUpperCase();
+        const cores = { 'VIP': '#22C55E', 'PRO': '#EC4899', 'LEGEND': '#06B6D4' };
+        const corHex = cores[plano] || '#FFFFFF';
+        
+        let statusHtml = '<p class="text-[10px] text-gold font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Vitalício</p>';
+        
+        if (user.planExpiresAt) {
+            const daysLeft = Math.ceil((user.planExpiresAt - Date.now()) / (1000 * 60 * 60 * 24));
+            if (daysLeft > 0) {
+                statusHtml = `<p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Expira em ${daysLeft} dia(s)</p>`;
+            } else {
+                statusHtml = `<p class="text-[10px] text-rose-500 font-bold uppercase tracking-widest leading-none mt-1 animate-pulse whitespace-nowrap">Plano Expirado</p>`;
+            }
+        }
+
+        const planHtml = `
+            <p class="text-xs font-bold text-white whitespace-nowrap" id="user-plan-text">
+                <span style="color: ${corHex}">${plano}</span> PLAN
+            </p>
+            ${statusHtml}
+        `;
+        if (planContainer) planContainer.innerHTML = planHtml;
+        if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
+    }
+
+    renderStoresGrid();
+    updateDateRangeLabel();
+    updatePlanButtons();
+
+    document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
+        const tabName = link.id.replace(/^menu-/, '');
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            switchTab(tabName);
+        });
+    });
+});
     </script>
 </body>
 </html>

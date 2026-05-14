@@ -1521,7 +1521,8 @@ function setStores(newStores) {
 
     const user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (user && user.email) {
-        fetch('https://storepanel-backend.onrender.com/sync-stores', {
+        // MÁGICA: Retornamos o 'fetch' para podermos mandar o sistema ESPERAR ele terminar!
+        return fetch('https://storepanel-backend.onrender.com/sync-stores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.email, stores: newStores })
@@ -1529,9 +1530,15 @@ function setStores(newStores) {
         .then(res => res.json())
         .then(data => {
             if (data.success) console.log("Nuvem sincronizada com sucesso!");
+            return true;
         })
-        .catch(err => console.error("Erro de sincronização com a nuvem:", err));
+        .catch(err => {
+            console.error("Erro de sincronização com a nuvem:", err);
+            return false;
+        });
     }
+    // Se não tiver utilizador, resolve imediatamente para não travar
+    return Promise.resolve(false);
 }
 // ==========================================
 
@@ -2731,8 +2738,8 @@ function loadTemplateSettings() {
     }
 }
 
-// SALVA AS CONFIGURAÇÕES E O SLUG
-function saveSettings() {
+// Adicionamos o 'async' aqui na função
+async function saveSettings() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
     let stores = getStores();
@@ -2764,14 +2771,19 @@ function saveSettings() {
             }
         });
 
-        setStores(stores);
+        // Avisa o cliente que vai demorar um pouquinho
+        showAlert("Salvando na Nuvem, aguarde...");
+
+        // MÁGICA: O 'await' obriga o navegador a esperar a resposta do banco de dados (Aiven/Render)!
+        await setStores(stores);
         
         closeModal('settings-modal');
         showAlert("Link atualizado! Redirecionando...");
 
+        // Só redireciona QUANDO a Nuvem já guardou a informação nova, acabando com a falha A -> B -> C!
         setTimeout(() => {
             window.location.href = `dashboard.html?s=${newSlug}`;
-        }, 1500);
+        }, 1000);
     }
 }
 
@@ -4097,7 +4109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (gridLojas) {
         gridLojas.innerHTML = `
             <div class="col-span-full flex flex-col items-center justify-center py-20 text-gold">
-                <svg class="w-12 h-12 animate-spin -scale-x-100 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <svg class="w-12 h-12 animate-spin mb-6" style="animation-direction: reverse;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 <p class="text-xs font-black uppercase tracking-[0.2em] text-gray-400 animate-pulse">Sincronizando Nuvem...</p>
             </div>
         `;

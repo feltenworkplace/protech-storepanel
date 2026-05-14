@@ -1580,12 +1580,20 @@ function visitStore() {
 
 function openStoresView() {
     setActiveStoreId('');
+    
+    // MÁGICA: Limpa o link da barra de endereço para o F5 não abrir a loja sozinho!
+    window.history.pushState({}, '', window.location.pathname);
+    
     document.getElementById('view-store-dashboard')?.classList.add('hidden');
     document.getElementById('view-stores')?.classList.remove('hidden');
+    
     const mainSidebar = document.getElementById('sidebar');
     const storeSidebar = document.getElementById('store-sidebar');
     if (mainSidebar) { mainSidebar.classList.remove('hidden'); mainSidebar.classList.add('md:block'); }
     if (storeSidebar) { storeSidebar.classList.add('hidden'); storeSidebar.classList.remove('md:block'); }
+
+    // ESSENCIAL: Desenha as lojas agora, senão o Loading fica lá pra sempre!
+    renderStoresGrid();
 }
 
 function renderStoresGrid() {
@@ -4091,8 +4099,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // CARREGAMENTO INICIAL DA NUVEM E REDIRECIONAMENTO (O F5 CORRIGIDO!)
+    // CARREGAMENTO INICIAL DA NUVEM (FURA-CACHING)
     // ==========================================
+    const titleLojas = document.querySelector('#view-stores h2');
+    if (titleLojas) {
+        titleLojas.innerHTML = 'Minhas lojas <span class="text-xs text-gold ml-3 animate-pulse inline-block align-middle bg-gold/10 px-3 py-1 rounded-lg border border-gold/20">Sincronizando Nuvem...</span>';
+    }
+
     fetch('https://storepanel-backend.onrender.com/get-stores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4100,7 +4113,10 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success && data.lojas && Array.isArray(data.lojas)) {
+        // SEMPRE removemos o aviso assim que a Nuvem responde
+        if (titleLojas) titleLojas.innerText = 'Minhas lojas';
+
+        if (data.success && data.lojas) {
             storesData = data.lojas; 
             enforceStoreLimits();
             
@@ -4108,25 +4124,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentSlug = params.get('s');
             
             if (currentSlug) {
-                // Se der F5 numa loja, o sistema ABRIRÁ a loja visualmente!
                 const storeAtiva = storesData.find(s => s.slug === currentSlug);
                 if (storeAtiva) {
                     openStoreDashboard(storeAtiva.id);
                 } else {
-                    // Prevenção: Se o link não existir, joga para a Home
                     window.history.pushState({}, '', window.location.pathname);
                     renderStoresGrid();
                 }
             } else {
-                // Se não tem link de loja, carrega os cartões das lojas normais
                 renderStoresGrid();
             }
-            
             updateCategoryDropdowns();
         }
     }).catch(err => {
-        console.error("Erro Crítico na Nuvem:", err);
-        showAlert("Não foi possível baixar os dados. Você pode estar offline.");
+        console.error("Erro Crítico:", err);
+        if (titleLojas) titleLojas.innerText = 'Minhas lojas (Modo Offline)';
+        renderStoresGrid(); // Tira o loading e mostra o que tiver na RAM
     });
     // ==========================================
 

@@ -775,8 +775,11 @@ input:-webkit-autofill:active{
                 <input type="text" id="cfg-server-port" placeholder="30120" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-gold/50">
             </div>
             <div>
-                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">RCON Password</label>
-                <input type="password" id="cfg-server-password" placeholder="••••••••" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-gold/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">ProTech Token (Chave)</label>
+                    <button onclick="openTokenHelpModal()" class="w-4 h-4 rounded-full bg-gold/20 text-gold flex items-center justify-center text-[10px] font-bold hover:bg-gold hover:text-black transition-colors" title="O que é isso?">?</button>
+                </div>
+                <input type="text" id="cfg-server-password" placeholder="pt_live_..." class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-gold/50 font-mono">
             </div>
         </div>
 
@@ -1494,6 +1497,37 @@ input:-webkit-autofill:active{
     </div>
 </div>
 
+<div id="token-help-modal" class="hidden fixed inset-0 z-[400] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('token-help-modal')"></div>
+        <div class="relative w-full max-w-md glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
+            <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+                <h3 class="text-xl font-black tracking-tight text-white flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-full bg-gold/10 text-gold flex items-center justify-center font-bold text-sm">?</span>
+                    Chave de Integração
+                </h3>
+                <button onclick="closeModal('token-help-modal')" class="text-gray-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 space-y-5 text-sm text-gray-400 leading-relaxed">
+                <p>O <b>ProTech Token</b> é a sua senha de segurança exclusiva. É ela que autoriza o painel a enviar os veículos e itens direto para o inventário do jogador no jogo.</p>
+                <p>Para ativar, copie a chave gerada abaixo, cole dentro do arquivo <code class="bg-white/10 px-1.5 py-0.5 rounded text-gold font-mono text-xs">config.lua</code> do seu script <code class="bg-white/10 px-1.5 py-0.5 rounded text-gray-300 font-mono text-xs">protech_connector</code> e reinicie o servidor!</p>
+                
+                <div class="mt-6 p-5 bg-white/5 border border-white/10 rounded-2xl">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Sua Chave Segura</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="generated-token-input" readonly class="w-full bg-black/50 border border-white/5 p-3 rounded-xl outline-none text-xs text-emerald-400 font-mono select-all">
+                        <button onclick="copyGeneratedToken()" class="bg-white/10 hover:bg-white/20 text-white px-4 rounded-xl transition text-xs font-bold" title="Copiar">Copiar</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button onclick="generateRandomToken()" class="flex-1 py-4 text-xs font-black uppercase text-gold border border-gold/20 hover:bg-gold/10 transition rounded-2xl bg-gold/5 tracking-widest">Gerar Nova</button>
+                    <button onclick="applyGeneratedToken()" class="flex-1 py-4 bg-gold text-black rounded-2xl text-xs font-black uppercase shadow-lg shadow-gold/20 hover:opacity-90 transition tracking-widest">Usar esta chave</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>   
         let productIdToDelete = null; // Controle para exclusão de produtos
 
@@ -2364,6 +2398,57 @@ function saveServerSettings() {
         setStores(stores);
         showSuccess("Dados do servidor salvos!");
     }
+}
+
+// ==========================================
+// LÓGICA DO GERADOR DE TOKEN (PROTECH KEY)
+// ==========================================
+function generateRandomString(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+function generateRandomToken() {
+    // Cria uma chave no estilo ProTech (ex: pt_live_aB3dE5...)
+    const token = "pt_live_" + generateRandomString(16);
+    document.getElementById('generated-token-input').value = token;
+}
+
+function openTokenHelpModal() {
+    const currentToken = document.getElementById('cfg-server-password').value;
+    
+    // Se ele já tiver uma chave salva, nós mostramos a dele. Se tiver vazio, geramos uma na hora!
+    if (currentToken && currentToken.trim() !== "") {
+        document.getElementById('generated-token-input').value = currentToken;
+    } else {
+        generateRandomToken();
+    }
+    
+    document.getElementById('token-help-modal').classList.remove('hidden');
+    document.body.classList.add('no-scroll');
+}
+
+function copyGeneratedToken() {
+    const input = document.getElementById('generated-token-input');
+    input.select();
+    input.setSelectionRange(0, 99999); // Suporte para mobile
+    navigator.clipboard.writeText(input.value).then(() => {
+        showSuccess("Chave copiada! Agora cole no seu config.lua");
+    }).catch(err => {
+        showAlert("Erro ao copiar. Selecione o texto e copie manualmente.");
+    });
+}
+
+function applyGeneratedToken() {
+    const token = document.getElementById('generated-token-input').value;
+    document.getElementById('cfg-server-password').value = token;
+    closeModal('token-help-modal');
+    // Salva automaticamente para facilitar a vida do cliente
+    saveServerSettings(); 
 }
 
 function openProductModal() {

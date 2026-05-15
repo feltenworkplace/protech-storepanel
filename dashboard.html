@@ -762,24 +762,26 @@ input:-webkit-autofill:active{
                 <h3 class="text-xl font-black uppercase tracking-tight">Conexão com o Servidor</h3>
                 <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Configure o destino das entregas automáticas</p>
             </div>
-            <button class="bg-gold/10 text-gold border border-gold/20 text-[10px] font-black px-4 py-2 rounded-lg uppercase hover:bg-gold hover:text-white transition shadow-lg shadow-gold/5">Baixar Connector .zip</button>
+            <button class="bg-transparent border border-[#D4AF37] text-[#D4AF37] text-[10px] font-black px-4 py-2 rounded-lg uppercase hover:border-white hover:text-white transition-all duration-300">
+                Baixar Connector .zip
+            </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">IP do Servidor</label>
-                <input type="text" id="cfg-server-ip" placeholder="127.0.0.1" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-gold/50">
+                <input type="text" id="cfg-server-ip" placeholder="127.0.0.1" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-[#D4AF37]/50">
             </div>
             <div>
                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Porta RCON</label>
-                <input type="text" id="cfg-server-port" placeholder="30120" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-gold/50">
+                <input type="text" id="cfg-server-port" placeholder="30120" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-[#D4AF37]/50">
             </div>
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">ProTech Token (Chave)</label>
-                    <button onclick="openTokenHelpModal()" class="w-5 h-5 rounded-full border border-gold/50 text-gold flex items-center justify-center text-[10px] font-bold hover:bg-gold hover:text-white transition-all shadow-sm" title="O que é isso?">?</button>
+                    <button onclick="openTokenHelpModal()" class="w-5 h-5 rounded-full border border-[#D4AF37] text-[#D4AF37] flex items-center justify-center text-[10px] font-bold hover:border-white hover:text-white transition-all duration-300" title="O que é isso?">?</button>
                 </div>
-                <input type="text" id="cfg-server-password" placeholder="pt_live_..." class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-gold/50 font-mono">
+                <input type="text" id="cfg-server-password" placeholder="pt_live_..." class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-[#D4AF37]/50 font-mono">
             </div>
         </div>
 
@@ -1502,7 +1504,7 @@ input:-webkit-autofill:active{
         <div class="relative w-full max-w-md glass rounded-[2.5rem] border-white/10 bg-[#0b0b0b] overflow-hidden shadow-2xl animate-bounce-short">
             <div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
                 <h3 class="text-xl font-black tracking-tight text-white flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-full bg-gold/10 text-gold flex items-center justify-center font-bold text-sm">?</span>
+                    <span class="w-8 h-8 rounded-full border-2 border-[#D4AF37] text-[#D4AF37] flex items-center justify-center font-bold text-sm">?</span>
                     Chave de Integração
                 </h3>
                 <button onclick="closeModal('token-help-modal')" class="text-gray-500 hover:text-white transition">

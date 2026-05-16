@@ -292,7 +292,7 @@ input:-webkit-autofill:active{
         </div>
     </aside>
 
-    <main class="flex-grow flex flex-col overflow-y-auto">
+    <main class="flex-grow flex flex-col h-screen overflow-hidden relative">
         <div id="plan-alert-bar" class="hidden w-full px-6 py-4 flex flex-col md:flex-row items-center justify-between z-50 transition-all border-b shadow-lg shrink-0">
             <div class="flex items-center gap-3 mb-3 md:mb-0">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -324,7 +324,7 @@ input:-webkit-autofill:active{
                 </div>
             </div>
         </header>
-        <div class="p-6 md:p-10 max-w-7xl mx-auto w-full">
+        <div id="main-scroll-area" class="p-6 md:p-10 w-full mx-auto max-w-7xl flex-grow overflow-y-auto custom-scrollbar flex flex-col">
             <section id="view-stores">
                 <div class="glass bg-[#0a0a1a] border-[#1a1a3a] p-5 rounded-3xl mb-12 flex flex-col md:flex-row justify-between items-center gap-4 gold-border">
                     <div class="flex items-center space-x-4">
@@ -2941,14 +2941,13 @@ function renewPlan() {
     const user = JSON.parse(localStorage.getItem('usuarioLogado')) || { plan: 'VIP' };
     const currentPlan = user.plan ? user.plan.toUpperCase() : 'VIP';
 
-    // --- A CORREÇÃO: Esconde a tela de bloqueio se ela existir! ---
     const lockView = document.getElementById('view-locked-dashboard');
     if (lockView) lockView.classList.add('hidden');
 
     const getBtnHtml = (planName, price, color) => {
         if (planName === currentPlan) {
             return `
-            <div class="flex gap-2 mt-auto">
+            <div class="flex gap-2 mt-auto pt-6">
                 <div class="flex-grow py-4 rounded-2xl bg-${color}/10 border border-${color}/30 text-${color} text-[10px] font-black uppercase text-center tracking-widest cursor-default flex items-center justify-center">Plano Atual</div>
                 <button onclick="extendCurrentPlan('${planName}', ${price})" class="w-12 h-[46px] flex-shrink-0 flex items-center justify-center rounded-2xl bg-${color}/10 border border-${color}/30 text-${color} hover:bg-${color} hover:text-black transition-all shadow-lg shadow-${color}/10" title="Adicionar 30 dias">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
@@ -2964,33 +2963,36 @@ function renewPlan() {
     
     if (viewStores) {
         viewStores.classList.remove('hidden');
+        // Transforma o viewStores num container flexível para centralizar verticalmente
+        viewStores.className = 'flex-grow flex flex-col justify-center animate-bounce-short';
+        
         viewStores.innerHTML = `
-            <div class="max-w-5xl mx-auto py-10 animate-bounce-short">
-                <div class="text-center mb-12">
-                    <div class="w-16 h-16 bg-gold/10 text-gold rounded-full flex items-center justify-center mx-auto mb-6 border border-gold/20">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            <div class="max-w-5xl mx-auto w-full">
+                <div class="text-center mb-8">
+                    <div class="w-14 h-14 bg-gold/10 text-gold rounded-full flex items-center justify-center mx-auto mb-4 border border-gold/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                     </div>
-                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-white uppercase">Checkout de Assinatura</h2>
-                    <p class="text-sm text-gray-500 mt-3 uppercase tracking-[0.2em]">Escolha seu plano para renovar ou fazer upgrade</p>
+                    <h2 class="text-2xl md:text-3xl font-black tracking-tight text-white uppercase">Checkout de Assinatura</h2>
+                    <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-[0.2em]">Escolha seu plano para renovar</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
                     <div class="glass rounded-[2rem] p-8 border-green-400/20 flex flex-col h-full hover:border-green-400/50 transition-all bg-zinc-900/40">
-                        <h3 class="text-xl font-black text-white mb-2 uppercase">VIP</h3>
-                        <p class="text-[10px] text-green-400 font-black uppercase tracking-widest mb-6">Starter</p>
-                        <div class="mb-8"><span class="text-4xl font-black text-green-400">R$ 14,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
+                        <h3 class="text-lg font-black text-white mb-2 uppercase">VIP</h3>
+                        <p class="text-[9px] text-green-400 font-black uppercase tracking-widest mb-4">Starter</p>
+                        <div class="mb-4"><span class="text-3xl font-black text-green-400">R$ 14,90</span><span class="text-gray-500 text-[10px]"> /30 dias</span></div>
                         ${getBtnHtml('VIP', 14.90, 'green-400')}
                     </div>
                     <div class="glass rounded-[2rem] p-8 border-pink-500/30 flex flex-col h-full bg-zinc-900/40 hover:border-pink-500/60 transition-all relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-pink-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl">Popular</div>
-                        <h3 class="text-xl font-black text-white mb-2 uppercase">PRO</h3>
-                        <p class="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-6">Elite</p>
-                        <div class="mb-8"><span class="text-4xl font-black text-pink-500">R$ 29,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
+                        <div class="absolute top-0 right-0 bg-pink-500 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-lg">Popular</div>
+                        <h3 class="text-lg font-black text-white mb-2 uppercase">PRO</h3>
+                        <p class="text-[9px] text-pink-500 font-black uppercase tracking-widest mb-4">Elite</p>
+                        <div class="mb-4"><span class="text-3xl font-black text-pink-500">R$ 29,90</span><span class="text-gray-500 text-[10px]"> /30 dias</span></div>
                         ${getBtnHtml('PRO', 29.90, 'pink-500')}
                     </div>
                     <div class="glass rounded-[2rem] p-8 border-cyan-400/20 flex flex-col h-full bg-zinc-900/40 hover:border-cyan-400/50 transition-all">
-                        <h3 class="text-xl font-black text-white mb-2 uppercase">LEGEND</h3>
-                        <p class="text-[10px] text-cyan-400 font-black uppercase tracking-widest mb-6">Expert</p>
-                        <div class="mb-8"><span class="text-4xl font-black text-cyan-400">R$ 59,90</span><span class="text-gray-500 text-xs"> /30 dias</span></div>
+                        <h3 class="text-lg font-black text-white mb-2 uppercase">LEGEND</h3>
+                        <p class="text-[9px] text-cyan-400 font-black uppercase tracking-widest mb-4">Expert</p>
+                        <div class="mb-4"><span class="text-3xl font-black text-cyan-400">R$ 59,90</span><span class="text-gray-500 text-[10px]"> /30 dias</span></div>
                         ${getBtnHtml('LEGEND', 59.90, 'cyan-400')}
                     </div>
                 </div>
@@ -3061,7 +3063,6 @@ function checkPlanExpiration() {
 }
 
 function lockDashboard() {
-    // 1. Esconde tudo! O Painel, a Grid de Lojas e todos os Modais abertos
     const viewsToHide = ['view-store-dashboard', 'view-stores', 'store-drawer-overlay', 'store-drawer'];
     viewsToHide.forEach(id => {
         const el = document.getElementById(id);
@@ -3070,14 +3071,13 @@ function lockDashboard() {
     
     document.querySelectorAll('.fixed.z-\\[200\\], .fixed.z-\\[300\\], .fixed.z-\\[400\\]').forEach(m => m.classList.add('hidden'));
 
-    // 2. Cria a tela de bloqueio perfeitamente centralizada (sem scroll!)
     let lockView = document.getElementById('view-locked-dashboard');
     if (!lockView) {
         lockView = document.createElement('div');
         lockView.id = 'view-locked-dashboard';
-        // flex-grow em vez de h-full para não forçar barra de rolagem
-        lockView.className = 'flex-grow flex flex-col items-center justify-center w-full mt-10 md:mt-20 animate-bounce-short z-50';
-        document.querySelector('main > div.max-w-7xl').appendChild(lockView);
+        // flex-grow e justify-center centralizam perfeitamente sem criar scroll!
+        lockView.className = 'flex-grow flex flex-col items-center justify-center w-full animate-bounce-short z-50';
+        document.getElementById('main-scroll-area').appendChild(lockView);
     }
 
     lockView.innerHTML = `
@@ -3093,7 +3093,6 @@ function lockDashboard() {
     
     lockView.classList.remove('hidden');
     
-    // 3. Trava a navegação para impedir que o usuário "fure" o bloqueio pelos menus
     window.switchTab = () => {}; 
     window.openStoreDashboard = () => {};
     window.openStoresView = () => {};

@@ -1914,143 +1914,6 @@ function executeStoreDelete() {
     storeIdToDelete = null;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    let user = JSON.parse(localStorage.getItem('usuarioLogado'));
-    if (!user) return window.location.href = 'login.html';
-
-    // --- VACINA ANTI-CRASH DO USUÁRIO ---
-    if (user.user && user.user.nome) {
-        user = {
-            nome: user.user.nome,
-            email: user.user.email,
-            plan: user.user.plano || 'VIP',
-            planExpiresAt: user.user.planExpiresAt || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
-            limits: typeof user.user.limites === 'string' ? JSON.parse(user.user.limites) : (user.user.limites || { stores: 1, items: 10 })
-        };
-        localStorage.setItem('usuarioLogado', JSON.stringify(user));
-    }
-    if (!user.nome) user.nome = "Administrador";
-    if (!user.plan) user.plan = "VIP";
-
-    let limitStores = 1;
-    try {
-        if (typeof user.limits === 'string') user.limits = JSON.parse(user.limits);
-        if (user.limits && user.limits.stores) limitStores = parseInt(user.limits.stores);
-    } catch(e) {}
-    user.limits = { stores: limitStores, items: 10 };
-
-    checkPlanExpiration();
-    enforceStoreLimits();
-
-    if (document.getElementById('nome-usuario-header')) {
-        document.getElementById('nome-usuario-header').innerText = user.nome;
-    }
-
-    document.querySelectorAll('.dynamic-user-name').forEach(elemento => {
-        elemento.innerText = user.nome;
-    });
-
-    const avatarImg = document.getElementById('user-avatar');
-    if (avatarImg) {
-        avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=D4AF37&color=000&bold=true`;
-        
-        avatarImg.onerror = function() {
-            const inicial = user.nome.charAt(0).toUpperCase();
-            this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#D4AF37"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif" font-weight="bold" fill="#000">${inicial}</text></svg>`);
-        };
-    }
-
-    // ==========================================
-    // CARREGAMENTO INICIAL DA NUVEM (SEGURO E ELEGANTE)
-    // ==========================================
-    // Adiciona o aviso de loading do lado do título sem destruir a tela!
-    const titleLojas = document.querySelector('#view-stores h2');
-    if (titleLojas) {
-        titleLojas.innerHTML = 'Minhas lojas <span class="text-xs text-gold ml-3 animate-pulse inline-block align-middle bg-gold/10 px-3 py-1 rounded-lg border border-gold/20">Sincronizando Nuvem...</span>';
-    }
-
-    fetch('https://storepanel-backend.onrender.com/get-stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success && data.lojas && Array.isArray(data.lojas)) {
-            storesData = data.lojas; 
-            
-            enforceStoreLimits();
-            
-            const params = new URLSearchParams(window.location.search);
-            const currentSlug = params.get('s');
-            
-            if (currentSlug) {
-                // Se der F5 com link, reabre o painel da loja
-                const storeAtiva = storesData.find(s => s.slug === currentSlug);
-                if (storeAtiva) {
-                    openStoreDashboard(storeAtiva.id);
-                } else {
-                    window.history.pushState({}, '', window.location.pathname);
-                    renderStoresGrid();
-                }
-            } else {
-                // Desenha a tela inicial perfeita
-                renderStoresGrid();
-            }
-            
-            updateCategoryDropdowns();
-            
-            // Tira o "Sincronizando Nuvem..." e volta ao normal
-            if (titleLojas) titleLojas.innerText = 'Minhas lojas';
-        }
-    }).catch(err => {
-        console.error("Erro Crítico na Nuvem:", err);
-        showAlert("Atenção: Não foi possível baixar os dados do servidor. Você pode estar offline ou o servidor está em manutenção.");
-        if (titleLojas) titleLojas.innerText = 'Minhas lojas (Modo Offline)';
-    });
-    // ==========================================
-
-    const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
-    const mobilePlanContent = document.getElementById('mobile-plan-content');
-    
-    if (user.plan) {
-        const plano = user.plan.toUpperCase();
-        const cores = { 'VIP': '#22C55E', 'PRO': '#EC4899', 'LEGEND': '#06B6D4' };
-        const corHex = cores[plano] || '#FFFFFF';
-        
-        let statusHtml = '<p class="text-[10px] text-gold font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Vitalício</p>';
-        
-        if (user.planExpiresAt) {
-            const daysLeft = Math.ceil((user.planExpiresAt - Date.now()) / (1000 * 60 * 60 * 24));
-            if (daysLeft > 0) {
-                statusHtml = `<p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Expira em ${daysLeft} dia(s)</p>`;
-            } else {
-                statusHtml = `<p class="text-[10px] text-rose-500 font-bold uppercase tracking-widest leading-none mt-1 animate-pulse whitespace-nowrap">Plano Expirado</p>`;
-            }
-        }
-
-        const planHtml = `
-            <p class="text-xs font-bold text-white whitespace-nowrap" id="user-plan-text">
-                <span style="color: ${corHex}">${plano}</span> PLAN
-            </p>
-            ${statusHtml}
-        `;
-        if (planContainer) planContainer.innerHTML = planHtml;
-        if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
-    }
-
-    updateDateRangeLabel();
-    updatePlanButtons();
-
-    document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
-        const tabName = link.id.replace(/^menu-/, '');
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            switchTab(tabName);
-        });
-    });
-});
-
 function renderCategories() {
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -3179,36 +3042,56 @@ function checkPlanExpiration() {
     const alertText = document.getElementById('plan-alert-text');
     if (!alertBar || !alertText) return;
 
-    if (daysLeft <= 0) {
+    if (timeLeft <= 0) {
         alertBar.classList.remove('hidden', 'bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
         alertBar.classList.add('bg-rose-500/10', 'border-rose-500/20', 'text-rose-500');
         alertText.innerHTML = `Seu plano <b>${user.plan}</b> expirou! Renove agora para restaurar o acesso.`;
         lockDashboard();
+        return true;
     } else if (daysLeft <= 10) {
         alertBar.classList.remove('hidden', 'bg-rose-500/10', 'border-rose-500/20', 'text-rose-500');
         alertBar.classList.add('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
         alertText.innerHTML = `Atenção: Seu plano <b>${user.plan}</b> expira em <b>${daysLeft} dia(s)</b>.`;
     }
+    return false;
 }
 
 function lockDashboard() {
-    const viewStores = document.getElementById('view-stores');
-    const storeDash = document.getElementById('view-store-dashboard');
+    // 1. Esconde tudo! O Painel, a Grid de Lojas e todos os Modais abertos
+    const viewsToHide = ['view-store-dashboard', 'view-stores', 'store-drawer-overlay', 'store-drawer'];
+    viewsToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
     
-    if (storeDash) storeDash.classList.add('hidden'); 
-    
-    if (viewStores) {
-        viewStores.innerHTML = `
-            <div class="text-center py-20 glass rounded-[2.5rem] border-rose-500/20 bg-zinc-900/40">
-                <div class="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                </div>
-                <h2 class="text-3xl font-black mb-4 text-white">Acesso Bloqueado</h2>
-                <p class="text-gray-400 mb-8 max-w-md mx-auto">Sua assinatura expirou. Para voltar a vender e gerenciar suas lojas com a ProTech, renove seu plano agora.</p>
-                <button onclick="renewPlan()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl shadow-lg shadow-gold/20 hover:opacity-90 transition uppercase tracking-widest">Renovar Assinatura</button>
-            </div>
-        `;
+    document.querySelectorAll('.fixed.z-\\[200\\], .fixed.z-\\[300\\], .fixed.z-\\[400\\]').forEach(m => m.classList.add('hidden'));
+
+    // 2. Cria ou usa uma div Mestra limpa e vazia para o bloqueio
+    let lockView = document.getElementById('view-locked-dashboard');
+    if (!lockView) {
+        lockView = document.createElement('div');
+        lockView.id = 'view-locked-dashboard';
+        lockView.className = 'w-full h-full flex flex-col items-center justify-center pt-20 px-4 animate-bounce-short z-50';
+        document.querySelector('main > div.max-w-7xl').appendChild(lockView);
     }
+
+    lockView.innerHTML = `
+        <div class="text-center py-20 glass rounded-[2.5rem] border-rose-500/20 bg-zinc-900/40 w-full max-w-2xl shadow-2xl">
+            <div class="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h2 class="text-3xl font-black mb-4 text-white uppercase tracking-tighter">Acesso Bloqueado</h2>
+            <p class="text-gray-400 mb-8 max-w-md mx-auto leading-relaxed">Sua assinatura expirou. Para voltar a vender e gerenciar suas lojas com a ProTech Lab, você precisa renovar o seu plano.</p>
+            <button onclick="renewPlan()" class="bg-gold text-black text-xs font-black px-10 py-4 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:opacity-90 hover:scale-105 transition-all uppercase tracking-widest">Renovar Assinatura</button>
+        </div>
+    `;
+    
+    lockView.classList.remove('hidden');
+    
+    // 3. Sobrescreve as funções de navegação para barrar qualquer clique nos menus laterais
+    window.switchTab = () => {}; 
+    window.openStoreDashboard = () => {};
+    window.openStoresView = () => {};
 }
 
 function selectTemplate(templateName) {
@@ -4184,6 +4067,9 @@ function parseMoneyValue(formattedValue) {
     return formattedValue.replace("R$ ", "").replace(/\./g, "").replace(",", ".");
 }
 
+// ==========================================
+// INICIALIZAÇÃO E CONTROLE DA PLATAFORMA (MÓDULO UNIFICADO)
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     let user = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!user) return window.location.href = 'login.html';
@@ -4209,7 +4095,19 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {}
     user.limits = { stores: limitStores, items: 10 };
 
-    checkPlanExpiration();
+    // ==========================================
+    // RELÓGIO DE VERIFICAÇÃO DE ASSINATURA EM TEMPO REAL
+    // ==========================================
+    let isExpired = checkPlanExpiration(); // Verifica logo ao abrir a página
+    
+    if (!isExpired) {
+        const planTick = setInterval(() => {
+            if (checkPlanExpiration()) {
+                clearInterval(planTick); // Para o relógio assim que expirar
+            }
+        }, 2000); // Verifica a cada 2 segundos
+    }
+
     enforceStoreLimits();
 
     if (document.getElementById('nome-usuario-header')) {
@@ -4258,8 +4156,14 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(res => res.json())
     .then(data => {
-        // SEMPRE removemos o aviso assim que a Nuvem responde
         if (titleLojas) titleLojas.innerText = 'Minhas lojas';
+
+        // SEGURO CONTRA FURA-BLOQUEIO: Se o tempo acabou, impede a renderização
+        const currentUser = JSON.parse(localStorage.getItem('usuarioLogado'));
+        if (currentUser && currentUser.planExpiresAt && (currentUser.planExpiresAt - Date.now() <= 0)) {
+            lockDashboard();
+            return;
+        }
 
         if (data.success && data.lojas) {
             storesData = data.lojas; 
@@ -4282,12 +4186,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCategoryDropdowns();
         }
     }).catch(err => {
-        console.error("Erro Crítico:", err);
+        console.error("Erro Crítico ao consultar a Nuvem:", err);
         if (titleLojas) titleLojas.innerText = 'Minhas lojas (Modo Offline)';
-        renderStoresGrid(); // Tira o loading e mostra o que tiver na RAM
+        renderStoresGrid(); 
     });
-    // ==========================================
 
+    // ==========================================
+    // RENDERIZAR IDENTIDADE DO PLANO NO TOPO
+    // ==========================================
     const planContainer = document.querySelector('.hidden.lg\\:block.text-right');
     const mobilePlanContent = document.getElementById('mobile-plan-content');
     
@@ -4317,10 +4223,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mobilePlanContent) mobilePlanContent.innerHTML = planHtml;
     }
 
-    // MÁGICA: O renderStoresGrid NÃO existe mais aqui fora para não atropelar a nuvem!
     updateDateRangeLabel();
     updatePlanButtons();
 
+    // Ouvintes de clique na sidebar da loja
     document.querySelectorAll('#store-sidebar a[id^="menu-"]').forEach(link => {
         const tabName = link.id.replace(/^menu-/, '');
         link.addEventListener('click', (event) => {

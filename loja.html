@@ -31,12 +31,12 @@
                 const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
                 const dados = await resposta.json();
                 if (dados.success) {
+                    document.title = `${dados.store.name}`;
                     const templateDaLoja = dados.store.template || 'standart';
                     const arquivos = { 'standart': 'store.html', 'dark': 'store2.html', 'pro1': 'store_pro1.html', 'pro2': 'store_pro2.html', 'legend1': 'store_legend1.html' };
                     const arquivoAlvo = arquivos[templateDaLoja] || 'store.html';
                     
                     const iframe = document.getElementById('store-frame');
-                    // MÁGICA DO FURA-CACHE (Adicionado o nocache aqui!)
                     iframe.src = arquivoAlvo + '?s=' + slug + '&nocache=' + Date.now();
                     
                     iframe.onload = () => {

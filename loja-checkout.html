@@ -316,47 +316,119 @@
             updateTotalsDisplay();
         }
 
-        function updateTotalsDisplay() {
-            document.getElementById('summary-subtotal').innerText = `R$ ${subtotalCart.toFixed(2)}`;
-            document.getElementById('summary-total').innerText = `R$ ${(subtotalCart - totalDiscount).toFixed(2)}`;
+        // ========================================================
+// ATUALIZA OS TOTAIS NA TELA APLICANDO O CUPOM DE DESCONTO
+// ========================================================
+function updateTotalsDisplay() {
+    let total = subtotalCart; // Pega o valor bruto calculado dos produtos
+    let valorDesconto = 0;
+
+    // Se houver um cupom ativo na memória global, faz o cálculo
+    if (window.activeDiscount) {
+        if (window.activeDiscount.tipo === 'porcentagem') {
+            // Desconto em % (Ex: 10% de R$ 60,00 = R$ 6,00)
+            valorDesconto = subtotalCart * (window.activeDiscount.valor / 100);
+        } else {
+            // Desconto em valor fixo (Ex: R$ 5,00)
+            valorDesconto = window.activeDiscount.valor;
+        }
+        
+        // Garante que o desconto não deixe o total menor do que zero
+        total = Math.max(0, subtotalCart - valorDesconto);
+    }
+
+    // 1. Injeta o Subtotal (Valor cheio sem desconto)
+    const elSubtotal = document.getElementById('cart-subtotal');
+    if (elSubtotal) elSubtotal.innerText = `R$ ${subtotalCart.toFixed(2)}`;
+
+    // 2. Injeta o Total final a pagar (Já com o desconto do cupom)
+    const elTotal = document.getElementById('cart-total');
+    if (elTotal) elTotal.innerText = `R$ ${total.toFixed(2)}`;
+    
+    // 3. Opcional: Se você tiver um elemento na tela para mostrar o desconto sumindo (Ex: - R$ 5,00)
+    const elDesconto = document.getElementById('display-desconto');
+    if (elDesconto) {
+        elDesconto.innerText = valorDesconto > 0 ? `- R$ ${valorDesconto.toFixed(2)}` : `R$ 0,00`;
+    }
+}
+
+        async function applyCoupon() {
+    const couponInput = document.getElementById('coupon-input');
+    const couponCode = couponInput.value.trim().toUpperCase();
+    const btnApply = document.getElementById('btn-apply-coupon');
+
+    if (!couponCode) return alert("Digite um cupom válido!");
+
+    // Desabilita o botão temporariamente para dar sensação de processamento premium
+    btnApply.innerText = "Aplicando...";
+    btnApply.classList.add('opacity-50', 'pointer-events-none');
+
+    try {
+        // 1. Puxamos o slug da URL do checkout para saber de qual loja estamos falando
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('s');
+
+        if (!slug) {
+            alert("Instância da loja não localizada.");
+            resetCouponBtn();
+            return;
         }
 
-        function applyCoupon() {
-            const codeInput = document.getElementById('coupon-code').value.trim().toUpperCase();
-            if (!codeInput) return;
+        // 2. Consultamos a rota oficial da sua API na Nuvem
+        const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+        const dados = await resposta.json();
 
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('s');
-            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-            const store = stores.find(s => s.slug === slug);
+        if (dados.success && dados.store) {
+            const loja = dados.store;
             
-            if (!store || !store.coupons) return alert("Erro ao conectar com a loja.");
+            // 3. Procuramos se o cupom digitado existe dentro dos cupons salvos dessa loja
+            // Convertemos ambos para uppercase para evitar problemas de maiúscula/minúscula
+            const cupomAchado = (loja.coupons || []).find(c => c.nome.trim().toUpperCase() === couponCode);
 
-            const coupon = store.coupons.find(c => c.code === codeInput && c.status === 'Ativo');
-
-            if (!coupon) {
-                alert("Cupom inválido ou expirado.");
+            if (!cupomAchado) {
+                alert("Cupom inválido ou expirado para esta loja.");
+                resetCouponBtn();
                 return;
             }
 
-            totalDiscount = 0;
-            cartItems.forEach(item => {
-                if (coupon.categories.includes(item.categoryId)) {
-                    const itemTotal = Number(item.price) * item.quantity;
-                    totalDiscount += itemTotal * (coupon.discount / 100);
-                }
-            });
-
-            if (totalDiscount > 0) {
-                const row = document.getElementById('discount-row');
-                row.classList.remove('hidden');
-                row.classList.add('flex');
-                document.getElementById('summary-discount').innerText = `- R$ ${totalDiscount.toFixed(2)}`;
-                updateTotalsDisplay();
-            } else {
-                alert("Este cupom não se aplica aos itens selecionados.");
+            // 4. Se o cupom existir, verificamos se ele está ativo
+            if (cupomAchado.status !== 'Ativo') {
+                alert("Este cupom não está mais ativo.");
+                resetCouponBtn();
+                return;
             }
+
+            // 5. Mágica do Desconto: Guardamos o cupom ativo globalmente para o render usar
+            window.activeDiscount = {
+                nome: cupomAchado.nome,
+                tipo: cupomAchado.tipo, // 'porcentagem' ou 'fixo'
+                valor: parseFloat(cupomAchado.valor)
+            };
+
+            // Recalcula o carrinho aplicando o desconto visualmente
+            renderCheckoutItems();
+            
+            alert(`Cupom "${cupomAchado.nome}" aplicado com sucesso!`);
+            couponInput.disabled = true; // Trava o campo para ele não acumular cupons
+            btnApply.innerText = "Aplicado";
+            btnApply.className = "px-6 h-14 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all";
+            
+        } else {
+            alert("Erro ao resgatar dados da loja na nuvem.");
+            resetCouponBtn();
         }
+
+    } catch (error) {
+        console.error("Erro na validação do cupom:", error);
+        alert("Erro ao conectar com a loja.");
+        resetCouponBtn();
+    }
+
+    function resetCouponBtn() {
+        btnApply.innerText = "Aplicar";
+        btnApply.classList.remove('opacity-50', 'pointer-events-none');
+    }
+}
 
         // --- MÁSCARAS ---
         document.getElementById('cli-cpf').addEventListener('input', e => {

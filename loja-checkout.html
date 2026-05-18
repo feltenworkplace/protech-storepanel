@@ -681,8 +681,7 @@
             if (dados.success && dados.store) {
                 const loja = dados.store;
                 
-                // MÁGICA: Suporta bancos de dados em PT-BR (cupons) ou EN (coupons)
-                const listaCupons = loja.cupons || loja.coupons || [];
+                const listaCupons = loja.cupons || loja.coupons || (loja.settings && loja.settings.cuponsOficiais) || [];
                 
                 // Procura validando tanto por "nome" quanto por "codigo"
                 const cupomAchado = listaCupons.find(c => 

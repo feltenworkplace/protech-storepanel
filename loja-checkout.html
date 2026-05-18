@@ -299,7 +299,7 @@
                     <div class="flex items-center justify-between group">
                         <div class="flex items-center gap-4">
                             <div class="relative shrink-0">
-                                <img src="${imageUrl}" class="w-14 h-14 rounded-2xl object-cover border border-white/10 bg-black group-hover:border-[#D4AF37]/50 transition-colors" onerror="this.src='https://via.placeholder.com/150'">
+                                <img src="${imageUrl}" class="w-14 h-14 rounded-2xl object-cover border border-white/10 bg-black group-hover:border-[#D4AF37]/50 transition-colors" onerror="this.onerror=null; this.src='https://i.imgur.com/K1Lg0G9.png'">
                                 <span class="absolute -top-3 -right-3 bg-[#D4AF37] text-black text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(212,175,55,0.4)] border-2 border-black z-10">${item.quantity}</span>
                             </div>
                             <div>
@@ -321,42 +321,82 @@
             document.getElementById('summary-total').innerText = `R$ ${(subtotalCart - totalDiscount).toFixed(2)}`;
         }
 
-        function applyCoupon() {
-            const codeInput = document.getElementById('coupon-code').value.trim().toUpperCase();
-            if (!codeInput) return;
+        async function applyCoupon() {
+    const couponInput = document.getElementById('coupon-input');
+    if (!couponInput) return;
+    
+    // Blindagem: Transforma em string com segurança antes de usar toUpperCase()
+    const couponCode = String(couponInput.value || '').trim().toUpperCase();
+    const btnApply = document.getElementById('btn-apply-coupon');
 
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('s');
-            const stores = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-            const store = stores.find(s => s.slug === slug);
+    if (!couponCode) return alert("Digite um cupom válido!");
+
+    btnApply.innerText = "Aplicando...";
+    btnApply.classList.add('opacity-50', 'pointer-events-none');
+
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('s');
+
+        if (!slug) {
+            alert("Instância da loja não localizada.");
+            return resetCouponBtn();
+        }
+
+        const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+        const dados = await resposta.json();
+
+        if (dados.success && dados.store) {
+            const loja = dados.store;
             
-            if (!store || !store.coupons) return alert("Erro ao conectar com a loja.");
+            // Procura o cupom garantindo que o nome do banco de dados seja lido como Texto
+            const cupomAchado = (loja.coupons || []).find(c => String(c.nome || '').trim().toUpperCase() === couponCode);
 
-            const coupon = store.coupons.find(c => c.code === codeInput && c.status === 'Ativo');
-
-            if (!coupon) {
-                alert("Cupom inválido ou expirado.");
-                return;
+            if (!cupomAchado) {
+                alert("Cupom inválido ou inexistente para esta loja.");
+                return resetCouponBtn();
             }
 
-            totalDiscount = 0;
-            cartItems.forEach(item => {
-                if (coupon.categories.includes(item.categoryId)) {
-                    const itemTotal = Number(item.price) * item.quantity;
-                    totalDiscount += itemTotal * (coupon.discount / 100);
-                }
-            });
+            if (cupomAchado.status !== 'Ativo') {
+                alert("Este cupom não está mais ativo.");
+                return resetCouponBtn();
+            }
 
-            if (totalDiscount > 0) {
-                const row = document.getElementById('discount-row');
-                row.classList.remove('hidden');
-                row.classList.add('flex');
-                document.getElementById('summary-discount').innerText = `- R$ ${totalDiscount.toFixed(2)}`;
+            // Salva o desconto na memória global
+            window.activeDiscount = {
+                nome: cupomAchado.nome,
+                tipo: cupomAchado.tipo,
+                valor: parseFloat(cupomAchado.valor)
+            };
+
+            // MÁGICA: Em vez de redesenhar tudo e dar erro, chamamos a função certa de calcular!
+            if (typeof updateTotalsDisplay === "function") {
                 updateTotalsDisplay();
             } else {
-                alert("Este cupom não se aplica aos itens selecionados.");
+                alert("Cupom validado, mas houve um erro ao atualizar os valores na tela.");
             }
+            
+            alert(`Cupom "${cupomAchado.nome}" aplicado com sucesso!`);
+            couponInput.disabled = true;
+            btnApply.innerText = "Aplicado";
+            btnApply.className = "px-6 h-14 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all";
+            
+        } else {
+            alert("Erro ao resgatar dados da loja na nuvem.");
+            resetCouponBtn();
         }
+
+    } catch (error) {
+        console.error("Erro na validação do cupom:", error);
+        alert("Erro ao conectar com a loja.");
+        resetCouponBtn();
+    }
+
+    function resetCouponBtn() {
+        btnApply.innerText = "Aplicar";
+        btnApply.classList.remove('opacity-50', 'pointer-events-none');
+    }
+}
 
         // --- MÁSCARAS ---
         document.getElementById('cli-cpf').addEventListener('input', e => {

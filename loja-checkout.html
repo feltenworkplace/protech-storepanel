@@ -604,83 +604,136 @@
             }
         }
 
-        async function applyCoupon() {
-    const couponInput = document.getElementById('coupon-input');
-    if (!couponInput) return;
-    
-    // Blindagem: Transforma em string com segurança antes de usar toUpperCase()
-    const couponCode = String(couponInput.value || '').trim().toUpperCase();
-    const btnApply = document.getElementById('btn-apply-coupon');
+        // ==========================================
+    // SISTEMA DE NOTIFICAÇÕES PREMIUM (TOASTS)
+    // ==========================================
+    function showNotification(message, type = 'error') {
+        // Remove notificação anterior para não acumular
+        const oldToast = document.getElementById('premium-toast');
+        if (oldToast) oldToast.remove();
 
-    if (!couponCode) return alert("Digite um cupom válido!");
+        const toast = document.createElement('div');
+        toast.id = 'premium-toast';
+        
+        // Estilização dinâmica (Vermelho para erro, Verde para sucesso)
+        const isError = type === 'error';
+        const bgColor = isError ? 'bg-rose-500/10' : 'bg-emerald-500/10';
+        const borderColor = isError ? 'border-rose-500/30' : 'border-emerald-500/30';
+        const textColor = isError ? 'text-rose-500' : 'text-emerald-500';
+        const shadow = isError ? 'shadow-[0_0_30px_rgba(244,63,94,0.15)]' : 'shadow-[0_0_30px_rgba(16,185,129,0.15)]';
+        
+        const icon = isError 
+            ? `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`
+            : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
 
-    btnApply.innerText = "Aplicando...";
-    btnApply.classList.add('opacity-50', 'pointer-events-none');
+        // Monta a caixa do aviso fora da tela (translate-y-[-100%])
+        toast.className = `fixed top-8 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-3 px-6 py-4 rounded-2xl border ${bgColor} ${borderColor} ${textColor} ${shadow} backdrop-blur-md transition-all duration-500 transform -translate-y-[150%] opacity-0`;
+        
+        toast.innerHTML = `
+            <div class="flex-shrink-0 bg-black/20 p-1 rounded-full">${icon}</div>
+            <p class="text-xs font-black uppercase tracking-widest whitespace-nowrap">${message}</p>
+        `;
 
-    try {
-        const params = new URLSearchParams(window.location.search);
-        const slug = params.get('s');
+        document.body.appendChild(toast);
 
-        if (!slug) {
-            alert("Instância da loja não localizada.");
-            return resetCouponBtn();
-        }
+        // Desliza para baixo suavemente (Animação de entrada)
+        setTimeout(() => {
+            toast.classList.remove('-translate-y-[150%]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+        }, 10);
 
-        const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
-        const dados = await resposta.json();
+        // Aguarda 3.5 segundos e desliza para cima (Animação de saída)
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('-translate-y-[150%]', 'opacity-0');
+            // Remove do HTML para não pesar a página
+            setTimeout(() => toast.remove(), 500);
+        }, 3500);
+    }
 
-        if (dados.success && dados.store) {
-            const loja = dados.store;
-            
-            // Procura o cupom garantindo que o nome do banco de dados seja lido como Texto
-            const cupomAchado = (loja.coupons || []).find(c => String(c.nome || '').trim().toUpperCase() === couponCode);
+    // ==========================================
+    // SISTEMA DE CUPOM ATUALIZADO E BLINDADO
+    // ==========================================
+    async function applyCoupon() {
+        const couponInput = document.getElementById('coupon-input');
+        if (!couponInput) return;
+        
+        const couponCode = String(couponInput.value || '').trim().toUpperCase();
+        const btnApply = document.getElementById('btn-apply-coupon');
 
-            if (!cupomAchado) {
-                alert("Cupom inválido ou inexistente para esta loja.");
+        if (!couponCode) return showNotification("Digite um código de cupom!", "error");
+
+        btnApply.innerText = "Aguarde...";
+        btnApply.classList.add('opacity-50', 'pointer-events-none');
+
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
+
+            if (!slug) {
+                showNotification("Instância da loja não localizada.", "error");
                 return resetCouponBtn();
             }
 
-            if (cupomAchado.status !== 'Ativo') {
-                alert("Este cupom não está mais ativo.");
-                return resetCouponBtn();
-            }
+            const resposta = await fetch(`https://storepanel-backend.onrender.com/api/store/${slug}`);
+            const dados = await resposta.json();
 
-            // Salva o desconto na memória global
-            window.activeDiscount = {
-                nome: cupomAchado.nome,
-                tipo: cupomAchado.tipo,
-                valor: parseFloat(cupomAchado.valor)
-            };
+            if (dados.success && dados.store) {
+                const loja = dados.store;
+                
+                // MÁGICA: Suporta bancos de dados em PT-BR (cupons) ou EN (coupons)
+                const listaCupons = loja.cupons || loja.coupons || [];
+                
+                // Procura validando tanto por "nome" quanto por "codigo"
+                const cupomAchado = listaCupons.find(c => 
+                    String(c.nome || c.codigo || '').trim().toUpperCase() === couponCode
+                );
 
-            // MÁGICA: Em vez de redesenhar tudo e dar erro, chamamos a função certa de calcular!
-            if (typeof updateTotalsDisplay === "function") {
-                updateTotalsDisplay();
+                if (!cupomAchado) {
+                    showNotification("Cupom inválido ou inexistente.", "error");
+                    return resetCouponBtn();
+                }
+
+                if (cupomAchado.status !== 'Ativo') {
+                    showNotification("Este cupom não está mais ativo.", "error");
+                    return resetCouponBtn();
+                }
+
+                // Salva o desconto
+                window.activeDiscount = {
+                    nome: cupomAchado.nome || cupomAchado.codigo,
+                    tipo: cupomAchado.tipo,
+                    valor: parseFloat(cupomAchado.valor)
+                };
+
+                // Atualiza a tela sem recarregar
+                if (typeof updateTotalsDisplay === "function") {
+                    updateTotalsDisplay();
+                }
+                
+                // Dispara a nova notificação de SUCESSO!
+                showNotification(`Cupom de ${window.activeDiscount.tipo === 'porcentagem' ? window.activeDiscount.valor + '%' : 'R$' + window.activeDiscount.valor} aplicado!`, "success");
+                
+                couponInput.disabled = true;
+                btnApply.innerText = "Aplicado";
+                btnApply.className = "px-6 h-14 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all";
+                
             } else {
-                alert("Cupom validado, mas houve um erro ao atualizar os valores na tela.");
+                showNotification("Erro ao sincronizar dados da nuvem.", "error");
+                resetCouponBtn();
             }
-            
-            alert(`Cupom "${cupomAchado.nome}" aplicado com sucesso!`);
-            couponInput.disabled = true;
-            btnApply.innerText = "Aplicado";
-            btnApply.className = "px-6 h-14 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all";
-            
-        } else {
-            alert("Erro ao resgatar dados da loja na nuvem.");
+
+        } catch (error) {
+            console.error("Erro na validação do cupom:", error);
+            showNotification("Falha na conexão com o servidor.", "error");
             resetCouponBtn();
         }
 
-    } catch (error) {
-        console.error("Erro na validação do cupom:", error);
-        alert("Erro ao conectar com a loja.");
-        resetCouponBtn();
+        function resetCouponBtn() {
+            btnApply.innerText = "Aplicar";
+            btnApply.classList.remove('opacity-50', 'pointer-events-none');
+        }
     }
-
-
-    function resetCouponBtn() {
-        btnApply.innerText = "Aplicar";
-        btnApply.classList.remove('opacity-50', 'pointer-events-none');
-    }
-}
 
         document.addEventListener('DOMContentLoaded', renderCheckoutItems);
     </script>

@@ -3235,7 +3235,7 @@ function openCouponModal() {
     document.body.classList.add('no-scroll');
 }
 
-function saveCoupon() {
+async function saveCoupon() {
     const code = document.getElementById('cp-code').value.trim().toUpperCase();
     const discount = document.getElementById('cp-discount').value;
     const uses = document.getElementById('cp-uses').value;
@@ -3254,10 +3254,15 @@ function saveCoupon() {
     if (storeIndex !== -1) {
         if (!stores[storeIndex].coupons) stores[storeIndex].coupons = [];
 
+        // MÁGICA 1: Tradução Perfeita! Colocamos todas as chaves que o checkout precisa ler.
         const newCoupon = {
             id: Date.now().toString(),
-            code,
+            code: code,
+            nome: code,          // Para o checkout achar facilmente
+            codigo: code,        // Backup
             discount: parseInt(discount),
+            valor: parseInt(discount), // A matemática do checkout usa isto!
+            tipo: 'porcentagem', // Define o desconto como % para a matemática funcionar
             maxUses: parseInt(uses) || 0,
             used: 0,
             revenue: 0,
@@ -3266,10 +3271,37 @@ function saveCoupon() {
         };
 
         stores[storeIndex].coupons.push(newCoupon);
-        setStores(stores);
+        setStores(stores); // Salva no navegador
         closeModal('coupon-modal');
         renderCoupons();
-        showSuccess("Cupom criado!");
+        
+        // MÁGICA 2: O Motor de Auto-Sync Implacável!
+        // Empacota a loja e manda para a nuvem na mesma fração de segundo.
+        try {
+            const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+            if (user && user.email) {
+                fetch('https://storepanel-backend.onrender.com/update-store', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        storeId: stores[storeIndex].id,
+                        storeData: stores[storeIndex]
+                    })
+                }).then(r => r.json()).then(res => {
+                    console.log("☁️ Cupom sincronizado com a nuvem:", res);
+                });
+            }
+        } catch (e) {
+            console.error("Erro ao sincronizar cupom com a nuvem:", e);
+        }
+
+        // Mostra o sucesso (com fallback caso a sua função showSuccess não exista)
+        if (typeof showSuccess === 'function') {
+            showSuccess("Cupom criado e sincronizado!");
+        } else {
+            alert("Cupom criado e sincronizado!");
+        }
     }
 }
 

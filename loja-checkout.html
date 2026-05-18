@@ -671,7 +671,8 @@
             const slug = params.get('s');
 
             if (!slug) {
-                showNotification("Instância da loja não localizada.", "error");
+                if(typeof showNotification === 'function') showNotification("Instância da loja não localizada.", "error");
+                else alert("Instância da loja não localizada.");
                 return resetCouponBtn();
             }
 
@@ -681,50 +682,55 @@
             if (dados.success && dados.store) {
                 const loja = dados.store;
                 
+                // MÁGICA: Puxa os cupons e procura por "code", "codigo" ou "nome"
                 const listaCupons = loja.cupons || loja.coupons || (loja.settings && loja.settings.cuponsOficiais) || [];
                 
-                // Procura validando tanto por "nome" quanto por "codigo"
                 const cupomAchado = listaCupons.find(c => 
-                    String(c.nome || c.codigo || '').trim().toUpperCase() === couponCode
+                    String(c.nome || c.codigo || c.code || '').trim().toUpperCase() === couponCode
                 );
 
                 if (!cupomAchado) {
-                    showNotification("Cupom inválido ou inexistente.", "error");
+                    if(typeof showNotification === 'function') showNotification("CUPOM INVÁLIDO OU INEXISTENTE.", "error");
+                    else alert("CUPOM INVÁLIDO OU INEXISTENTE.");
                     return resetCouponBtn();
                 }
 
                 if (cupomAchado.status !== 'Ativo') {
-                    showNotification("Este cupom não está mais ativo.", "error");
+                    if(typeof showNotification === 'function') showNotification("Este cupom não está mais ativo.", "error");
+                    else alert("Este cupom não está mais ativo.");
                     return resetCouponBtn();
                 }
 
-                // Salva o desconto
+                // Salva o desconto puxando o valor de onde ele estiver (valor ou discount)
                 window.activeDiscount = {
-                    nome: cupomAchado.nome || cupomAchado.codigo,
-                    tipo: cupomAchado.tipo,
-                    valor: parseFloat(cupomAchado.valor)
+                    nome: cupomAchado.nome || cupomAchado.codigo || cupomAchado.code,
+                    tipo: cupomAchado.tipo || 'porcentagem',
+                    valor: parseFloat(cupomAchado.valor || cupomAchado.discount)
                 };
 
-                // Atualiza a tela sem recarregar
+                // Atualiza a tela de totais
                 if (typeof updateTotalsDisplay === "function") {
                     updateTotalsDisplay();
                 }
                 
-                // Dispara a nova notificação de SUCESSO!
-                showNotification(`Cupom de ${window.activeDiscount.tipo === 'porcentagem' ? window.activeDiscount.valor + '%' : 'R$' + window.activeDiscount.valor} aplicado!`, "success");
+                const msgSucesso = `Cupom de ${window.activeDiscount.tipo === 'porcentagem' ? window.activeDiscount.valor + '%' : 'R$' + window.activeDiscount.valor} aplicado!`;
+                if(typeof showNotification === 'function') showNotification(msgSucesso, "success");
+                else alert(msgSucesso);
                 
                 couponInput.disabled = true;
                 btnApply.innerText = "Aplicado";
                 btnApply.className = "px-6 h-14 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all";
                 
             } else {
-                showNotification("Erro ao sincronizar dados da nuvem.", "error");
+                if(typeof showNotification === 'function') showNotification("Erro ao sincronizar dados da nuvem.", "error");
+                else alert("Erro ao sincronizar dados da nuvem.");
                 resetCouponBtn();
             }
 
         } catch (error) {
             console.error("Erro na validação do cupom:", error);
-            showNotification("Falha na conexão com o servidor.", "error");
+            if(typeof showNotification === 'function') showNotification("Falha na conexão com o servidor.", "error");
+            else alert("Falha na conexão com o servidor.");
             resetCouponBtn();
         }
 

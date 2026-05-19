@@ -493,7 +493,7 @@
                                     <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Ou use o PIX Copia e Cola</p>
                                     <div class="flex gap-2">
                                         <input type="text" readonly value="${dados.qr_code}" class="input-premium !py-3 text-[10px] text-gray-400 font-mono">
-                                        <button onclick="copyPixCode(this, '${dados.qr_code}')" class="bg-white/10 hover:bg-[#D4AF37] hover:text-black transition-colors px-4 rounded-xl text-xs font-black uppercase">Copiar</button>
+                                        <button onclick="copyPixCode(this, '${dados.qr_code}')" class="bg-white/10 hover:bg-[#D4AF37] hover:text-black transition-colors px-4 rounded-xl text-xs font-black uppercase shrink-0 whitespace-nowrap">Copiar</button>
                                     </div>
                                 </div>
                                 
@@ -829,18 +829,18 @@
         }
     }
 
-    // ========================================================
+// ========================================================
 // EFEITO VISUAL PREMIUM AO COPIAR O PIX
 // ========================================================
 function copyPixCode(btn, code) {
     navigator.clipboard.writeText(code).then(() => {
-        // 1. Guarda as classes e o texto originais
+        // 1. Guarda as classes originais (AGORA COM SHRINK-0 e WHITESPACE-NOWRAP)
         const originalText = "Copiar";
-        const originalClasses = "bg-white/10 hover:bg-[#D4AF37] hover:text-black transition-colors px-4 rounded-xl text-xs font-black uppercase";
+        const originalClasses = "bg-white/10 hover:bg-[#D4AF37] hover:text-black transition-colors px-4 rounded-xl text-xs font-black uppercase shrink-0 whitespace-nowrap";
 
-        // 2. Transforma o botão num indicador de Sucesso (Verde Neon)
+        // 2. Transforma o botão num indicador de Sucesso
         btn.innerText = "Copiado!";
-        btn.className = "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 rounded-xl text-xs font-black uppercase transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]";
+        btn.className = "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 rounded-xl text-xs font-black uppercase transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.2)] shrink-0 whitespace-nowrap";
 
         // 3. Temporizador: Volta ao normal após 2.5 segundos
         setTimeout(() => {
@@ -850,7 +850,6 @@ function copyPixCode(btn, code) {
         
     }).catch(err => {
         console.error("Erro ao copiar o código: ", err);
-        // Usa o nosso sistema de notificação premium caso dê erro
         if (typeof showNotification === 'function') {
             showNotification("Falha ao copiar o código PIX.", "error");
         } else {

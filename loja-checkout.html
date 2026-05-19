@@ -317,9 +317,52 @@
         }
 
         function updateTotalsDisplay() {
-            document.getElementById('summary-subtotal').innerText = `R$ ${subtotalCart.toFixed(2)}`;
-            document.getElementById('summary-total').innerText = `R$ ${(subtotalCart - totalDiscount).toFixed(2)}`;
+    let total = subtotalCart;
+    let valorDesconto = 0;
+
+    // 1. Se houver um cupão ativo na memória, faz a matemática inteligente
+    if (window.activeDiscount) {
+        // Calcula a percentagem (ex: 30% de 60 = 18)
+        if (window.activeDiscount.tipo === 'porcentagem' || !window.activeDiscount.tipo) {
+            valorDesconto = subtotalCart * (window.activeDiscount.valor / 100);
+        } else {
+            valorDesconto = window.activeDiscount.valor; // Caso futuramente adicione desconto em valor fixo (R$)
         }
+        
+        // Garante que o total não fica negativo
+        total = Math.max(0, subtotalCart - valorDesconto);
+    }
+
+    // 2. Salva o desconto na variável global para o botão do PIX usar o valor correto
+    totalDiscount = valorDesconto;
+
+    // 3. Função auxiliar para formatar em Reais (R$ 0,00)
+    const formatBRL = (valor) => 'R$ ' + valor.toFixed(2).replace('.', ',');
+
+    // 4. Atualiza os textos principais no ecrã
+    const elSubtotal = document.getElementById('summary-subtotal');
+    const elTotal = document.getElementById('summary-total');
+    
+    if (elSubtotal) elSubtotal.innerText = formatBRL(subtotalCart);
+    if (elTotal) elTotal.innerText = formatBRL(total);
+    
+    // 5. Mostra ou esconde a linha verde "Desconto Aplicado" e injeta o valor
+    const rowDesconto = document.getElementById('discount-row');
+    const txtDesconto = document.getElementById('summary-discount');
+    
+    if (valorDesconto > 0) {
+        if (rowDesconto) {
+            rowDesconto.classList.remove('hidden');
+            rowDesconto.classList.add('flex'); // Mostra a linha
+        }
+        if (txtDesconto) txtDesconto.innerText = '- ' + formatBRL(valorDesconto);
+    } else {
+        if (rowDesconto) {
+            rowDesconto.classList.add('hidden');
+            rowDesconto.classList.remove('flex');
+        }
+    }
+}
 
         // --- MÁSCARAS ---
         document.getElementById('cli-cpf').addEventListener('input', e => {

@@ -424,6 +424,9 @@
             }
         }
 
+        // ========================================================
+        // LÓGICA DE PAGAMENTO E APROVAÇÃO (ATUALIZADA 100% OFF)
+        // ========================================================
         async function finalizeOrder() {
             const method = document.querySelector('input[name="payment_method"]:checked').value;
             const btnFinalize = document.getElementById('btn-finalize');
@@ -435,17 +438,27 @@
 
             if(!nome || !cpf || !email || !gameId) return alert("Preencha seus dados e o ID do jogo!");
 
-            // CORREÇÃO DE OURO: Usamos a loja oficial "window.currentStore" que o checkout buscou do Render!
             const store = window.currentStore;
+            const valorTotal = (subtotalCart - totalDiscount).toFixed(2);
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('s');
 
+            // 1. O ATALHO VIP: Se for R$ 0,00, PULA O BANCO E APROVA NA HORA!
+            if (Number(valorTotal) <= 0) {
+                btnFinalize.innerText = "Resgatando Produto...";
+                btnFinalize.classList.add('opacity-50', 'pointer-events-none');
+                
+                // Gera um ID de transação fictício apenas para registo
+                const transacaoId = 'FREE-' + Math.floor(Math.random() * 10000000);
+                await concluirEntrega(transacaoId, nome, cpf, email, gameId, store, slug, 0, 'Cupom 100%');
+                return;
+            }
+
+            // 2. SE FOR MAIOR QUE ZERO, VERIFICA O MERCADO PAGO E SEGUE NORMAL
             if (!store || !store.settings || !store.settings.mpToken) {
                 alert("Esta loja ainda não possui credenciais ativas do Mercado Pago cadastrados no servidor.");
                 return;
             }
-
-            const valorTotal = (subtotalCart - totalDiscount).toFixed(2);
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('s');
 
             if (method === 'pix') {
                 btnFinalize.innerText = "Conectando ao Banco...";
@@ -466,7 +479,6 @@
                     const dados = await resposta.json();
 
                     if (dados.success) {
-                        // 1. MÁGICA VISUAL: Mostra o QR CODE
                         const wRight = document.querySelector('.w-1\\/2.pl-4');
                         wRight.innerHTML = `
                             <div class="text-center animate-bounce-short">
@@ -492,7 +504,6 @@
                             </div>
                         `;
 
-                        // 2. VERIFICADOR CONSTANTE
                         const verificador = setInterval(async () => {
                             try {
                                 const checkRes = await fetch('https://storepanel-backend.onrender.com/check-payment', {
@@ -508,128 +519,13 @@
 
                                 if (checkData.approved) {
                                     clearInterval(verificador);
-                                    // --- 2.5 CHAMANDO O MOTOBOY DO RCON (A MÁGICA QUE FALTAVA) ---
-                                    console.log("DADOS DA LOJA:", store);
-                                    console.log("ITENS DO CARRINHO:", cartItems);
-
-                                    try {
-                                        let comandosParaEnviar = [];
-
-                                        // Pega cada item do carrinho e prepara o comando
-                                        cartItems.forEach(item => {
-                                            let textoDoComando = null;
-
-                                            // A MÁGICA DE RECUPERAÇÃO: Vai na vitrine e pega o produto completo original
-                                            const produtoReal = store.products.find(p => p.id === item.id);
-                                            
-                                            if (produtoReal) {
-                                                // 1. Tenta ver se o comando está grudado direto no produto real
-                                                if (produtoReal.command) {
-                                                    textoDoComando = produtoReal.command;
-                                                } 
-                                                // 2. Se o produto tiver o "commandId", a gente busca a frase lá no cofre de comandos
-                                                else if (produtoReal.commandId && store.commands) {
-                                                    let comandoAchado = store.commands.find(c => c.id === produtoReal.commandId);
-                                                    if (comandoAchado && comandoAchado.command) {
-                                                        textoDoComando = comandoAchado.command;
-                                                    } else if (comandoAchado && comandoAchado.action) { 
-                                                        textoDoComando = comandoAchado.action; 
-                                                    }
-                                                }
-                                            }
-
-                                            // Se a gente encontrou a frase do comando com sucesso...
-                                            if (textoDoComando) {
-                                                // Troca a tag {id} pelo Passaporte/ID do jogador
-                                                let comandoPronto = textoDoComando.replace('{id}', gameId);
-
-                                                // Repete o comando pela quantidade comprada (se comprou 2 carros, manda 2 vezes)
-                                                for (let i = 0; i < (item.quantity || 1); i++) {
-                                                    comandosParaEnviar.push(comandoPronto);
-                                                }
-                                            } else {
-                                                console.log("❌ Ops! Não achei a frase do comando para o item:", item.name);
-                                            }
-                                        });
-
-                                        // Se a loja tiver configurado o RCON no painel, dispara para o Render!
-                                        if (comandosParaEnviar.length > 0 && store.server && store.server.ip) {
-                                            console.log("✅ Comandos montados com sucesso:", comandosParaEnviar);
-                                            console.log("🏍️ Enviando ordem de entrega via HTTP API...");
-                                            
-                                            fetch('https://storepanel-backend.onrender.com/delivery', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    ip: store.server.ip,
-                                                    port: store.server.port,
-                                                    token: "pt_live_942kS82ls92mS02l", 
-                                                    commands: comandosParaEnviar
-                                                })
-                                            })
-                                            .then(res => res.json())
-                                            .then(data => console.log("Resposta do RCON:", data))
-                                            .catch(err => console.error("Erro na comunicação com RCON:", err));
-                                        } else {
-                                            console.log("⚠️ O motoboy não saiu: Nenhum comando válido foi gerado ou falta configurar o IP da loja.");
-                                        }
-                                    } catch (rconErro) {
-                                        console.error("Erro ao preparar comandos:", rconErro);
-                                    }
-                                    // -------------------------------------------------------------
-
-                                    // --- 3. INJETA A VENDA COM O GAME ID NO DASHBOARD ---
-                                    let storesAtualizadas = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
-                                    let indexLoja = storesAtualizadas.findIndex(s => s.slug === slug);
-                                    
-                                    if (indexLoja !== -1) {
-                                        if (!storesAtualizadas[indexLoja].orders) storesAtualizadas[indexLoja].orders = [];
-                                        
-                                        const novoPedido = {
-                                            id: 'PED-' + Math.floor(Math.random() * 100000), 
-                                            cliente: nome,
-                                            email: email,
-                                            cpf: cpf,
-                                            gameId: gameId, // AQUI ESTÁ A CHAVE DE OURO! Guardado no banco.
-                                            total: Number(valorTotal),
-                                            metodo: 'PIX',
-                                            status: 'Aprovado', 
-                                            data: new Date().toISOString(),
-                                            itens: cartItems
-                                        };
-                                        
-                                        storesAtualizadas[indexLoja].orders.push(novoPedido);
-                                        localStorage.setItem('protech_stores_v1', JSON.stringify(storesAtualizadas));
-                                        localStorage.removeItem('protech_active_cart'); 
-                                    }
-
-                                    // --- 4. TELA DE SUCESSO VERDADEIRA ---
-                                    wRight.innerHTML = `
-                                        <div class="text-center animate-bounce-short">
-                                            <div class="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                            </div>
-                                            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">Pagamento Aprovado!</h2>
-                                            <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest">Obrigado pela sua compra.</p>
-                                            
-                                            <div class="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 text-left relative overflow-hidden">
-                                                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 blur-[50px] rounded-full"></div>
-                                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Status do Pedido</p>
-                                                <p class="text-emerald-500 font-black text-sm mb-4">Concluído e Entregue</p>
-                                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">ID da Transação</p>
-                                                <p class="text-white font-mono text-xs">${dados.payment_id}</p>
-                                            </div>
-                                            
-                                            <button onclick="window.history.back()" class="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] px-8 py-4 rounded-xl transition-all duration-300 w-full">
-                                                Voltar para a Loja
-                                            </button>
-                                        </div>
-                                    `;
+                                    // Pagamento aprovado! Chama a mesma função de entrega
+                                    await concluirEntrega(dados.payment_id, nome, cpf, email, gameId, store, slug, valorTotal, 'PIX');
                                 }
                             } catch (e) {
                                 console.log("Aguardando confirmação do banco...");
                             }
-                        }, 5000); // 5000ms = 5 segundos
+                        }, 5000); 
 
                     } else {
                         alert("Erro: " + dados.message);
@@ -644,6 +540,105 @@
                 }
             } else {
                 alert("Processando pagamento via Cartão de Crédito...");
+            }
+        }
+
+        // ========================================================
+        // O MOTOBOY (ISOLADO PARA FUNCIONAR TANTO COM PIX QUANTO COM 100% OFF)
+        // ========================================================
+        async function concluirEntrega(paymentId, nome, cpf, email, gameId, store, slug, valorTotal, metodoPagamento) {
+            try {
+                let comandosParaEnviar = [];
+                cartItems.forEach(item => {
+                    let textoDoComando = null;
+                    const produtoReal = store.products.find(p => p.id === item.id);
+                    
+                    if (produtoReal) {
+                        if (produtoReal.command) {
+                            textoDoComando = produtoReal.command;
+                        } else if (produtoReal.commandId && store.commands) {
+                            let comandoAchado = store.commands.find(c => c.id === produtoReal.commandId);
+                            if (comandoAchado && comandoAchado.command) {
+                                textoDoComando = comandoAchado.command;
+                            } else if (comandoAchado && comandoAchado.action) { 
+                                textoDoComando = comandoAchado.action; 
+                            }
+                        }
+                    }
+
+                    if (textoDoComando) {
+                        let comandoPronto = textoDoComando.replace('{id}', gameId);
+                        for (let i = 0; i < (item.quantity || 1); i++) {
+                            comandosParaEnviar.push(comandoPronto);
+                        }
+                    }
+                });
+
+                if (comandosParaEnviar.length > 0 && store.server && store.server.ip) {
+                    fetch('https://storepanel-backend.onrender.com/delivery', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ip: store.server.ip,
+                            port: store.server.port,
+                            token: store.server.pass || "pt_live_942kS82ls92mS02l", 
+                            commands: comandosParaEnviar
+                        })
+                    }).catch(err => console.error("Erro na comunicação com RCON:", err));
+                }
+            } catch (rconErro) {
+                console.error("Erro ao preparar comandos:", rconErro);
+            }
+
+            // Salva a venda no dashboard
+            let storesAtualizadas = JSON.parse(localStorage.getItem('protech_stores_v1') || '[]');
+            let indexLoja = storesAtualizadas.findIndex(s => s.slug === slug);
+            
+            if (indexLoja !== -1) {
+                if (!storesAtualizadas[indexLoja].orders) storesAtualizadas[indexLoja].orders = [];
+                
+                const novoPedido = {
+                    id: 'PED-' + Math.floor(Math.random() * 100000), 
+                    cliente: nome,
+                    email: email,
+                    cpf: cpf,
+                    gameId: gameId,
+                    total: Number(valorTotal),
+                    metodo: metodoPagamento,
+                    status: 'Aprovado', 
+                    data: new Date().toISOString(),
+                    itens: cartItems
+                };
+                
+                storesAtualizadas[indexLoja].orders.push(novoPedido);
+                localStorage.setItem('protech_stores_v1', JSON.stringify(storesAtualizadas));
+                localStorage.removeItem('protech_active_cart'); 
+            }
+
+            // Mostra a tela de sucesso final
+            const wRight = document.querySelector('.w-1\\/2.pl-4');
+            if (wRight) {
+                wRight.innerHTML = `
+                    <div class="text-center animate-bounce-short">
+                        <div class="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">${metodoPagamento === 'Cupom 100%' ? 'Resgate Concluído!' : 'Pagamento Aprovado!'}</h2>
+                        <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest">Obrigado pela sua preferência.</p>
+                        
+                        <div class="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 text-left relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 blur-[50px] rounded-full"></div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Status do Pedido</p>
+                            <p class="text-emerald-500 font-black text-sm mb-4">Concluído e Entregue</p>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">ID da Transação</p>
+                            <p class="text-white font-mono text-xs">${paymentId}</p>
+                        </div>
+                        
+                        <button onclick="window.history.back()" class="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] px-8 py-4 rounded-xl transition-all duration-300 w-full">
+                            Voltar para a Loja
+                        </button>
+                    </div>
+                `;
             }
         }
 

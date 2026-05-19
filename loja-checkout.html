@@ -701,12 +701,49 @@
         const couponInput = document.getElementById('coupon-input');
         if (!couponInput) return;
         
-        const couponCode = String(couponInput.value || '').trim().toUpperCase();
         const btnApply = document.getElementById('btn-apply-coupon');
+        
+        // As classes originais do seu botão para podermos restaurar perfeitamente
+        const originalClasses = "bg-white hover:bg-[#D4AF37] text-black font-black uppercase tracking-widest text-[10px] px-6 h-14 flex items-center justify-center rounded-xl transition-all duration-300 shrink-0";
 
-        if (!couponCode) return showNotification("Digite um código de cupom!", "error");
+        // ==================================================
+        // 1. MODO CANCELAMENTO (Se já existir um cupom aplicado)
+        // ==================================================
+        if (window.activeDiscount) {
+            window.activeDiscount = null; // Apaga o desconto da memória
+            couponInput.value = '';       // Limpa a caixinha de texto
+            couponInput.disabled = false; // Destrava a caixinha
+
+            // Restaura o botão para o formato original de "Aplicar"
+            btnApply.className = originalClasses;
+            btnApply.innerText = "Aplicar";
+
+            // Remove os efeitos visuais de "Cancelar?" do mouse
+            btnApply.onmouseenter = null;
+            btnApply.onmouseleave = null;
+
+            // Recalcula o preço para o valor cheio
+            if (typeof updateTotalsDisplay === "function") updateTotalsDisplay();
+            
+            // Opcional: Mostra notificação que foi removido (usando erro para ficar vermelho)
+            if (typeof showNotification === 'function') showNotification("CUPOM REMOVIDO.", "error");
+            
+            return; // Interrompe a função aqui, pois o objetivo era só cancelar!
+        }
+
+        // ==================================================
+        // 2. MODO APLICAÇÃO (O código que já estava a funcionar)
+        // ==================================================
+        const couponCode = String(couponInput.value || '').trim().toUpperCase();
+
+        if (!couponCode) {
+            if(typeof showNotification === 'function') showNotification("Digite um código de cupom!", "error");
+            else alert("Digite um código de cupom!");
+            return;
+        }
 
         btnApply.innerText = "Aguarde...";
+        // Importante: Tiramos o 'pointer-events-none' daqui a pouco para podermos clicar de novo
         btnApply.classList.add('opacity-50', 'pointer-events-none');
 
         try {
@@ -725,7 +762,6 @@
             if (dados.success && dados.store) {
                 const loja = dados.store;
                 
-                // MÁGICA: Puxa os cupons e procura por "code", "codigo" ou "nome"
                 const listaCupons = loja.cupons || loja.coupons || (loja.settings && loja.settings.cuponsOficiais) || [];
                 
                 const cupomAchado = listaCupons.find(c => 
@@ -744,25 +780,40 @@
                     return resetCouponBtn();
                 }
 
-                // Salva o desconto puxando o valor de onde ele estiver (valor ou discount)
+                // Salva o desconto na memória global
                 window.activeDiscount = {
                     nome: cupomAchado.nome || cupomAchado.codigo || cupomAchado.code,
                     tipo: cupomAchado.tipo || 'porcentagem',
                     valor: parseFloat(cupomAchado.valor || cupomAchado.discount)
                 };
 
-                // Atualiza a tela de totais
-                if (typeof updateTotalsDisplay === "function") {
-                    updateTotalsDisplay();
-                }
+                // Atualiza a tela com o preço mais baixo
+                if (typeof updateTotalsDisplay === "function") updateTotalsDisplay();
                 
                 const msgSucesso = `Cupom de ${window.activeDiscount.tipo === 'porcentagem' ? window.activeDiscount.valor + '%' : 'R$' + window.activeDiscount.valor} aplicado!`;
                 if(typeof showNotification === 'function') showNotification(msgSucesso, "success");
                 else alert(msgSucesso);
                 
-                couponInput.disabled = true;
+                // ==================================================
+                // 3. MÁGICA: TRANSFORMA O BOTÃO EM "CANCELAR"
+                // ==================================================
+                couponInput.disabled = true; // Trava o campo de texto
+                
+                // Deixa o botão verde e clivável
+                btnApply.className = "px-6 h-14 flex items-center justify-center rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all duration-300 shrink-0 cursor-pointer";
                 btnApply.innerText = "Aplicado";
-                btnApply.className = "px-6 h-14 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all";
+                
+                // Ao colocar o mouse (Hover: fica Vermelho)
+                btnApply.onmouseenter = () => {
+                    btnApply.innerText = "Cancelar?";
+                    btnApply.className = "px-6 h-14 flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-black uppercase tracking-widest transition-all duration-300 shrink-0 cursor-pointer shadow-[0_0_15px_rgba(244,63,94,0.15)]";
+                };
+                
+                // Ao tirar o mouse (Volta a ser Verde)
+                btnApply.onmouseleave = () => {
+                    btnApply.innerText = "Aplicado";
+                    btnApply.className = "px-6 h-14 flex items-center justify-center rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest transition-all duration-300 shrink-0 cursor-pointer";
+                };
                 
             } else {
                 if(typeof showNotification === 'function') showNotification("Erro ao sincronizar dados da nuvem.", "error");
@@ -779,7 +830,7 @@
 
         function resetCouponBtn() {
             btnApply.innerText = "Aplicar";
-            btnApply.classList.remove('opacity-50', 'pointer-events-none');
+            btnApply.className = originalClasses;
         }
     }
 

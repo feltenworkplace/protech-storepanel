@@ -3210,6 +3210,11 @@ document.addEventListener('DOMContentLoaded', checkTemplateAccess);
 let couponIdToDelete = null;
 
 function openCouponModal() {
+    // 1. Limpa os campos fantasmas antes de abrir o modal
+    document.getElementById('cp-code').value = '';
+    document.getElementById('cp-discount').value = '';
+    document.getElementById('cp-uses').value = '';
+
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
     const store = getStores().find(s => s.slug === currentSlug);

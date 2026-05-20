@@ -1538,18 +1538,18 @@ input:-webkit-autofill:active{
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-8 space-y-6">
-                <div>
-                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Access Token (Produção)</label>
-                    <input type="text" id="mp-access-token" placeholder="APP_USR-123456789..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-gold outline-none text-sm text-white transition-all">
-                    <p class="text-[10px] text-gray-500 mt-2">Este token garante que o dinheiro das vendas vá direto para a sua conta.</p>
-                </div>
-            
-                <div class="flex gap-3 pt-4">
-                    <button onclick="closeModal('payment-config-modal')" class="flex-1 py-4 text-xs font-black uppercase text-gray-500 hover:text-white transition rounded-2xl bg-white/0 hover:bg-white/5">Cancelar</button>
-                    <button onclick="savePaymentConfig()" class="flex-1 py-4 bg-[#009EE3] text-white rounded-2xl text-xs font-black uppercase shadow-lg shadow-[#009EE3]/20 hover:opacity-90 transition">Salvar Integração</button>
-                </div>
+            <div class="space-y-6 mb-8">
+            <div>
+                <label class="block text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">ACCESS TOKEN (PRODUÇÃO)</label>
+                <input type="text" id="mp-token" placeholder="APP_USR-..." class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-mono text-white focus:border-[#009EE3] transition-all outline-none">
+                <p class="text-[10px] text-gray-500 font-bold mt-2">Este token garante que o dinheiro das vendas vá direto para a sua conta.</p>
             </div>
+            
+            <div class="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <input type="checkbox" id="mp-status" class="w-4 h-4 rounded border-white/10 bg-zinc-800 text-[#009EE3] focus:ring-0 focus:ring-offset-0 cursor-pointer">
+                <label for="mp-status" class="text-[10px] text-gray-300 font-black uppercase tracking-widest cursor-pointer select-none">Ativar Mercado Pago no checkout da loja</label>
+            </div>
+        </div>
         </div>
     </div>
 
@@ -3514,6 +3514,12 @@ function openPaymentConfig() {
         document.getElementById('mp-access-token').value = '';
     }
 
+    // A MÁGICA AQUI: Lê se o botão estava ativado e marca a caixinha
+    const statusCheckbox = document.getElementById('mp-status');
+    if (statusCheckbox) {
+        statusCheckbox.checked = (store && store.settings && store.settings.mpActive) || false;
+    }
+
     document.getElementById('payment-config-modal').classList.remove('hidden');
     document.body.classList.add('no-scroll');
 }
@@ -3521,6 +3527,13 @@ function openPaymentConfig() {
 function savePaymentConfig() {
     const token = document.getElementById('mp-access-token').value.trim();
     if (!token) return showAlert("Cole o seu Access Token do Mercado Pago.");
+
+    // A MÁGICA AQUI: Descobre se a caixinha está marcada na hora de salvar
+    let isActive = false;
+    const statusCheckbox = document.getElementById('mp-status');
+    if (statusCheckbox) {
+        isActive = statusCheckbox.checked;
+    }
 
     const params = new URLSearchParams(window.location.search);
     const currentSlug = params.get('s');
@@ -3531,6 +3544,10 @@ function savePaymentConfig() {
         if (!stores[storeIndex].settings) stores[storeIndex].settings = {};
         
         stores[storeIndex].settings.mpToken = token;
+        
+        // Salva o status do botão no banco de dados da loja
+        stores[storeIndex].settings.mpActive = isActive;
+        
         setStores(stores);
         
         closeModal('payment-config-modal');

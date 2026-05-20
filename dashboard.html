@@ -917,26 +917,28 @@ input:-webkit-autofill:active{
 </div>
 
 <div id="tab-metodos" class="hidden space-y-8">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+    <div class="max-w-2xl mx-auto glass rounded-[2.5rem] p-12 border-white/5 bg-zinc-900/10 flex flex-col items-center text-center group hover:border-gold/30 transition-all">
         
-        <div class="glass rounded-[2rem] p-8 border-white/5 bg-zinc-900/10 flex flex-col items-center text-center group hover:border-gold/20 transition-all h-full">
-            <div class="w-24 h-24 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/5 p-4 shrink-0 overflow-hidden">
+        <div class="flex items-center gap-6 mb-8">
+            <div class="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5 p-4 overflow-hidden shadow-lg shadow-black/50 group-hover:-translate-y-1 transition-transform">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKItLyTnFNM9IpmWGCmBxMCP-njQTA9dj6Uw&s" alt="Mercado Pago" class="w-full h-full object-contain">
             </div>
-            <h4 class="font-black text-lg uppercase tracking-tight text-white flex-grow">Mercado Pago</h4>
-            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-8">Checkout Transparente</p>
-            <button onclick="openPaymentConfig()" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gold hover:text-black hover:border-gold transition-all">Configurar</button>
-        </div>
-
-        <div class="glass rounded-[2rem] p-8 border-white/5 bg-zinc-900/10 flex flex-col items-center text-center group hover:border-gold/20 transition-all h-full">
-            <div class="w-24 h-24 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/5 p-4 shrink-0 overflow-hidden">
+            <span class="text-white/20 font-black text-xl">+</span>
+            <div class="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5 p-4 overflow-hidden shadow-lg shadow-black/50 group-hover:-translate-y-1 transition-transform delay-75">
                 <img src="https://files.passeidireto.com/2889edc1-1a70-456a-a32c-e3f050102347/2889edc1-1a70-456a-a32c-e3f050102347.png" alt="Pix" class="w-full h-full object-contain">
             </div>
-            <h4 class="font-black text-lg uppercase tracking-tight text-white flex-grow">Pix</h4>
-            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-8">Recebimento Instantâneo</p>
-            <button onclick="openPaymentConfig()" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gold hover:text-black hover:border-gold transition-all">Configurar</button>
         </div>
 
+        <h4 class="font-black text-2xl uppercase tracking-tight text-white mb-2">Mercado Pago</h4>
+        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-4">PIX Automático e Cartão de Crédito</p>
+        
+        <p class="text-sm text-gray-400 leading-relaxed mb-10 max-w-md">
+            Conecte a sua conta do Mercado Pago uma única vez para processar tanto os pagamentos instantâneos via PIX quanto as vendas por cartão na sua loja.
+        </p>
+
+        <button onclick="openPaymentConfig()" class="w-full max-w-xs py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-gold hover:text-black hover:border-gold transition-all shadow-lg">
+            Configurar Integração
+        </button>
     </div>
 </div>
 
